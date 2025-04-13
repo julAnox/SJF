@@ -1,0 +1,76 @@
+{
+  "resolvedIssues": [
+    {
+      "id": 1,
+      "title": "Login Button Not Working",
+      "description": "The login button was unresponsive on mobile devices",
+      "solution": "Fixed the event handler for touch devices and improved button accessibility",
+      "date": "2024-03-15T10:30:00Z",
+      "category": "Authentication"
+    },
+    {
+      "id": 2,
+      "title": "Job Search Filter Issues",
+      "description": "Salary range filter wasn't updating the job list correctly",
+      "solution": "Corrected the salary filter logic and added proper state management",
+      "date": "2024-03-14T15:45:00Z",
+      "category": "Search"
+    },
+    {
+      "id": 3,
+      "title": "Profile Image Upload Error",
+      "description": "Users couldn't upload profile pictures larger than 1MB",
+      "solution": "Implemented image compression and improved upload handling",
+      "date": "2024-03-13T09:20:00Z",
+      "category": "Profile"
+    },
+    {
+      "id": 4,
+      "title": "Notification Delay",
+      "description": "Job application notifications were delayed by several hours",
+      "solution": "Optimized notification service and reduced processing time",
+      "date": "2024-03-12T14:10:00Z",
+      "category": "Notifications"
+    },
+    {
+      "id": 5,
+      "title": "Resume Parser Bug",
+      "description": "PDF resumes weren't being parsed correctly",
+      "solution": "Updated PDF parsing library and improved text extraction",
+      "date": "2024-03-11T11:25:00Z",
+      "category": "Resume"
+    },
+    {
+      "id": 6,
+      "title": "Chat Message Order",
+      "description": "Messages in the chat were sometimes displayed out of order",
+      "solution": "Fixed timestamp sorting and message queue processing",
+      "date": "2024-03-10T16:50:00Z",
+      "category": "Chat"
+    },
+    {
+      "id": 7,
+      "title": "Application Form Validation",
+      "description": "Form was submitting without required fields being filled",
+      "solution": "Implemented comprehensive form validation with clear error messages",
+      "date": "2024-03-09T13:15:00Z",
+      "category": "Forms"
+    },
+    {
+      "id": 8,
+      "title": "Search Performance Issues",
+      "description": "Job search was becoming slow with large result sets",
+      "solution": "Implemented pagination and optimized search query performance",
+      "date": "2024-03-08T10:45:00Z",
+      "category": "Performance"
+    },
+    {
+      "id": 9,
+      "title": "Mobile Layout Bugs",
+      "description": "UI elements were overlapping on smaller screens",
+      "solution": "Improved responsive design and fixed mobile layout issues",
+      "date": "2024-03-07T14:30:00Z",
+      "category": "UI/UX"
+    }
+  ]
+}

@@ -1,0 +1,139 @@
+{
+  "resumes": [
+    {
+      "id": 1,
+      "name": "Alexander Smith",
+      "title": "Frontend Developer",
+      "photo": "https://i.pravatar.cc/150?img=1",
+      "location": {
+        "city": "Moscow",
+        "metro": "Arbatskaya"
+      },
+      "skills": ["React", "TypeScript", "Tailwind CSS", "Node.js"],
+      "experience": {
+        "years": 2,
+        "current": "Junior Frontend Developer at TechStart",
+        "previous": ["Intern at Digital Solutions"]
+      },
+      "education": {
+        "degree": "Bachelor of Computer Science",
+        "university": "Moscow State University",
+        "graduationYear": 2023
+      },
+      "languages": ["English (B2)", "Russian (Native)"],
+      "salary": {
+        "expected": 150000
+      },
+      "availability": "Full-time",
+      "lastActive": "2024-03-15T10:00:00Z"
+    },
+    {
+      "id": 2,
+      "name": "Maria Petrova",
+      "title": "UX/UI Designer",
+      "photo": "https://i.pravatar.cc/150?img=2",
+      "location": {
+        "city": "Saint Petersburg",
+        "metro": "Nevsky Prospekt"
+      },
+      "skills": ["Figma", "Adobe XD", "Prototyping", "User Research"],
+      "experience": {
+        "years": 1,
+        "current": "UI Designer at Creative Studio",
+        "previous": []
+      },
+      "education": {
+        "degree": "Bachelor of Design",
+        "university": "Saint Petersburg State University",
+        "graduationYear": 2024
+      },
+      "languages": ["English (C1)", "Russian (Native)", "French (A2)"],
+      "salary": {
+        "expected": 120000
+      },
+      "availability": "Part-time",
+      "lastActive": "2024-03-14T15:30:00Z"
+    },
+    {
+      "id": 3,
+      "name": "Dmitry Ivanov",
+      "title": "Backend Developer",
+      "photo": "https://i.pravatar.cc/150?img=3",
+      "location": {
+        "city": "Moscow",
+        "metro": "Paveletskaya"
+      },
+      "skills": ["Python", "Django", "PostgreSQL", "Docker"],
+      "experience": {
+        "years": 3,
+        "current": "Backend Developer at TechCorp",
+        "previous": ["Junior Developer at StartupX"]
+      },
+      "education": {
+        "degree": "Master of Computer Science",
+        "university": "MIPT",
+        "graduationYear": 2022
+      },
+      "languages": ["English (B2)", "Russian (Native)", "German (A1)"],
+      "salary": {
+        "expected": 200000
+      },
+      "availability": "Full-time",
+      "lastActive": "2024-03-13T09:15:00Z"
+    },
+    {
+      "id": 4,
+      "name": "Anna Sokolova",
+      "title": "Data Analyst",
+      "photo": "https://i.pravatar.cc/150?img=4",
+      "location": {
+        "city": "Moscow",
+        "metro": "Kievskaya"
+      },
+      "skills": ["Python", "SQL", "Tableau", "Excel"],
+      "experience": {
+        "years": 0,
+        "current": "Data Analysis Intern",
+        "previous": []
+      },
+      "education": {
+        "degree": "Bachelor of Statistics",
+        "university": "HSE University",
+        "graduationYear": 2024
+      },
+      "languages": ["English (C1)", "Russian (Native)"],
+      "salary": {
+        "expected": 80000
+      },
+      "availability": "Internship",
+      "lastActive": "2024-03-12T14:20:00Z"
+    },
+    {
+      "id": 5,
+      "name": "Igor Volkov",
+      "title": "DevOps Engineer",
+      "photo": "https://i.pravatar.cc/150?img=5",
+      "location": {
+        "city": "Saint Petersburg",
+        "metro": "Tekhnologichesky Institut"
+      },
+      "skills": ["AWS", "Kubernetes", "Jenkins", "Terraform"],
+      "experience": {
+        "years": 4,
+        "current": "DevOps Lead at CloudTech",
+        "previous": ["System Administrator at DataCo"]
+      },
+      "education": {
+        "degree": "Master of Information Technology",
+        "university": "ITMO University",
+        "graduationYear": 2021
+      },
+      "languages": ["English (C2)", "Russian (Native)"],
+      "salary": {
+        "expected": 250000
+      },
+      "availability": "Full-time",
+      "lastActive": "2024-03-11T11:45:00Z"
+    }
+  ]
+}

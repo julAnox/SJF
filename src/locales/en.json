@@ -1,0 +1,558 @@
+{
+  "nav": {
+    "jobs": "Jobs",
+    "resumes": "Resumes",
+    "chat": "Chat",
+    "auction": "Auction",
+    "about": "About",
+    "login": "Log In",
+    "signup": "Sign Up"
+  },
+  "chat": {
+    "title": "Messages",
+    "search": "Search conversations...",
+    "empty": "No messages yet",
+    "settings": {
+      "title": "Chat Settings",
+      "delete": "Delete Chat",
+      "clear": "Clear History",
+      "share": "Share Contact",
+      "close": "Close Chat",
+      "block": "Block User",
+      "confirmDelete": "Are you sure you want to delete this chat?",
+      "confirmClear": "Are you sure you want to clear chat history?",
+      "confirmBlock": "Are you sure you want to block this user?"
+    },
+    "messages": {
+      "resume": "Attached Resume",
+      "coverLetter": "Cover Letter",
+      "jobOffer": "Job Offer"
+    },
+    "input": {
+      "placeholder": "Type a message...",
+      "send": "Send"
+    },
+    "share": {
+      "title": "Share Contact",
+      "search": "Search chats..."
+    },
+    "blocked": "This chat is blocked",
+    "unblock": "Unblock Chat",
+    "closed": "This chat is closed"
+  },
+  "applications": {
+    "modal": {
+      "title": "Apply for Position",
+      "selectResume": "Choose Resume",
+      "profileResumes": "From Your Profile",
+      "uploadResume": "Or Upload New Resume",
+      "dropResume": "Drop DOC/DOCX file here or click to browse",
+      "coverLetter": "Cover Letter",
+      "coverLetterPlaceholder": "Write a cover letter...",
+      "submit": "Submit Application",
+      "cancel": "Cancel"
+    }
+  },
+  "offers": {
+    "modal": {
+      "title": "Send Job Offer",
+      "position": "Position",
+      "company": "Company",
+      "salary": "Salary Range",
+      "description": "Job Description",
+      "requirements": "Requirements",
+      "benefits": "Benefits",
+      "submit": "Send Offer",
+      "cancel": "Cancel"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Welcome Back",
+      "subtitle": "Sign in to your account",
+      "email": "Email Address",
+      "password": "Password",
+      "rememberMe": "Remember me",
+      "forgotPassword": "Forgot password?",
+      "signIn": "Sign In",
+      "noAccount": "Don't have an account?",
+      "signUp": "Sign up",
+      "emailRequired": "Email is required",
+      "emailInvalid": "Email is invalid",
+      "passwordRequired": "Password is required",
+      "passwordLength": "Password must be at least 6 characters"
+    },
+    "register": {
+      "title": "Create Account",
+      "subtitle": "Join our community of students and employers",
+      "email": "Email Address",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "terms": "I agree to the",
+      "termsLink": "Terms of Service",
+      "and": "and",
+      "privacyLink": "Privacy Policy",
+      "createAccount": "Create Account",
+      "haveAccount": "Already have an account?",
+      "signIn": "Sign in",
+      "emailRequired": "Email is required",
+      "emailInvalid": "Email is invalid",
+      "passwordRequired": "Password is required",
+      "passwordLength": "Password must be at least 6 characters",
+      "signupFailed": "Failed to create account. Please try again.",
+      "confirmPasswordRequired": "Please confirm your password",
+      "passwordsNoMatch": "Passwords do not match"
+    }
+  },
+  "about": {
+    "hero": {
+      "title": "About Student's Job",
+      "subtitle": "Connecting talented students with their dream careers"
+    },
+    "mission": {
+      "title": "Our Mission",
+      "description": "We're on a mission to revolutionize how students find employment opportunities. By connecting talented students with forward-thinking employers, we're building bridges to successful careers and helping shape the future workforce."
+    },
+    "stats": {
+      "students": "Active Students",
+      "employers": "Partner Employers",
+      "placements": "Successful Placements",
+      "satisfaction": "Student Satisfaction"
+    },
+    "values": {
+      "title": "Our Values",
+      "innovation": {
+        "title": "Innovation",
+        "description": "Constantly improving our platform to provide the best job search experience"
+      },
+      "integrity": {
+        "title": "Integrity",
+        "description": "Maintaining honest and transparent relationships with all our users"
+      },
+      "inclusion": {
+        "title": "Inclusion",
+        "description": "Creating equal opportunities for students from all backgrounds"
+      },
+      "impact": {
+        "title": "Impact",
+        "description": "Making a real difference in students' career journeys"
+      }
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "subtitle": "Find answers to common questions about our platform",
+      "questions": [
+        {
+          "question": "How do I create an account?",
+          "answer": "Creating an account is simple! Click the 'Sign Up' button in the top right corner, enter your email address, create a password, and you're ready to go."
+        },
+        {
+          "question": "Is the service free for students?",
+          "answer": "Yes! Student's Job is completely free for students. We believe in providing equal access to career opportunities for all students."
+        },
+        {
+          "question": "How do I apply for jobs?",
+          "answer": "Once you've created an account and completed your profile, you can browse available positions and apply directly through our platform with just a few clicks."
+        },
+        {
+          "question": "Can I use the platform if I'm still studying?",
+          "answer": "Absolutely! We especially encourage current students to use our platform to find internships and part-time positions that fit their schedule."
+        },
+        {
+          "question": "How do I contact employers?",
+          "answer": "After applying for a position, you can communicate with employers through our built-in messaging system. This ensures professional and tracked communication."
+        },
+        {
+          "question": "What types of jobs are available?",
+          "answer": "We offer a wide range of opportunities including internships, part-time positions, project-based work, and full-time roles suitable for students and recent graduates."
+        }
+      ]
+    },
+    "recentQuestions": {
+      "title": "Recent Questions",
+      "viewAll": "View All Questions"
+    },
+    "bugReport": {
+      "title": "Report an Issue",
+      "subtitle": "Help us improve by reporting any problems you encounter",
+      "form": {
+        "name": "Your Name",
+        "email": "Email Address",
+        "issue": "Describe the Issue",
+        "submit": "Submit Report",
+        "success": "Thank you for your report! We'll look into it.",
+        "namePlaceholder": "Enter your name",
+        "emailPlaceholder": "Enter your email",
+        "issuePlaceholder": "Please describe the problem in detail"
+      }
+    }
+  },
+  "home": {
+    "hero": {
+      "title": "Find Your Dream Student Job",
+      "subtitle": "Connect with top employers looking for talented students",
+      "searchPlaceholder": "Search for jobs, skills, or companies...",
+      "search": "Search"
+    },
+    "stats": {
+      "jobs": "Active Jobs",
+      "students": "Students",
+      "companies": "Partner Companies"
+    },
+    "features": {
+      "jobs": {
+        "title": "Latest Job Opportunities",
+        "description": "Discover internships and part-time positions tailored for students"
+      },
+      "students": {
+        "title": "Student Community",
+        "description": "Join a growing network of ambitious students and professionals"
+      },
+      "opportunities": {
+        "title": "Career Growth",
+        "description": "Access exclusive opportunities and advance your career path"
+      },
+      "education": {
+        "title": "Skill Development",
+        "description": "Learn from industry experts and enhance your professional skills"
+      }
+    },
+    "howItWorks": {
+      "title": "How It Works",
+      "step1": {
+        "title": "Create Your Profile",
+        "description": "Build your professional profile and showcase your skills"
+      },
+      "step2": {
+        "title": "Explore Opportunities",
+        "description": "Browse through thousands of job listings and find your perfect match"
+      },
+      "step3": {
+        "title": "Apply and Connect",
+        "description": "Apply to positions and connect directly with employers"
+      }
+    },
+    "companies": {
+      "title": "Trusted by Leading Companies",
+      "subtitle": "Join thousands of companies who trust us with their hiring needs"
+    },
+    "testimonials": {
+      "title": "Success Stories",
+      "testimonial1": "Found my first internship through Student's Job. The platform made it incredibly easy to connect with employers.",
+      "testimonial2": "The quality of job opportunities here is outstanding. I've built valuable connections for my career.",
+      "testimonial3": "Student's Job helped me land my dream position. The process was smooth and professional.",
+      "author1": {
+        "name": "Alex Johnson",
+        "role": "Software Engineering Intern"
+      },
+      "author2": {
+        "name": "Sarah Williams",
+        "role": "Marketing Assistant"
+      },
+      "author3": {
+        "name": "Michael Chen",
+        "role": "Data Analyst"
+      }
+    },
+    "cta": {
+      "title": "Ready to Start Your Career Journey?",
+      "description": "Join thousands of students who have found their perfect job opportunity",
+      "button": "Get Started Now"
+    }
+  },
+  "footer": {
+    "description": "Student's Job is the leading platform connecting students with their dream career opportunities. Join our community today!",
+    "quickLinks": "Quick Links",
+    "about": "About Us",
+    "jobs": "Browse Jobs",
+    "companies": "Companies",
+    "blog": "Blog",
+    "contact": "Contact",
+    "forEmployers": "For Employers",
+    "postJob": "Post a Job",
+    "browseResumes": "Browse Resumes",
+    "pricing": "Pricing Plans",
+    "recruitment": "Recruitment Solutions",
+    "newsletter": "Newsletter",
+    "newsletterDescription": "Subscribe to our newsletter for the latest job opportunities and career tips.",
+    "emailPlaceholder": "Enter your email",
+    "subscribe": "Subscribe",
+    "rights": "All rights reserved."
+  },
+  "jobs": {
+    "search": {
+      "placeholder": "Search for jobs...",
+      "filters": "Filters"
+    },
+    "filters": {
+      "location": {
+        "title": "Location",
+        "city": "City",
+        "cityPlaceholder": "Enter city...",
+        "metro": "Metro Station",
+        "metroPlaceholder": "Enter metro station..."
+      },
+      "experience": {
+        "title": "Experience (years)",
+        "min": "Min",
+        "max": "Max"
+      },
+      "salary": {
+        "title": "Salary Range (₽)",
+        "min": "Min",
+        "max": "Max"
+      },
+      "employmentType": {
+        "title": "Employment Type",
+        "fulltime": "Full-time",
+        "parttime": "Part-time",
+        "contract": "Contract",
+        "temporary": "Temporary",
+        "remote": "Remote"
+      },
+      "schedule": {
+        "title": "Work Schedule",
+        "fullday": "Full day",
+        "flexiblehours": "Flexible hours",
+        "shiftwork": "Shift work",
+        "nightshifts": "Night shifts"
+      },
+      "sideWork": {
+        "title": "Side Work",
+        "onetimetask": "One-time task",
+        "parttime": "Part-time",
+        "atleast4hoursaday": "At least 4 hours a day",
+        "onweekends": "On weekends",
+        "intheevenings": "In the evenings"
+      }
+    },
+    "sort": {
+      "title": "Sort",
+      "relevance": "By relevance",
+      "date": "By date modified",
+      "salaryDesc": "By descending salary",
+      "salaryAsc": "By ascending salary"
+    },
+    "timeFrame": {
+      "title": "Time Frame",
+      "all": "All time",
+      "month": "This month",
+      "week": "This week",
+      "threeDays": "Last three days",
+      "day": "Last day"
+    },
+    "perPage": {
+      "vacancies": "vacancies"
+    },
+    "activeFilters": {
+      "title": "Active Filters",
+      "clearAll": "Clear all filters",
+      "noResults": "No jobs found matching your criteria",
+      "city": "City: {city}",
+      "metro": "Metro: {metro}",
+      "experience": "Experience: {years} years",
+      "salary": "Salary: up to ₽{salary}"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "card": {
+      "applyNow": "Apply Now",
+      "posted": "Posted"
+    }
+  },
+  "resumes": {
+    "search": {
+      "placeholder": "Search resumes...",
+      "filters": "Filters"
+    },
+    "filters": {
+      "location": {
+        "title": "Location",
+        "city": "City",
+        "cityPlaceholder": "Enter city...",
+        "metro": "Metro Station",
+        "metroPlaceholder": "Enter metro station..."
+      },
+      "experience": {
+        "title": "Experience (years)",
+        "min": "Min",
+        "max": "Max"
+      },
+      "salary": {
+        "title": "Expected Salary (₽)",
+        "min": "Min",
+        "max": "Max"
+      },
+      "availability": {
+        "title": "Availability",
+        "fulltime": "Full-time",
+        "parttime": "Part-time",
+        "internship": "Internship"
+      },
+      "skills": {
+        "title": "Skills",
+        "react": "React",
+        "typescript": "TypeScript",
+        "tailwind": "Tailwind CSS",
+        "nodejs": "Node.js",
+        "figma": "Figma",
+        "adobexd": "Adobe XD",
+        "prototyping": "Prototyping",
+        "userresearch": "User Research",
+        "python": "Python",
+        "django": "Django",
+        "postgresql": "PostgreSQL",
+        "docker": "Docker",
+        "sql": "SQL",
+        "tableau": "Tableau",
+        "excel": "Excel",
+        "aws": "AWS",
+        "kubernetes": "Kubernetes",
+        "jenkins": "Jenkins",
+        "terraform": "Terraform"
+      },
+      "languages": {
+        "title": "Languages",
+        "english_b2": "English (B2)",
+        "russian_native": "Russian (Native)",
+        "english_c1": "English (C1)",
+        "french_a2": "French (A2)",
+        "german_a1": "German (A1)",
+        "english_c2": "English (C2)"
+      },
+      "education": {
+        "title": "Education",
+        "bsc_cs": "Bachelor of Computer Science",
+        "bsc_design": "Bachelor of Design",
+        "msc_cs": "Master of Computer Science",
+        "bsc_stats": "Bachelor of Statistics",
+        "msc_it": "Master of Information Technology"
+      }
+    },
+    "sort": {
+      "title": "Sort",
+      "relevance": "By relevance",
+      "lastActive": "Last active",
+      "experienceDesc": "Most experienced",
+      "experienceAsc": "Recently graduated",
+      "salaryDesc": "Highest expected salary",
+      "salaryAsc": "Lowest expected salary"
+    },
+    "timeFrame": {
+      "title": "Time Frame",
+      "all": "All time",
+      "today": "Active today",
+      "week": "Active this week",
+      "month": "Active this month"
+    },
+    "perPage": {
+      "resumes": "resumes"
+    },
+    "activeFilters": {
+      "title": "Active Filters",
+      "clearAll": "Clear all filters",
+      "noResults": "No resumes found matching your criteria",
+      "city": "City: {city}",
+      "metro": "Metro: {metro}",
+      "experience": "Experience: {years} years",
+      "salary": "Salary: up to ₽{salary}"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "actions": {
+      "contact": "Contact",
+      "viewProfile": "View Profile"
+    },
+    "details": {
+      "experience": "{years} years experience",
+      "expectedSalary": "Expected: ₽{salary}",
+      "lastActive": "Last active: {date}"
+    },
+    "date": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "daysAgo": "{days} days ago"
+    }
+  },
+  "auction": {
+    "title": "Talent Auction",
+    "subtitle": "Companies are competing for your skills",
+    "notEnoughApplications": {
+      "title": "Not Enough Applications",
+      "description": "You need to apply to at least 3 positions before participating in the auction.",
+      "currentlyApplied": "Currently applied to: {count} positions"
+    },
+    "countdown": {
+      "title": "Auction Starting Soon",
+      "description": "Get ready to receive competitive offers from top companies!"
+    },
+    "stages": {
+      "salary": {
+        "name": "Salary",
+        "description": "Base salary bidding"
+      },
+      "equity": {
+        "name": "Equity",
+        "description": "Company equity percentage"
+      },
+      "benefits": {
+        "name": "Benefits",
+        "description": "Social benefits package"
+      },
+      "position": {
+        "name": "Position",
+        "description": "Job position and level"
+      }
+    },
+    "tutorial": {
+      "welcome": {
+        "title": "Welcome to Talent Auction",
+        "description": "Companies will compete for your talent through a 4-stage bidding process. Each stage focuses on a different aspect of the job offer."
+      },
+      "salary": {
+        "title": "Stage 1: Salary Bidding",
+        "description": "Companies will bid on your base salary. Each company has 10 seconds to make their offer, and the highest bid sets the bar for the next company."
+      },
+      "equity": {
+        "title": "Stage 2: Equity Offering",
+        "description": "Companies will offer equity percentages in their organization. This represents your ownership stake in the company."
+      },
+      "benefits": {
+        "title": "Stage 3: Benefits Package",
+        "description": "Companies will compete on benefits packages, including health insurance, vacation days, professional development, and other perks."
+      },
+      "position": {
+        "title": "Stage 4: Position Level",
+        "description": "Finally, companies will bid on your position level, from Junior to Head of Department, affecting your role and responsibilities."
+      },
+      "next": "Next",
+      "previous": "Previous",
+      "start": "Start Auction"
+    },
+    "timers": {
+      "stageTime": "Stage Time",
+      "companyTime": "Company Time"
+    },
+    "currentStage": "Current Stage",
+    "currentTurn": "Current Turn",
+    "bidHistory": "Bid History",
+    "enterBid": "Enter bid",
+    "bid": "Bid",
+    "results": {
+      "title": "Auction Results",
+      "noBid": "No bid",
+      "chooseOffer": "Choose Offer"
+    },
+    "positions": {
+      "junior": "Junior",
+      "middle": "Middle",
+      "senior": "Senior",
+      "lead": "Lead",
+      "head": "Head"
+    }
+  }
+}

@@ -1,0 +1,129 @@
+{
+  "jobs": [
+    {
+      "id": 1,
+      "title": "Frontend Developer",
+      "company": "TechStart",
+      "companyLogo": "https://images.unsplash.com/photo-1549421263-6064833b071b?w=100&h=100&fit=crop",
+      "salary": {
+        "min": 120000,
+        "max": 180000
+      },
+      "location": {
+        "city": "Moscow",
+        "metro": "Arbatskaya"
+      },
+      "type": "Full-time",
+      "schedule": "Flexible hours",
+      "experience": 1,
+      "description": "We are looking for a talented Frontend Developer to join our dynamic team. The ideal candidate will have experience with React, TypeScript, and modern web technologies.",
+      "requirements": [
+        "1+ years of experience with React",
+        "Strong knowledge of TypeScript",
+        "Understanding of modern web development practices",
+        "Good problem-solving skills"
+      ],
+      "postedDate": "2024-03-15T10:00:00Z"
+    },
+    {
+      "id": 2,
+      "title": "UX/UI Designer",
+      "company": "Creative Solutions",
+      "companyLogo": "https://images.unsplash.com/photo-1571171637578-41bc2dd41cd2?w=100&h=100&fit=crop",
+      "salary": {
+        "min": 90000,
+        "max": 150000
+      },
+      "location": {
+        "city": "Saint Petersburg",
+        "metro": "Nevsky Prospekt"
+      },
+      "type": "Part-time",
+      "schedule": "Remote",
+      "experience": 2,
+      "description": "Join our creative team as a UX/UI Designer. We're looking for someone who can create beautiful and functional interfaces for our clients' projects.",
+      "requirements": [
+        "Experience with Figma and Adobe Creative Suite",
+        "Strong portfolio of web and mobile designs",
+        "Understanding of user-centered design principles",
+        "Good communication skills"
+      ],
+      "postedDate": "2024-03-14T15:30:00Z"
+    },
+    {
+      "id": 3,
+      "title": "Backend Developer",
+      "company": "DataFlow Systems",
+      "companyLogo": "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=100&h=100&fit=crop",
+      "salary": {
+        "min": 150000,
+        "max": 220000
+      },
+      "location": {
+        "city": "Moscow",
+        "metro": "Paveletskaya"
+      },
+      "type": "Full-time",
+      "schedule": "Full day",
+      "experience": 3,
+      "description": "We're seeking a Backend Developer to help build and maintain our cloud-based services. Experience with Node.js and databases is required.",
+      "requirements": [
+        "3+ years of backend development experience",
+        "Strong knowledge of Node.js and Express",
+        "Experience with SQL and NoSQL databases",
+        "Understanding of RESTful APIs"
+      ],
+      "postedDate": "2024-03-13T09:15:00Z"
+    },
+    {
+      "id": 4,
+      "title": "Data Analyst Intern",
+      "company": "Analytics Pro",
+      "companyLogo": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=100&h=100&fit=crop",
+      "salary": {
+        "min": 45000,
+        "max": 70000
+      },
+      "location": {
+        "city": "Moscow",
+        "metro": "Kievskaya"
+      },
+      "type": "Part-time",
+      "schedule": "Flexible hours",
+      "experience": 0,
+      "description": "Great opportunity for students to gain hands-on experience in data analysis. We'll teach you the tools and techniques used in modern data analytics.",
+      "requirements": [
+        "Basic knowledge of SQL",
+        "Understanding of statistics",
+        "Strong analytical mindset",
+        "Currently pursuing a relevant degree"
+      ],
+      "postedDate": "2024-03-12T14:20:00Z"
+    },
+    {
+      "id": 5,
+      "title": "DevOps Engineer",
+      "company": "Cloud Systems",
+      "companyLogo": "https://images.unsplash.com/photo-1667372393119-3d4c48d07fc9?w=100&h=100&fit=crop",
+      "salary": {
+        "min": 180000,
+        "max": 250000
+      },
+      "location": {
+        "city": "Saint Petersburg",
+        "metro": "Tekhnologichesky Institut"
+      },
+      "type": "Full-time",
+      "schedule": "Full day",
+      "experience": 4,
+      "description": "Looking for a DevOps Engineer to help us automate and optimize our deployment processes. Experience with cloud platforms is essential.",
+      "requirements": [
+        "Experience with AWS or Azure",
+        "Knowledge of Docker and Kubernetes",
+        "Understanding of CI/CD principles",
+        "Strong scripting skills"
+      ],
+      "postedDate": "2024-03-11T11:45:00Z"
+    }
+  ]
+}
