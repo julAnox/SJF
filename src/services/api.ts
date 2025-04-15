@@ -22,87 +22,6 @@ api.interceptors.response.use(
   }
 );
 
-// Jobs API
-export const jobsApi = {
-  getAll: async () => {
-    const response = await api.get("/jobs/");
-    return response.data;
-  },
-
-  getById: async (id: string) => {
-    const response = await api.get(`/jobs/${id}/`);
-    return response.data;
-  },
-
-  create: async (jobData: any) => {
-    const response = await api.post("/jobs/", jobData);
-    return response.data;
-  },
-
-  update: async (id: string, jobData: any) => {
-    const response = await api.patch(`/jobs/${id}/`, jobData);
-    return response.data;
-  },
-
-  delete: async (id: string) => {
-    await api.delete(`/jobs/${id}/`);
-  },
-};
-
-// Resumes API
-export const resumesApi = {
-  getAll: async () => {
-    const response = await api.get("/resumes/");
-    return response.data;
-  },
-
-  getById: async (id: string) => {
-    const response = await api.get(`/resumes/${id}/`);
-    return response.data;
-  },
-
-  create: async (resumeData: any) => {
-    const response = await api.post("/resumes/", resumeData);
-    return response.data;
-  },
-
-  update: async (id: string, resumeData: any) => {
-    const response = await api.patch(`/resumes/${id}/`, resumeData);
-    return response.data;
-  },
-
-  delete: async (id: string) => {
-    await api.delete(`/resumes/${id}/`);
-  },
-};
-
-// Companies API
-export const companiesApi = {
-  getAll: async () => {
-    const response = await api.get("/companies/");
-    return response.data;
-  },
-
-  getById: async (id: string) => {
-    const response = await api.get(`/companies/${id}/`);
-    return response.data;
-  },
-
-  create: async (companyData: any) => {
-    const response = await api.post("/companies/", companyData);
-    return response.data;
-  },
-
-  update: async (id: string, companyData: any) => {
-    const response = await api.patch(`/companies/${id}/`, companyData);
-    return response.data;
-  },
-
-  delete: async (id: string) => {
-    await api.delete(`/companies/${id}/`);
-  },
-};
-
 // Types matching Django models
 export interface User {
   id: number;
@@ -120,6 +39,8 @@ export interface User {
   role: string;
   created_at: string;
   updated_at: string;
+  last_login: string | null;
+  last_signup: string;
 }
 
 export interface Job {
@@ -143,22 +64,15 @@ export interface Job {
 export interface Resume {
   id: number;
   user: number;
-  title: string;
-  photo: string;
-  city: string;
-  metro: string;
-  skills: string[] | Record<string, string>;
-  experience_years: number;
-  current_position: string;
-  degree: string;
-  university: string;
-  graduation_year: number;
+  gender: string | null;
+  profession: string;
+  experience: string;
+  education: string;
+  institutionName: string;
+  graduationYear: string;
   specialization: string;
-  expected_salary: number;
-  languages: string[] | Record<string, string>;
-  availability: string;
-  status: string;
-  last_active: string;
+  skills: Record<string, string> | null;
+  contacts: string;
   created_at: string;
   updated_at: string;
 }
@@ -227,5 +141,211 @@ export interface AuctionBid {
   value: any;
   timestamp: string;
 }
+
+export interface Comment {
+  id: number;
+  user: number;
+  stars: number;
+  content: string;
+  likes: number;
+  first_name?: string;
+  last_name?: string;
+  date?: string;
+}
+
+export interface Issue {
+  id: number;
+  user: number;
+  issue: string;
+  solution: string | null;
+  views?: number;
+  first_name?: string;
+  last_name?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// Users API
+export const usersApi = {
+  getAll: async (): Promise<User[]> => {
+    const response = await api.get("/users/");
+    return response.data;
+  },
+
+  getById: async (id: number): Promise<User> => {
+    const response = await api.get(`/users/${id}/`);
+    return response.data;
+  },
+};
+
+// Jobs API
+export const jobsApi = {
+  getAll: async () => {
+    const response = await api.get("/jobs/");
+    return response.data;
+  },
+
+  getById: async (id: string) => {
+    const response = await api.get(`/jobs/${id}/`);
+    return response.data;
+  },
+
+  create: async (jobData: any) => {
+    const response = await api.post("/jobs/", jobData);
+    return response.data;
+  },
+
+  update: async (id: string, jobData: any) => {
+    const response = await api.patch(`/jobs/${id}/`, jobData);
+    return response.data;
+  },
+
+  delete: async (id: string) => {
+    await api.delete(`/jobs/${id}/`);
+  },
+};
+
+// Resumes API
+export const resumesApi = {
+  getAll: async () => {
+    const response = await api.get("/resumes/");
+    return response.data;
+  },
+
+  getById: async (id: string) => {
+    const response = await api.get(`/resumes/${id}/`);
+    return response.data;
+  },
+
+  create: async (resumeData: FormData) => {
+    const response = await api.post("/resumes/", resumeData);
+    return response.data;
+  },
+
+  update: async (id: string, resumeData: Partial<Resume>) => {
+    const response = await api.patch(`/resumes/${id}/`, resumeData);
+    return response.data;
+  },
+
+  delete: async (id: string) => {
+    await api.delete(`/resumes/${id}/`);
+  },
+};
+
+// Companies API
+export const companiesApi = {
+  getAll: async (): Promise<Company[]> => {
+    const response = await api.get("/companies/");
+    return response.data;
+  },
+
+  getById: async (id: string) => {
+    const response = await api.get(`/companies/${id}/`);
+    return response.data;
+  },
+
+  create: async (companyData: Partial<Company>) => {
+    const response = await api.post("/companies/", companyData);
+    return response.data;
+  },
+
+  update: async (id: string, companyData: Partial<Company>) => {
+    const response = await api.patch(`/companies/${id}/`, companyData);
+    return response.data;
+  },
+
+  delete: async (id: string) => {
+    await api.delete(`/companies/${id}/`);
+  },
+};
+
+// Comments API
+export const commentsApi = {
+  getAll: async (): Promise<Comment[]> => {
+    const response = await api.get("/comments/");
+    return response.data;
+  },
+
+  create: async (commentData: {
+    stars: number;
+    content: string;
+    user: number;
+    likes: number;
+  }): Promise<Comment> => {
+    const response = await api.post("/comments/", commentData);
+    return response.data;
+  },
+
+  like: async (id: number, likes: number): Promise<Comment> => {
+    const response = await api.patch(`/comments/${id}/`, { likes });
+    return response.data;
+  },
+
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/comments/${id}/`);
+  },
+};
+
+// Issues API
+export const issuesApi = {
+  getAll: async (): Promise<Issue[]> => {
+    const response = await api.get("/issues/");
+    return response.data;
+  },
+
+  getResolved: async (): Promise<Issue[]> => {
+    const response = await api.get("/issues/");
+    return response.data.filter((issue: Issue) => issue.solution);
+  },
+
+  getById: async (id: number): Promise<Issue> => {
+    const response = await api.get(`/issues/${id}/`);
+    return response.data;
+  },
+
+  create: async (issueData: {
+    user: number;
+    issue: string;
+  }): Promise<Issue> => {
+    const response = await api.post("/issues/", issueData);
+    return response.data;
+  },
+
+  update: async (id: number, issueData: Partial<Issue>): Promise<Issue> => {
+    const response = await api.patch(`/issues/${id}/`, issueData);
+    return response.data;
+  },
+
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/issues/${id}/`);
+  },
+};
+
+// Analytics API
+export const analyticsApi = {
+  // Функция для получения количества заходов и регистраций за последние 24 часа
+  estimateDailyLoginsSignups: async (): Promise<number> => {
+    try {
+      const users = await usersApi.getAll();
+
+      const now = new Date();
+      const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+      const recentUsers = users.filter((user) => {
+        const createdAt = new Date(user.created_at);
+        const lastLogin = user.last_login ? new Date(user.last_login) : null;
+        return (
+          (createdAt >= twentyFourHoursAgo && createdAt <= now) ||
+          (lastLogin && lastLogin >= twentyFourHoursAgo && lastLogin <= now)
+        );
+      });
+
+      return recentUsers.length; // Количество новых пользователей (регистраций и входов)
+    } catch (error) {
+      console.error("Ошибка при оценке посещений и регистраций:", error);
+      return 0;
+    }
+  },
+};
 
 export default api;

@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
@@ -14,7 +16,12 @@ import {
   Building2,
 } from "lucide-react";
 import ApplicationModal from "../../components/Modals/ApplicationModal";
-import { jobsApi, companiesApi, Job, Company } from "../../services/api";
+import {
+  jobsApi,
+  companiesApi,
+  type Job,
+  type Company,
+} from "../../services/api";
 
 interface FilterState {
   city: string;
@@ -81,9 +88,9 @@ const Jobs = () => {
             typeof job.requirements === "string"
               ? JSON.parse(job.requirements)
               : job.requirements || {},
-          salary_min: parseFloat(job.salary_min) || 0,
-          salary_max: parseFloat(job.salary_max) || 0,
-          experiense: parseInt(job.experiense) || 0,
+          salary_min: Number.parseFloat(job.salary_min) || 0,
+          salary_max: Number.parseFloat(job.salary_max) || 0,
+          experiense: Number.parseInt(job.experiense) || 0,
           city: job.city || "",
           metro: job.metro || "",
           type: job.type || "",
@@ -169,6 +176,9 @@ const Jobs = () => {
   const filteredJobs = jobs
     .filter((job) => {
       if (!job) return false;
+
+      // Only show active jobs
+      if (job.status !== "active") return false;
 
       const matchesSearch =
         (job.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -394,7 +404,10 @@ const Jobs = () => {
                     step="1"
                     value={filters.experiense}
                     onChange={(e) =>
-                      handleFilterChange("experiense", parseInt(e.target.value))
+                      handleFilterChange(
+                        "experiense",
+                        Number.parseInt(e.target.value)
+                      )
                     }
                     className="w-full accent-emerald-500"
                   />
@@ -437,7 +450,7 @@ const Jobs = () => {
                       onChange={(e) =>
                         handleFilterChange(
                           "salary_min",
-                          parseInt(e.target.value)
+                          Number.parseInt(e.target.value)
                         )
                       }
                       className="w-full px-3 py-2 bg-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -450,7 +463,7 @@ const Jobs = () => {
                       onChange={(e) =>
                         handleFilterChange(
                           "salary_max",
-                          parseInt(e.target.value)
+                          Number.parseInt(e.target.value)
                         )
                       }
                       className="w-full px-3 py-2 bg-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -463,7 +476,10 @@ const Jobs = () => {
                     step="10000"
                     value={filters.salary_max}
                     onChange={(e) =>
-                      handleFilterChange("salary_max", parseInt(e.target.value))
+                      handleFilterChange(
+                        "salary_max",
+                        Number.parseInt(e.target.value)
+                      )
                     }
                     className="w-full accent-emerald-500"
                   />
@@ -566,7 +582,10 @@ const Jobs = () => {
                   <select
                     value={filters.perPage}
                     onChange={(e) =>
-                      handleFilterChange("perPage", parseInt(e.target.value))
+                      handleFilterChange(
+                        "perPage",
+                        Number.parseInt(e.target.value)
+                      )
                     }
                     className="appearance-none bg-gray-700 text-white px-4 py-2 pr-8 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   >
@@ -662,7 +681,10 @@ const Jobs = () => {
                         {/* Company Logo */}
                         {job.company && (job.company as Company).logo ? (
                           <img
-                            src={(job.company as Company).logo}
+                            src={
+                              (job.company as Company).logo ||
+                              "/placeholder.svg"
+                            }
                             alt={(job.company as Company).name}
                             className="w-20 h-20 rounded-lg object-cover"
                             onError={() => handleImageError(job.id)}

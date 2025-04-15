@@ -105,6 +105,9 @@
     }
   },
   "about": {
+    "issues": {
+      "notif": "You need to be logged in to submit an issue"
+    },
     "hero": {
       "title": "About Student's Job",
       "subtitle": "Connecting talented students with their dream careers"
@@ -114,10 +117,10 @@
       "description": "We're on a mission to revolutionize how students find employment opportunities. By connecting talented students with forward-thinking employers, we're building bridges to successful careers and helping shape the future workforce."
     },
     "stats": {
-      "students": "Active Students",
-      "employers": "Partner Employers",
-      "placements": "Successful Placements",
-      "satisfaction": "Student Satisfaction"
+      "users_stats": "Registered users",
+      "companies": "Registered companies",
+      "dailyVisits": "Daily visits",
+      "fiveStarReviews": "Five star reviews"
     },
     "values": {
       "title": "Our Values",

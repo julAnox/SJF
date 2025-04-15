@@ -1,4 +1,7 @@
+"use client";
+
 import type React from "react";
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -15,15 +18,23 @@ import {
   FileText,
   Plus,
   Building2,
-  ChevronDown,
-  ChevronUp,
   Briefcase,
+  Trash2,
+  DollarSign,
+  Clock,
+  Edit,
+  EyeOff,
+  Eye,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
+import { companiesApi, jobsApi, resumesApi } from "../../services/api";
+import ResumeViewModal from "./ResumeViewModal";
+import ResumeEditModal from "./ResumeEditModal";
+import CreateCompanyModal from "../../components/Modals/CreateCompanyModal";
+import CreateJobModal from "../../components/Modals/CreateJobModal";
+import CompanyViewModal from "../../components/Modals/CompanyViewModal";
 import ResumeWizard from "./ResumeWizard";
-import CompanyForm, { CompanyFormData } from "./CompanyForm";
-import JobForm from "./JobForm";
-import { companiesApi } from "../../api/companies";
+import DeleteConfirmationModal from "../../components/Modals/DeleteConfirmationModal";
 
 interface FormData {
   first_name: string;
@@ -40,6 +51,48 @@ interface FormData {
   avatar: string;
 }
 
+interface Company {
+  id: number;
+  user: number;
+  name: string;
+  logo: string;
+  description: string;
+  website: string;
+  industry: string;
+  size: string;
+  founded_year: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface Job {
+  id: number;
+  company: number;
+  title: string;
+  description: string;
+  requirements: string;
+  salary_min: number;
+  salary_max: number;
+  city: string;
+  metro: string;
+  type: string;
+  schedule: string;
+  experiense: number;
+  status: string;
+  type_of_money: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface DeleteModalState {
+  isOpen: boolean;
+  type: "resume" | "job" | "company";
+  id: string | null;
+  title: string;
+  message: string;
+}
+
 const Profile = () => {
   const navigate = useNavigate();
   const {
@@ -47,11 +100,12 @@ const Profile = () => {
     isAuthenticated,
     updateProfile,
     isLoading: authLoading,
+    verifyPassword,
   } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [showResumeWizard, setShowResumeWizard] = useState(false);
-  const [showCompanyForm, setShowCompanyForm] = useState(false);
-  const [showJobForm, setShowJobForm] = useState(false);
+  const [showCreateCompanyModal, setShowCreateCompanyModal] = useState(false);
+  const [showCreateJobModal, setShowCreateJobModal] = useState(false);
   const [notification, setNotification] = useState<{
     type: "success" | "error";
     message: string;
@@ -70,8 +124,25 @@ const Profile = () => {
     role: "student",
     avatar: "",
   });
-  const [companyData, setCompanyData] = useState<CompanyFormData | null>(null);
-  const [jobs, setJobs] = useState([]);
+  const [company, setCompany] = useState<Company | null>(null);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [userResumes, setUserResumes] = useState([]);
+  const [editingJob, setEditingJob] = useState<Job | null>(null);
+
+  // Add state variables for the modals
+  const [selectedResumeId, setSelectedResumeId] = useState<string | null>(null);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showCompanyViewModal, setShowCompanyViewModal] = useState(false);
+
+  // Delete confirmation modal state
+  const [deleteModal, setDeleteModal] = useState<DeleteModalState>({
+    isOpen: false,
+    type: "resume",
+    id: null,
+    title: "",
+    message: "",
+  });
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -102,6 +173,11 @@ const Profile = () => {
       if (user.role === "company") {
         fetchCompanyData();
       }
+
+      // Fetch resumes if user is a student
+      if (user.role === "student") {
+        fetchUserResumes();
+      }
     }
   }, [user]);
 
@@ -109,28 +185,59 @@ const Profile = () => {
   const fetchCompanyData = async () => {
     try {
       setIsLoading(true);
-      const response = await companiesApi.getAll();
-      const userCompany = response.find(
-        (company: any) => company.user === parseInt(user?.id || "0")
-      );
+      const companies = await companiesApi.getAll();
+      const userCompany = companies.find((c) => c.user === Number(user?.id));
 
       if (userCompany) {
-        setCompanyData({
-          name: userCompany.name,
-          logo: userCompany.logo,
-          description: userCompany.description,
-          website: userCompany.website,
-          industry: userCompany.industry,
-          size: userCompany.size,
-          founded_year: userCompany.founded_year,
-          status: userCompany.status,
-        });
+        setCompany(userCompany);
+        // Fetch jobs for this company
+        fetchCompanyJobs(userCompany.id);
       }
     } catch (error) {
       console.error("Error fetching company data:", error);
       setNotification({
         type: "error",
         message: "Failed to load company data",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch jobs for the company
+  const fetchCompanyJobs = async (companyId: number) => {
+    try {
+      setIsLoading(true);
+      const allJobs = await jobsApi.getAll();
+      const companyJobs = allJobs.filter(
+        (job: Job) => job.company === companyId
+      );
+      setJobs(companyJobs);
+    } catch (error) {
+      console.error("Error fetching jobs:", error);
+      setNotification({
+        type: "error",
+        message: "Failed to load job listings",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch user resumes
+  const fetchUserResumes = async () => {
+    try {
+      setIsLoading(true);
+      const response = await resumesApi.getAll();
+      const userResumesList = response.filter(
+        (resume: any) => resume.user === Number.parseInt(user?.id || "0")
+      );
+      setUserResumes(userResumesList);
+    } catch (error) {
+      console.error("Error fetching user resumes:", error);
+      setNotification({
+        type: "error",
+        message: "Failed to load resumes",
       });
     } finally {
       setIsLoading(false);
@@ -149,7 +256,7 @@ const Profile = () => {
     }));
   };
 
-  // Handle form submission
+  // Handle profile form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -166,26 +273,38 @@ const Profile = () => {
         type: "error",
         message: "Failed to update profile. Please try again.",
       });
-      setTimeout(() => setNotification(null), 3000);
     } finally {
       setIsLoading(false);
     }
   };
 
   // Handle company form submission
-  const handleCompanySubmit = async (data: CompanyFormData) => {
+  const handleCompanySubmit = async (companyData: any) => {
     try {
       setIsLoading(true);
-      await companiesApi.create({
-        ...data,
-        user: parseInt(user?.id || "0"),
-      });
-
-      setCompanyData(data);
-      setNotification({
-        type: "success",
-        message: "Company details saved successfully!",
-      });
+      if (company) {
+        // Update existing company
+        await companiesApi.update(company.id.toString(), {
+          ...companyData,
+          user: Number(user?.id),
+        });
+        setNotification({
+          type: "success",
+          message: "Company details updated successfully!",
+        });
+      } else {
+        // Create new company
+        const newCompany = await companiesApi.create({
+          ...companyData,
+          user: Number(user?.id),
+        });
+        setCompany(newCompany);
+        setNotification({
+          type: "success",
+          message: "Company created successfully!",
+        });
+      }
+      fetchCompanyData(); // Refresh data
       setTimeout(() => setNotification(null), 3000);
     } catch (error) {
       console.error("Error saving company data:", error);
@@ -193,30 +312,172 @@ const Profile = () => {
         type: "error",
         message: "Failed to save company details. Please try again.",
       });
-      setTimeout(() => setNotification(null), 3000);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Handle job form submission
-  const handleJobSubmit = async (jobData: any) => {
-    // Implementation for job submission
+  // Handle company creation from modal
+  const handleCompanyCreated = (newCompany: Company) => {
+    setCompany(newCompany);
+    setNotification({
+      type: "success",
+      message: "Company created successfully!",
+    });
+    setTimeout(() => setNotification(null), 3000);
+    fetchCompanyData(); // Refresh data
   };
 
-  // Handle job deletion
-  const handleDeleteJob = async (jobId: string) => {
-    // Implementation for job deletion
+  // Handle job creation/update from modal
+  const handleJobCreated = (job: Job) => {
+    setNotification({
+      type: "success",
+      message: editingJob
+        ? "Job updated successfully!"
+        : "Job created successfully!",
+    });
+    setTimeout(() => setNotification(null), 3000);
+    setEditingJob(null);
+    if (company) {
+      fetchCompanyJobs(company.id); // Refresh jobs
+    }
   };
 
-  // Handle job status toggle
-  const handleToggleJobStatus = async (jobId: string) => {
-    // Implementation for toggling job status
+  // Handle resume creation from modal
+  const handleResumeCreated = (resume: any) => {
+    setNotification({
+      type: "success",
+      message: "Resume created successfully!",
+    });
+    setTimeout(() => setNotification(null), 3000);
+    fetchUserResumes(); // Refresh resumes
   };
 
-  // Handle resume completion
-  const handleResumeComplete = (resumeData: any) => {
-    // Implementation for resume completion
+  // Open delete confirmation modal for company
+  const openDeleteCompanyModal = () => {
+    if (!company) return;
+
+    setDeleteModal({
+      isOpen: true,
+      type: "company",
+      id: company.id.toString(),
+      title: "Delete Company",
+      message: `Are you sure you want to delete "${company.name}"? This will also delete all associated job listings.`,
+    });
+  };
+
+  // Open delete confirmation modal for job
+  const openDeleteJobModal = (jobId: string, jobTitle: string) => {
+    setDeleteModal({
+      isOpen: true,
+      type: "job",
+      id: jobId,
+      title: "Delete Job Listing",
+      message: `Are you sure you want to delete the job listing "${jobTitle}"?`,
+    });
+  };
+
+  // Open delete confirmation modal for resume
+  const openDeleteResumeModal = (resumeId: string, resumeTitle: string) => {
+    setDeleteModal({
+      isOpen: true,
+      type: "resume",
+      id: resumeId,
+      title: "Delete Resume",
+      message: `Are you sure you want to delete the resume for "${resumeTitle}"?`,
+    });
+  };
+
+  // Handle delete confirmation
+  const handleDeleteConfirm = async (password: string) => {
+    if (!deleteModal.id) return;
+
+    try {
+      // First verify the password
+      const isPasswordValid = await verifyPassword(password);
+
+      if (!isPasswordValid) {
+        throw new Error("Incorrect password");
+      }
+
+      setIsLoading(true);
+
+      // Perform the deletion based on type
+      switch (deleteModal.type) {
+        case "company":
+          await companiesApi.delete(deleteModal.id);
+          setCompany(null);
+          setJobs([]);
+          setNotification({
+            type: "success",
+            message: "Company deleted successfully!",
+          });
+          break;
+
+        case "job":
+          await jobsApi.delete(deleteModal.id);
+          if (company) {
+            fetchCompanyJobs(company.id); // Refresh jobs
+          }
+          setNotification({
+            type: "success",
+            message: "Job deleted successfully!",
+          });
+          break;
+
+        case "resume":
+          await resumesApi.delete(deleteModal.id);
+          fetchUserResumes(); // Refresh resumes
+          setNotification({
+            type: "success",
+            message: "Resume deleted successfully!",
+          });
+          break;
+      }
+
+      setTimeout(() => setNotification(null), 3000);
+    } catch (error) {
+      console.error(`Error deleting ${deleteModal.type}:`, error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle job status toggle (active/hidden)
+  const handleToggleJobStatus = async (
+    jobId: string,
+    currentStatus: string
+  ) => {
+    try {
+      setIsLoading(true);
+      const newStatus = currentStatus === "active" ? "hidden" : "active";
+      await jobsApi.update(jobId, { status: newStatus });
+      setNotification({
+        type: "success",
+        message: `Job ${
+          newStatus === "active" ? "activated" : "hidden"
+        } successfully!`,
+      });
+      if (company) {
+        fetchCompanyJobs(company.id); // Refresh jobs
+      }
+      setTimeout(() => setNotification(null), 3000);
+    } catch (error) {
+      console.error("Error updating job status:", error);
+      setNotification({
+        type: "error",
+        message: "Failed to update job status. Please try again.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle editing a job
+  const handleEditJob = (job: Job) => {
+    setEditingJob(job);
+    setShowCreateJobModal(true);
   };
 
   // Handle avatar change
@@ -234,6 +495,28 @@ const Profile = () => {
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  // Handle viewing a resume
+  const handleViewResume = (resumeId: string) => {
+    setSelectedResumeId(resumeId);
+    setShowViewModal(true);
+  };
+
+  // Handle editing a resume
+  const handleEditResume = (resumeId: string) => {
+    setSelectedResumeId(resumeId);
+    setShowEditModal(true);
+  };
+
+  // Handle resume edit completion
+  const handleResumeEditComplete = (resumeData: any) => {
+    fetchUserResumes();
+    setNotification({
+      type: "success",
+      message: "Resume updated successfully",
+    });
+    setTimeout(() => setNotification(null), 3000);
   };
 
   if (!isAuthenticated && !authLoading) {
@@ -275,7 +558,9 @@ const Profile = () => {
                   <img
                     src={
                       formData.avatar ||
-                      `https://ui-avatars.com/api/?name=${formData.first_name}+${formData.last_name}&background=random`
+                      `https://ui-avatars.com/api/?name=${
+                        formData.first_name || ""
+                      }+${formData.last_name || ""}&background=random`
                     }
                     alt={`${formData.first_name} ${formData.last_name}`}
                     className="w-32 h-32 rounded-xl object-cover border-4 border-gray-800"
@@ -517,115 +802,390 @@ const Profile = () => {
             {/* Resumes Section (for students) */}
             {formData.role === "student" && (
               <div className="bg-gray-800 rounded-xl shadow-xl">
-                <button
-                  onClick={() => setShowResumeWizard(true)}
-                  className="w-full p-6 flex items-center justify-between text-left"
-                >
+                <div className="p-6 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <FileText className="w-6 h-6 text-emerald-400" />
                     <h2 className="text-xl font-bold text-white">
                       Your Resumes
                     </h2>
                   </div>
-                  <Plus className="w-5 h-5 text-gray-400" />
-                </button>
+                  <button
+                    onClick={() => setShowResumeWizard(true)}
+                    className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center hover:bg-emerald-500 transition-colors"
+                  >
+                    <Plus className="w-5 h-5 text-white" />
+                  </button>
+                </div>
+
+                {/* Resume List */}
+                <div className="px-6 pb-6">
+                  {isLoading ? (
+                    <div className="flex justify-center py-4">
+                      <Loader2 className="w-6 h-6 text-emerald-400 animate-spin" />
+                    </div>
+                  ) : userResumes.length > 0 ? (
+                    <div className="space-y-3 mt-2">
+                      {userResumes.map((resume: any) => (
+                        <div
+                          key={resume.id}
+                          className="p-4 bg-gray-700 rounded-lg hover:bg-gray-650 transition-colors"
+                        >
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h3 className="font-medium text-white">
+                                {resume.profession}
+                              </h3>
+                              <p className="text-sm text-gray-400 mt-1">
+                                {resume.education} • {resume.specialization}
+                              </p>
+                            </div>
+                            <span className="text-xs text-gray-400">
+                              {new Date(resume.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <div className="flex gap-2 mt-3">
+                            <button
+                              onClick={() => handleViewResume(resume.id)}
+                              className="px-3 py-1 bg-gray-600 text-white text-sm rounded hover:bg-gray-500 transition-colors"
+                            >
+                              View
+                            </button>
+                            <button
+                              onClick={() => handleEditResume(resume.id)}
+                              className="px-3 py-1 bg-emerald-600 text-white text-sm rounded hover:bg-emerald-500 transition-colors"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() =>
+                                openDeleteResumeModal(
+                                  resume.id,
+                                  resume.profession
+                                )
+                              }
+                              className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-500 transition-colors"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-400 text-center py-4">
+                      You haven't created any resumes yet.
+                    </p>
+                  )}
+                </div>
               </div>
             )}
 
             {/* Company Section (for companies) */}
             {formData.role === "company" && (
-              <>
-                <div className="bg-gray-800 rounded-xl shadow-xl">
-                  <button
-                    onClick={() => setShowCompanyForm(!showCompanyForm)}
-                    className="w-full p-6 flex items-center justify-between text-left"
-                  >
+              <div className="bg-gray-800 rounded-xl shadow-xl">
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       <Building2 className="w-6 h-6 text-emerald-400" />
                       <h2 className="text-xl font-bold text-white">
                         Company Details
                       </h2>
                     </div>
-                    {showCompanyForm ? (
-                      <ChevronUp className="w-5 h-5 text-gray-400" />
+                    {company ? (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setShowCompanyViewModal(true)}
+                          className="p-2 text-gray-400 hover:text-emerald-500 transition-colors"
+                          title="Edit Company"
+                        >
+                          <Edit className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={openDeleteCompanyModal}
+                          className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                          title="Delete Company"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
                     ) : (
-                      <ChevronDown className="w-5 h-5 text-gray-400" />
-                    )}
-                  </button>
-                  <AnimatePresence>
-                    {showCompanyForm && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="overflow-hidden"
+                      <button
+                        onClick={() => setShowCreateCompanyModal(true)}
+                        className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center hover:bg-emerald-500 transition-colors"
+                        title="Create Company"
                       >
-                        <div className="p-6 pt-0">
-                          <CompanyForm
-                            onSubmit={handleCompanySubmit}
-                            isLoading={isLoading}
-                            initialData={companyData}
-                          />
-                        </div>
-                      </motion.div>
+                        <Plus className="w-5 h-5 text-white" />
+                      </button>
                     )}
-                  </AnimatePresence>
-                </div>
+                  </div>
 
-                <div className="bg-gray-800 rounded-xl shadow-xl">
-                  <button
-                    onClick={() => setShowJobForm(!showJobForm)}
-                    className="w-full p-6 flex items-center justify-between text-left"
-                  >
+                  {company ? (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-4">
+                        {company.logo ? (
+                          <img
+                            src={company.logo || "/placeholder.svg"}
+                            alt={company.name}
+                            className="w-16 h-16 rounded-lg object-cover bg-gray-700"
+                          />
+                        ) : (
+                          <div className="w-16 h-16 rounded-lg bg-gray-700 flex items-center justify-center">
+                            <Building2 className="w-8 h-8 text-gray-500" />
+                          </div>
+                        )}
+                        <div>
+                          <h3 className="font-medium text-white text-lg">
+                            {company.name}
+                          </h3>
+                          <p className="text-sm text-gray-400">
+                            {company.industry}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <p className="text-gray-400">Founded</p>
+                          <p className="text-white">{company.founded_year}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-400">Size</p>
+                          <p className="text-white">{company.size}</p>
+                        </div>
+                        <div className="col-span-2">
+                          <p className="text-gray-400">Website</p>
+                          <a
+                            href={company.website}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-emerald-400 hover:underline truncate block"
+                          >
+                            {company.website}
+                          </a>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => setShowCompanyViewModal(true)}
+                        className="w-full mt-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm"
+                      >
+                        View & Edit Details
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-gray-400 mb-4">
+                        You haven't created a company yet.
+                      </p>
+                      <button
+                        onClick={() => setShowCreateCompanyModal(true)}
+                        className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors"
+                      >
+                        Create Company
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Jobs Section - Only visible if company exists */}
+            {company && (
+              <div className="bg-gray-800 rounded-xl shadow-xl">
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       <Briefcase className="w-6 h-6 text-emerald-400" />
                       <h2 className="text-xl font-bold text-white">
                         Job Listings
                       </h2>
                     </div>
-                    {showJobForm ? (
-                      <ChevronUp className="w-5 h-5 text-gray-400" />
-                    ) : (
-                      <ChevronDown className="w-5 h-5 text-gray-400" />
-                    )}
-                  </button>
-                  <AnimatePresence>
-                    {showJobForm && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="overflow-hidden"
-                      >
-                        <div className="p-6 pt-0">
-                          <JobForm
-                            onSubmit={handleJobSubmit}
-                            isLoading={isLoading}
-                            jobs={jobs}
-                            onDeleteJob={handleDeleteJob}
-                            onToggleJobStatus={handleToggleJobStatus}
-                          />
+                    <button
+                      onClick={() => {
+                        setEditingJob(null);
+                        setShowCreateJobModal(true);
+                      }}
+                      className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center hover:bg-emerald-500 transition-colors"
+                      title="Add New Job"
+                    >
+                      <Plus className="w-5 h-5 text-white" />
+                    </button>
+                  </div>
+
+                  {/* Job List */}
+                  {isLoading ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+                    </div>
+                  ) : jobs.length === 0 ? (
+                    <div className="text-center py-8 text-gray-400">
+                      <p>No job listings yet. Create your first job posting!</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {jobs.map((job) => (
+                        <div
+                          key={job.id}
+                          className="bg-gray-700 rounded-lg overflow-hidden"
+                        >
+                          {/* Job Header */}
+                          <div className="p-4">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h3 className="font-medium text-white">
+                                    {job.title}
+                                  </h3>
+                                  <span
+                                    className={`text-xs px-2 py-0.5 rounded ${
+                                      job.status === "active"
+                                        ? "bg-emerald-600"
+                                        : "bg-gray-500"
+                                    }`}
+                                  >
+                                    {job.status === "active"
+                                      ? "Active"
+                                      : "Hidden"}
+                                  </span>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-400 mt-2">
+                                  <div className="flex items-center gap-1">
+                                    <MapPin className="w-4 h-4" />
+                                    <span>{job.city}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <DollarSign className="w-4 h-4" />
+                                    <span>{`${job.salary_min}-${job.salary_max} ${job.type_of_money}`}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="w-4 h-4" />
+                                    <span>{job.type}</span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => handleEditJob(job)}
+                                  className="p-1 text-gray-400 hover:text-white transition-colors"
+                                  title="Edit Job"
+                                >
+                                  <Edit className="w-5 h-5" />
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    handleToggleJobStatus(
+                                      job.id.toString(),
+                                      job.status
+                                    )
+                                  }
+                                  className="p-1 text-gray-400 hover:text-white transition-colors"
+                                  title={
+                                    job.status === "active"
+                                      ? "Hide Job"
+                                      : "Show Job"
+                                  }
+                                >
+                                  {job.status === "active" ? (
+                                    <EyeOff className="w-5 h-5" />
+                                  ) : (
+                                    <Eye className="w-5 h-5" />
+                                  )}
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    openDeleteJobModal(
+                                      job.id.toString(),
+                                      job.title
+                                    )
+                                  }
+                                  className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                                  title="Delete Job"
+                                >
+                                  <Trash2 className="w-5 h-5" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </>
+              </div>
             )}
           </motion.div>
         </div>
       </div>
 
-      {/* Resume Creation Wizard */}
+      {/* Modals */}
+      <CreateCompanyModal
+        isOpen={showCreateCompanyModal}
+        onClose={() => setShowCreateCompanyModal(false)}
+        onComplete={handleCompanyCreated}
+      />
+
+      {company && (
+        <CreateJobModal
+          isOpen={showCreateJobModal}
+          onClose={() => {
+            setShowCreateJobModal(false);
+            setEditingJob(null);
+          }}
+          onComplete={handleJobCreated}
+          companyId={company.id}
+          initialData={editingJob}
+        />
+      )}
+
       <AnimatePresence>
-        {showResumeWizard && (
-          <ResumeWizard
-            isOpen={showResumeWizard}
-            onClose={() => setShowResumeWizard(false)}
-            onComplete={handleResumeComplete}
+        {showViewModal && selectedResumeId && (
+          <ResumeViewModal
+            isOpen={showViewModal}
+            onClose={() => setShowViewModal(false)}
+            resume={userResumes.find(
+              (resume: any) => resume.id === selectedResumeId
+            )}
           />
         )}
       </AnimatePresence>
+
+      <AnimatePresence>
+        {showEditModal && selectedResumeId && (
+          <ResumeEditModal
+            isOpen={showEditModal}
+            onClose={() => setShowEditModal(false)}
+            resumeId={selectedResumeId}
+            onComplete={handleResumeEditComplete}
+          />
+        )}
+      </AnimatePresence>
+
+      {company && (
+        <CompanyViewModal
+          isOpen={showCompanyViewModal}
+          onClose={() => setShowCompanyViewModal(false)}
+          onComplete={handleCompanySubmit}
+          initialData={company}
+        />
+      )}
+
+      {showResumeWizard && (
+        <ResumeWizard
+          isOpen={showResumeWizard}
+          onClose={() => setShowResumeWizard(false)}
+          onComplete={handleResumeCreated}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ ...deleteModal, isOpen: false })}
+        onConfirm={handleDeleteConfirm}
+        title={deleteModal.title}
+        message={deleteModal.message}
+        itemType={deleteModal.type}
+      />
     </div>
   );
 };

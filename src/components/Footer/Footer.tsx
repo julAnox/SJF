@@ -9,8 +9,9 @@ import {
   InstagramIcon,
   LinkedinIcon,
   GithubIcon,
-  GraduationCap
+  GraduationCap,
 } from "lucide-react";
+import logo from "../../assets/logo.png";
 
 const Footer = () => {
   const { t } = useTranslation();
@@ -22,8 +23,9 @@ const Footer = () => {
           {/* Company Info */}
           <div>
             <div className="flex items-center gap-4 text-xl md:text-2xl font-bold text-emerald-400 mb-6">
-              <GraduationCap className="w-10 h-10" />
-              <span>Student's Job</span>
+              <span className="text-xl">Student's</span>
+              <img src={logo} alt="" className="w-10" />
+              <span className="text-xl">Job</span>
             </div>
             <p className="text-gray-400 mb-6">{t("footer.description")}</p>
             <div className="space-y-4">

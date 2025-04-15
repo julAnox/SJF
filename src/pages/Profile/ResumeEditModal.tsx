@@ -1,17 +1,25 @@
-"use client";
-
 import type React from "react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  X,
+  User,
+  Mail,
+  Phone,
+  Calendar,
+  MapPin,
+  Globe,
+} from "lucide-react";
 import { resumesApi } from "../../services/api";
 import { useAuth } from "../../contexts/AuthContext";
-// Add import for SkillSelect component
 import SkillSelect from "../../components/SkillSelect/SkillSelect";
 
-interface ResumeWizardProps {
+interface ResumeEditModalProps {
   isOpen: boolean;
   onClose: () => void;
+  resumeId: string | null;
   onComplete: (data: any) => void;
 }
 
@@ -64,16 +72,25 @@ const educationOptions = [
   "Doctor of Sciences",
 ];
 
-const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
+const ResumeEditModal = ({
+  isOpen,
+  onClose,
+  resumeId,
+  onComplete,
+}: ResumeEditModalProps) => {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<FormData>(initialFormData);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
 
   useEffect(() => {
-    if (user) {
+    if (isOpen && resumeId) {
+      fetchResumeData();
+    }
+    if (isOpen && user) {
       setFormData((prev) => ({
         ...prev,
-        user: user.id,
         name: user.first_name || "",
         surname: user.last_name || "",
         email: user.email || "",
@@ -82,7 +99,45 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
         region: user.region || "",
       }));
     }
-  }, [user]);
+  }, [isOpen, resumeId, user]);
+
+  const fetchResumeData = async () => {
+    if (!resumeId) return;
+
+    try {
+      setIsLoading(true);
+      const resumeData = await resumesApi.getById(resumeId);
+
+      let processedSkills = "";
+
+      if (typeof resumeData.skills === "string") {
+        processedSkills = resumeData.skills;
+      } else if (resumeData.skills && typeof resumeData.skills === "object") {
+        try {
+          processedSkills = Object.keys(resumeData.skills).join(",");
+        } catch (e) {
+          processedSkills = "";
+        }
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        ...resumeData,
+        skills: processedSkills,
+        name: user?.first_name || prev.name,
+        surname: user?.last_name || prev.surname,
+        email: user?.email || prev.email,
+        phone: user?.phone || prev.phone,
+        country: user?.country || prev.country,
+        region: user?.region || prev.region,
+      }));
+    } catch (error) {
+      console.error("Error fetching resume data:", error);
+      setError("Failed to load resume data");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -111,26 +166,11 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
     }));
   };
 
-  // Update the handleNext function to format skills as a JSON object
-  const handleNext = async () => {
+  const handleNext = () => {
     if (step < 4) {
       setStep((prev) => prev + 1);
     } else {
-      try {
-        // No need to format skills, they're already a comma-separated string
-        const dataToSend = {
-          ...formData,
-          // Ensure skills is a string
-          skills: typeof formData.skills === "string" ? formData.skills : "",
-        };
-
-        console.log("Data to send:", dataToSend);
-        const response = await resumesApi.create(dataToSend);
-        onComplete(response);
-        onClose();
-      } catch (error) {
-        console.error("Error creating resume:", error);
-      }
+      handleSubmit();
     }
   };
 
@@ -140,86 +180,131 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
     }
   };
 
+  const handleSubmit = async () => {
+    if (!resumeId) return;
+
+    try {
+      setIsLoading(true);
+      const dataToSend = {
+        ...formData,
+        skills: typeof formData.skills === "string" ? formData.skills : "",
+      };
+
+      const response = await resumesApi.update(resumeId, dataToSend);
+      onComplete(response);
+      onClose();
+    } catch (error) {
+      console.error("Error updating resume:", error);
+      setError("Failed to update resume");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const renderStep = () => {
     switch (step) {
       case 1:
         return (
-          <div className="space-y-2">
+          <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Name
               </label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                readOnly
-                className="w-full px-4 py-2 bg-gray-600 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:outline-none cursor-not-allowed"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  readOnly
+                  className="w-full px-4 py-2 pl-10 bg-gray-600 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:outline-none cursor-not-allowed"
+                />
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              </div>
             </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Surname
               </label>
-              <input
-                type="text"
-                name="surname"
-                value={formData.surname}
-                readOnly
-                className="w-full px-4 py-2 bg-gray-600 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:outline-none cursor-not-allowed"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  name="surname"
+                  value={formData.surname}
+                  readOnly
+                  className="w-full px-4 py-2 pl-10 bg-gray-600 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:outline-none cursor-not-allowed"
+                />
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              </div>
             </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Email
               </label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                readOnly
-                className="w-full px-4 py-2 bg-gray-600 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:outline-none cursor-not-allowed"
-              />
+              <div className="relative">
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  readOnly
+                  className="w-full px-4 py-2 pl-10 bg-gray-600 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:outline-none cursor-not-allowed"
+                />
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              </div>
             </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Phone
               </label>
-              <input
-                type="tel"
-                name="phone"
-                value={formData.phone}
-                readOnly
-                className="w-full px-4 py-2 bg-gray-600 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:outline-none cursor-not-allowed"
-              />
+              <div className="relative">
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  readOnly
+                  className="w-full px-4 py-2 pl-10 bg-gray-600 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:outline-none cursor-not-allowed"
+                />
+                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Country
               </label>
-              <input
-                type="text"
-                name="country"
-                value={formData.country}
-                readOnly
-                className="w-full px-4 py-2 bg-gray-600 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:outline-none cursor-not-allowed"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  name="country"
+                  value={formData.country}
+                  readOnly
+                  className="w-full px-4 py-2 pl-10 bg-gray-600 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:outline-none cursor-not-allowed"
+                />
+                <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              </div>
             </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Region
               </label>
-              <input
-                type="text"
-                name="region"
-                value={formData.region}
-                readOnly
-                className="w-full px-4 py-2 bg-gray-600 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:outline-none cursor-not-allowed"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  name="region"
+                  value={formData.region}
+                  readOnly
+                  className="w-full px-4 py-2 pl-10 bg-gray-600 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:outline-none cursor-not-allowed"
+                />
+                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              </div>
             </div>
+
             <p className="text-sm text-gray-400 italic mt-2 mb-4">
               These details were automatically loaded from your profile.
             </p>
+
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Gender
@@ -233,11 +318,11 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
                 <option value="">Select your gender</option>
                 <option value="male">Male</option>
                 <option value="female">Female</option>
-                <option value="other">Other</option>
               </select>
             </div>
           </div>
         );
+
       case 2:
         return (
           <div className="space-y-6">
@@ -271,6 +356,7 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
             </div>
           </div>
         );
+
       case 3:
         return (
           <div className="space-y-6">
@@ -339,6 +425,7 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
             </div>
           </div>
         );
+
       case 4:
         return (
           <div className="space-y-6">
@@ -358,7 +445,7 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Contacts
+                Additional Contacts
               </label>
               <textarea
                 name="contacts"
@@ -366,12 +453,13 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
                 onChange={handleChange}
                 rows={4}
                 className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
-                placeholder="Enter your contact details"
+                placeholder="Enter additional contact information"
                 maxLength={500}
               />
             </div>
           </div>
         );
+
       default:
         return null;
     }
@@ -399,9 +487,7 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
               >
                 <X className="w-6 h-6" />
               </button>
-              <h2 className="text-2xl font-bold text-white">
-                Create your resume
-              </h2>
+              <h2 className="text-2xl font-bold text-white">Edit Resume</h2>
               <p className="text-gray-400 mt-2">Step {step} of 4</p>
               <div className="mt-4 h-2 bg-gray-700 rounded-full overflow-hidden">
                 <div
@@ -411,25 +497,43 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
               </div>
             </div>
 
-            <div className="p-6">{renderStep()}</div>
+            {isLoading ? (
+              <div className="p-6 flex justify-center items-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
+              </div>
+            ) : error ? (
+              <div className="p-6 text-center">
+                <p className="text-red-500">{error}</p>
+                <button
+                  onClick={onClose}
+                  className="mt-4 px-6 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="p-6">{renderStep()}</div>
 
-            <div className="p-6 border-t border-gray-700 flex justify-between">
-              <button
-                onClick={handleBack}
-                disabled={step === 1}
-                className="px-6 py-2 flex items-center gap-2 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ChevronLeft className="w-5 h-5" />
-                Back
-              </button>
-              <button
-                onClick={handleNext}
-                className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors flex items-center gap-2"
-              >
-                {step === 4 ? "Finish" : "Next"}
-                {step < 4 && <ChevronRight className="w-5 h-5" />}
-              </button>
-            </div>
+                <div className="p-6 border-t border-gray-700 flex justify-between">
+                  <button
+                    onClick={handleBack}
+                    disabled={step === 1}
+                    className="px-6 py-2 flex items-center gap-2 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                    Back
+                  </button>
+                  <button
+                    onClick={handleNext}
+                    className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors flex items-center gap-2"
+                  >
+                    {step === 4 ? "Save" : "Next"}
+                    {step < 4 && <ChevronRight className="w-5 h-5" />}
+                  </button>
+                </div>
+              </>
+            )}
           </motion.div>
         </motion.div>
       )}
@@ -437,4 +541,4 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
   );
 };
 
-export default ResumeWizard;
+export default ResumeEditModal;

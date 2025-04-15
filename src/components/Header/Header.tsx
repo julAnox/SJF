@@ -13,9 +13,9 @@ import {
   Menu,
   X,
   User,
-  GraduationCap,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
+import logo from "../../assets/logo.png";
 
 const Header = () => {
   const { t, i18n } = useTranslation();
@@ -43,8 +43,9 @@ const Header = () => {
             to="/"
             className="flex items-center gap-4 text-xl md:text-2xl font-bold text-emerald-400 hover:text-emerald-300 transition-colors shrink-0"
           >
-            <GraduationCap className="w-10 h-10" />
-            <span className="hidden xs:block">Student's Job</span>
+            <span className="text-xl">Student's</span>
+            <img src={logo} alt="" className="w-10" />
+            <span className="text-xl">Job</span>
           </NavLink>
 
           {/* Mobile Menu Button */}

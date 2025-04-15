@@ -20,13 +20,8 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import StarRating from "../../components/StarRating/StarRating";
-import {
-  commentsApi,
-  usersApi,
-  type Comment,
-  type User,
-} from "../../api/comments";
-import { companiesApi, type Company } from "../../api/companies";
+import { commentsApi, usersApi } from "../../services/api";
+import { companiesApi } from "../../services/api";
 
 interface CommentWithUser extends Comment {
   first_name: string;

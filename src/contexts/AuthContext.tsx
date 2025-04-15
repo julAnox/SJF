@@ -39,6 +39,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   updateProfile: (data: Partial<User>) => Promise<User | null>;
   fetchUserProfile: () => Promise<User | null>;
+  verifyPassword: (password: string) => Promise<boolean>; // Add this line
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -106,6 +107,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error("Login error:", error);
       throw error;
+    }
+  };
+
+  // Add verifyPassword function
+  const verifyPassword = async (password: string): Promise<boolean> => {
+    if (!user) return false;
+
+    try {
+      // Get the current user's data to check password
+      const response = await axios.get(`/users/?email=${user.email}`);
+      const users = response.data;
+
+      if (!users || users.length === 0) {
+        return false;
+      }
+
+      const userData = users[0];
+
+      // Check if the provided password matches the stored password
+      return userData.password === password;
+    } catch (error) {
+      console.error("Password verification error:", error);
+      return false;
     }
   };
 
@@ -227,6 +251,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout,
         updateProfile,
         fetchUserProfile,
+        verifyPassword, // Add this line
       }}
     >
       {children}
