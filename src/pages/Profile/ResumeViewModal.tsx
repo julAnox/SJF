@@ -1,3 +1,5 @@
+"use client";
+
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -14,6 +16,8 @@ import {
   PenTool,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
+import { usersApi } from "../../services/api";
+import { useState, useEffect } from "react";
 
 interface ResumeViewModalProps {
   isOpen: boolean;
@@ -23,6 +27,26 @@ interface ResumeViewModalProps {
 
 const ResumeViewModal = ({ isOpen, onClose, resume }: ResumeViewModalProps) => {
   const { user } = useAuth();
+  const [resumeUser, setResumeUser] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (resume && resume.user) {
+        try {
+          setIsLoading(true);
+          const userData = await usersApi.getById(resume.user);
+          setResumeUser(userData);
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchUserData();
+  }, [resume]);
 
   if (!resume) return null;
 
@@ -34,8 +58,8 @@ const ResumeViewModal = ({ isOpen, onClose, resume }: ResumeViewModalProps) => {
     if (typeof resume.skills === "string") {
       return resume.skills
         .split(",")
-        .filter((skill) => skill.trim() !== "")
-        .map((skill) => skill.trim());
+        .filter((skill: string) => skill.trim() !== "")
+        .map((skill: string) => skill.trim());
     } else if (typeof resume.skills === "object") {
       // If it's an object (legacy format), convert to array
       try {
@@ -111,7 +135,8 @@ const ResumeViewModal = ({ isOpen, onClose, resume }: ResumeViewModalProps) => {
                     <User className="w-5 h-5 text-emerald-400 flex-shrink-0" />
                     <div>
                       <p className="text-white">
-                        {user?.first_name || ""} {user?.last_name || ""}
+                        {resumeUser?.first_name || ""}{" "}
+                        {resumeUser?.last_name || ""}
                       </p>
                       <p className="text-sm text-gray-400">
                         {resume.gender || ""}
@@ -121,22 +146,22 @@ const ResumeViewModal = ({ isOpen, onClose, resume }: ResumeViewModalProps) => {
 
                   <div className="flex items-center gap-3">
                     <Mail className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                    <p className="text-white">{user?.email || ""}</p>
+                    <p className="text-white">{resumeUser?.email || ""}</p>
                   </div>
 
                   <div className="flex items-center gap-3">
                     <Phone className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                    <p className="text-white">{user?.phone || ""}</p>
+                    <p className="text-white">{resumeUser?.phone || ""}</p>
                   </div>
 
                   <div className="flex items-center gap-3">
                     <Globe className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                    <p className="text-white">{user?.country || ""}</p>
+                    <p className="text-white">{resumeUser?.country || ""}</p>
                   </div>
 
                   <div className="flex items-center gap-3">
                     <MapPin className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                    <p className="text-white">{user?.region || ""}</p>
+                    <p className="text-white">{resumeUser?.region || ""}</p>
                   </div>
                 </div>
 
@@ -185,7 +210,7 @@ const ResumeViewModal = ({ isOpen, onClose, resume }: ResumeViewModalProps) => {
                 </h3>
                 {renderSkills().length > 0 ? (
                   <div className="flex flex-wrap gap-2">
-                    {renderSkills().map((skill, index) => (
+                    {renderSkills().map((skill: string, index: number) => (
                       <span
                         key={index}
                         className="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-sm flex items-center"

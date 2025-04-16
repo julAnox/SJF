@@ -10,6 +10,10 @@ import axios from "axios";
 
 const API_URL = "http://127.0.0.1:8000/app"; // Base API URL
 
+// Add the default avatar constant to match the backend
+const DEFAULT_AVATAR =
+  "https://static.vecteezy.com/system/resources/thumbnails/005/545/335/small/user-sign-icon-person-symbol-human-avatar-isolated-on-white-backogrund-vector.jpg";
+
 interface User {
   id: string;
   email: string;
@@ -39,7 +43,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   updateProfile: (data: Partial<User>) => Promise<User | null>;
   fetchUserProfile: () => Promise<User | null>;
-  verifyPassword: (password: string) => Promise<boolean>; // Add this line
+  verifyPassword: (password: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -70,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: userData.email,
       first_name: userData.first_name || "",
       last_name: userData.last_name || "",
-      avatar: userData.avatar || "",
+      avatar: userData.avatar || DEFAULT_AVATAR, // Use the default avatar if none is provided
       date_of_birth: userData.date_of_birth || "",
       phone: userData.phone || "",
       country: userData.country || "",
@@ -110,12 +114,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Add verifyPassword function
   const verifyPassword = async (password: string): Promise<boolean> => {
     if (!user) return false;
 
     try {
-      // Get the current user's data to check password
       const response = await axios.get(`/users/?email=${user.email}`);
       const users = response.data;
 
@@ -124,8 +126,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       const userData = users[0];
-
-      // Check if the provided password matches the stored password
       return userData.password === password;
     } catch (error) {
       console.error("Password verification error:", error);
@@ -140,7 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password,
         first_name: "",
         last_name: "",
-        avatar: "",
+        avatar: DEFAULT_AVATAR, // Set default avatar on signup
         date_of_birth: "",
         phone: "",
         country: "",
@@ -148,7 +148,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         district: "",
         publish_phone: false,
         publish_status: false,
-        role: role || "student", // Ensure role is passed through
+        role: role || "student",
       });
 
       if (!response.data) {
@@ -251,7 +251,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout,
         updateProfile,
         fetchUserProfile,
-        verifyPassword, // Add this line
+        verifyPassword,
       }}
     >
       {children}
