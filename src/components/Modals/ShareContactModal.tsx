@@ -1,7 +1,9 @@
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Search, Share2 } from 'lucide-react';
+"use client";
+
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { motion, AnimatePresence } from "framer-motion";
+import { X, Search, Share2 } from "lucide-react";
 
 interface ShareContactModalProps {
   isOpen: boolean;
@@ -10,11 +12,16 @@ interface ShareContactModalProps {
   chats: Array<{ id: string; userName: string; userAvatar: string }>;
 }
 
-const ShareContactModal = ({ isOpen, onClose, onShare, chats }: ShareContactModalProps) => {
+const ShareContactModal = ({
+  isOpen,
+  onClose,
+  onShare,
+  chats,
+}: ShareContactModalProps) => {
   const { t } = useTranslation();
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredChats = chats.filter(chat =>
+  const filteredChats = chats.filter((chat) =>
     chat.userName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -30,7 +37,7 @@ const ShareContactModal = ({ isOpen, onClose, onShare, chats }: ShareContactModa
           >
             <div className="flex items-center justify-between p-6 border-b border-gray-700">
               <h2 className="text-xl font-semibold text-white">
-                {t('chat.share.title')}
+                {t("chat.share.title")}
               </h2>
               <button
                 onClick={onClose}
@@ -46,31 +53,37 @@ const ShareContactModal = ({ isOpen, onClose, onShare, chats }: ShareContactModa
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={t('chat.share.search')}
+                  placeholder={t("chat.share.search")}
                   className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               </div>
 
               <div className="space-y-2 max-h-96 overflow-y-auto">
-                {filteredChats.map(chat => (
-                  <button
-                    key={chat.id}
-                    onClick={() => {
-                      onShare(chat.id);
-                      onClose();
-                    }}
-                    className="w-full flex items-center gap-4 p-4 rounded-lg hover:bg-gray-700 transition-colors"
-                  >
-                    <img
-                      src={chat.userAvatar}
-                      alt={chat.userName}
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
-                    <span className="text-white">{chat.userName}</span>
-                    <Share2 className="w-5 h-5 text-gray-400 ml-auto" />
-                  </button>
-                ))}
+                {filteredChats.length > 0 ? (
+                  filteredChats.map((chat) => (
+                    <button
+                      key={chat.id}
+                      onClick={() => {
+                        onShare(chat.id);
+                        onClose();
+                      }}
+                      className="w-full flex items-center gap-4 p-4 rounded-lg hover:bg-gray-700 transition-colors"
+                    >
+                      <img
+                        src={chat.userAvatar || "/placeholder.svg"}
+                        alt={chat.userName}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                      <span className="text-white">{chat.userName}</span>
+                      <Share2 className="w-5 h-5 text-gray-400 ml-auto" />
+                    </button>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-400">
+                    No chats available to share with
+                  </div>
+                )}
               </div>
             </div>
           </motion.div>

@@ -1,108 +1,188 @@
-import { useState, useRef, useContext } from 'react';
-import { useTranslation } from 'react-i18next';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Upload, Send, FileText } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { ApplicationContext } from '../../App';
+"use client";
+
+import type React from "react";
+
+import { useState, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import { motion, AnimatePresence } from "framer-motion";
+import { X, Upload, Send, FileText, AlertCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
+import { resumesApi } from "../../services/api";
+import applicationsService from "../../services/applicationsService";
+import chatsService from "../../services/chatsService";
+import messagesService from "../../services/messagesService";
+import { toast } from "../../utils/toast"; // Assuming you have a toast utility
 
 interface ApplicationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: { resumeId: string; coverLetter: string; resumeFile?: File }) => void;
   jobId: string;
   jobTitle: string;
   companyName: string;
+  companyId: string;
 }
 
-const ApplicationModal = ({ isOpen, onClose, onSubmit, jobId, jobTitle, companyName }: ApplicationModalProps) => {
+const ApplicationModal = ({
+  isOpen,
+  onClose,
+  jobId,
+  jobTitle,
+  companyName,
+  companyId,
+}: ApplicationModalProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { setApplicationCount } = useContext(ApplicationContext);
-  const [selectedResume, setSelectedResume] = useState('');
-  const [coverLetter, setCoverLetter] = useState('');
+  const { user } = useAuth();
+  const [selectedResume, setSelectedResume] = useState("");
+  const [coverLetter, setCoverLetter] = useState("");
   const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [resumes, setResumes] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [submitAttempts, setSubmitAttempts] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Get resumes from localStorage
-  const resumes = JSON.parse(localStorage.getItem('resumes') || '[]');
+  // Fetch user's resumes
+  useEffect(() => {
+    const fetchResumes = async () => {
+      try {
+        if (!user) return;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!((selectedResume || resumeFile) && coverLetter)) return;
-
-    // Create a new chat
-    const chats = JSON.parse(localStorage.getItem('chats') || '{}');
-    const chatId = `chat_${Date.now()}`;
-    
-    const newChat = {
-      id: chatId,
-      companyId: jobId,
-      companyName: companyName,
-      jobTitle: jobTitle,
-      messages: [
-        {
-          id: Date.now().toString(),
-          senderId: 'currentUser',
-          type: 'resume',
-          content: `Applied for ${jobTitle}`,
-          timestamp: new Date().toISOString(),
-          metadata: {
-            resumeId: selectedResume,
-            jobId: jobId
-          }
-        },
-        {
-          id: (Date.now() + 1).toString(),
-          senderId: 'currentUser',
-          type: 'coverLetter',
-          content: coverLetter,
-          timestamp: new Date().toISOString()
-        }
-      ],
-      lastMessage: 'Application sent',
-      timestamp: new Date().toISOString(),
-      status: 'active'
+        const allResumes = await resumesApi.getAll();
+        const userResumes = allResumes.filter(
+          (resume: any) => resume.user === Number.parseInt(user.id)
+        );
+        setResumes(userResumes);
+      } catch (err) {
+        console.error("Error fetching resumes:", err);
+        setError("Failed to load resumes");
+      }
     };
 
-    chats[chatId] = newChat;
-    localStorage.setItem('chats', JSON.stringify(chats));
-
-    // Store application in localStorage and update count
-    const applications = JSON.parse(localStorage.getItem('applications') || '[]');
-    applications.push({
-      jobId,
-      resumeId: selectedResume,
-      coverLetter,
-      timestamp: new Date().toISOString()
-    });
-    localStorage.setItem('applications', JSON.stringify(applications));
-
-    // Update application count in context
-    setApplicationCount(applications.length);
-
-    // Submit the application
-    onSubmit({
-      resumeId: selectedResume,
-      coverLetter,
-      ...(resumeFile && { resumeFile })
-    });
-
-    // Navigate to the new chat
-    navigate(`/chat/${chatId}`);
-    onClose();
-  };
+    if (isOpen) {
+      fetchResumes();
+    }
+  }, [isOpen, user]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.type === 'application/msword' || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+      if (
+        file.type === "application/msword" ||
+        file.type ===
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+        file.name.endsWith(".doc") ||
+        file.name.endsWith(".docx")
+      ) {
         setResumeFile(file);
-        setSelectedResume(''); // Clear selected profile resume when file is uploaded
+        setSelectedResume(""); // Clear selected profile resume when file is uploaded
       } else {
-        alert('Please upload a DOC or DOCX file');
+        setError("Please upload a DOC or DOCX file");
       }
     }
   };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!((selectedResume || resumeFile) && coverLetter)) {
+      setError("Please select a resume and provide a cover letter");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setError(null);
+      setSubmitAttempts((prev) => prev + 1);
+
+      if (!user) {
+        setError("You must be logged in to apply");
+        return;
+      }
+
+      // 1. Create application
+      const applicationData = {
+        user: Number.parseInt(user.id),
+        job: Number.parseInt(jobId),
+        resume: selectedResume ? Number.parseInt(selectedResume) : null,
+        cover_letter: coverLetter,
+        status: "pending",
+      };
+
+      const application = await applicationsService.create(applicationData);
+
+      if (!application || !application.id) {
+        throw new Error("Failed to create application");
+      }
+
+      // 2. Create chat
+      const chatData = {
+        application: application.id,
+        status: "active",
+      };
+
+      const chat = await chatsService.create(chatData);
+
+      if (!chat || !chat.id) {
+        throw new Error("Failed to create chat");
+      }
+
+      // 3. Add resume message
+      const resumeMessage = {
+        chat: chat.id,
+        sender: Number.parseInt(user.id),
+        content: selectedResume
+          ? `Resume: ${
+              resumes.find((r) => r.id === Number.parseInt(selectedResume))
+                ?.profession || "My Resume"
+            }`
+          : resumeFile
+          ? `Resume: ${resumeFile.name}`
+          : "Resume uploaded as document",
+        message_type: "resume",
+        metadata: selectedResume ? { resumeId: selectedResume } : null,
+        read: false,
+      };
+
+      await messagesService.create(resumeMessage);
+
+      // 4. Add cover letter message
+      const coverLetterMessage = {
+        chat: chat.id,
+        sender: Number.parseInt(user.id),
+        content: coverLetter,
+        message_type: "coverLetter",
+        read: false,
+      };
+
+      await messagesService.create(coverLetterMessage);
+
+      // Show success message
+      if (typeof toast?.success === "function") {
+        toast.success("Application submitted successfully!");
+      }
+
+      // 5. Navigate to chat
+      navigate(`/chat/${chat.id}`);
+      onClose();
+    } catch (err) {
+      console.error("Error submitting application:", err);
+      setError("Failed to submit application. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Reset form when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedResume("");
+      setCoverLetter("");
+      setResumeFile(null);
+      setError(null);
+      setSubmitAttempts(0);
+    }
+  }, [isOpen]);
 
   return (
     <AnimatePresence>
@@ -116,7 +196,7 @@ const ApplicationModal = ({ isOpen, onClose, onSubmit, jobId, jobTitle, companyN
           >
             <div className="flex items-center justify-between p-6 border-b border-gray-700">
               <h2 className="text-xl font-semibold text-white">
-                {t('applications.modal.title')}
+                Apply for Position
               </h2>
               <button
                 onClick={onClose}
@@ -127,39 +207,65 @@ const ApplicationModal = ({ isOpen, onClose, onSubmit, jobId, jobTitle, companyN
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
+              {error && (
+                <div className="p-3 bg-red-500/20 border border-red-500 rounded-lg text-red-300 flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                  <span>{error}</span>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-emerald-300">
+                  <div className="flex-1">
+                    <p className="font-medium">Applying for: {jobTitle}</p>
+                    <p className="text-sm text-emerald-300/80">
+                      Company: {companyName}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <div className="space-y-4">
                 <label className="block text-sm font-medium text-gray-300">
-                  {t('applications.modal.selectResume')}
+                  Choose Resume
                 </label>
-                
+
                 {/* Profile Resumes */}
                 <div className="space-y-2">
-                  <p className="text-sm text-gray-400">{t('applications.modal.profileResumes')}</p>
+                  <p className="text-sm text-gray-400">From Your Profile</p>
                   <div className="grid grid-cols-2 gap-4">
-                    {resumes.map((resume: any) => (
-                      <button
-                        key={resume.id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedResume(resume.id.toString());
-                          setResumeFile(null); // Clear uploaded file when profile resume is selected
-                        }}
-                        className={`flex items-center gap-2 p-4 rounded-lg border ${
-                          selectedResume === resume.id.toString()
-                            ? 'border-emerald-500 bg-emerald-500/10'
-                            : 'border-gray-600 hover:border-gray-500'
-                        } transition-colors text-left`}
-                      >
-                        <FileText className="w-5 h-5 text-emerald-400" />
-                        <span className="text-white">{resume.title}</span>
-                      </button>
-                    ))}
+                    {resumes.length > 0 ? (
+                      resumes.map((resume) => (
+                        <button
+                          key={resume.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedResume(resume.id.toString());
+                            setResumeFile(null); // Clear uploaded file when profile resume is selected
+                          }}
+                          className={`flex items-center gap-2 p-4 rounded-lg border ${
+                            selectedResume === resume.id.toString()
+                              ? "border-emerald-500 bg-emerald-500/10"
+                              : "border-gray-600 hover:border-gray-500"
+                          } transition-colors text-left`}
+                        >
+                          <FileText className="w-5 h-5 text-emerald-400" />
+                          <span className="text-white">
+                            {resume.profession || "Resume"}
+                          </span>
+                        </button>
+                      ))
+                    ) : (
+                      <p className="col-span-2 text-gray-400 text-sm">
+                        No resumes found in your profile
+                      </p>
+                    )}
                   </div>
                 </div>
 
                 {/* File Upload */}
                 <div className="space-y-2">
-                  <p className="text-sm text-gray-400">{t('applications.modal.uploadResume')}</p>
+                  <p className="text-sm text-gray-400">Or Upload New Resume</p>
                   <input
                     type="file"
                     ref={fileInputRef}
@@ -172,8 +278,8 @@ const ApplicationModal = ({ isOpen, onClose, onSubmit, jobId, jobTitle, companyN
                     onClick={() => fileInputRef.current?.click()}
                     className={`w-full flex items-center justify-center gap-2 p-4 rounded-lg border ${
                       resumeFile
-                        ? 'border-emerald-500 bg-emerald-500/10'
-                        : 'border-gray-600 border-dashed hover:border-gray-500'
+                        ? "border-emerald-500 bg-emerald-500/10"
+                        : "border-gray-600 border-dashed hover:border-gray-500"
                     } transition-colors`}
                   >
                     {resumeFile ? (
@@ -184,7 +290,9 @@ const ApplicationModal = ({ isOpen, onClose, onSubmit, jobId, jobTitle, companyN
                     ) : (
                       <>
                         <Upload className="w-5 h-5 text-gray-400" />
-                        <span className="text-gray-400">{t('applications.modal.dropResume')}</span>
+                        <span className="text-gray-400">
+                          Click to upload resume (DOC, DOCX)
+                        </span>
                       </>
                     )}
                   </button>
@@ -193,7 +301,7 @@ const ApplicationModal = ({ isOpen, onClose, onSubmit, jobId, jobTitle, companyN
 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  {t('applications.modal.coverLetter')}
+                  Cover Letter
                 </label>
                 <textarea
                   value={coverLetter}
@@ -201,7 +309,7 @@ const ApplicationModal = ({ isOpen, onClose, onSubmit, jobId, jobTitle, companyN
                   required
                   rows={6}
                   className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
-                  placeholder={t('applications.modal.coverLetterPlaceholder')}
+                  placeholder="Write a brief cover letter explaining why you're a good fit for this position..."
                 />
               </div>
 
@@ -211,15 +319,27 @@ const ApplicationModal = ({ isOpen, onClose, onSubmit, jobId, jobTitle, companyN
                   onClick={onClose}
                   className="px-4 py-2 text-gray-300 hover:text-white transition-colors"
                 >
-                  {t('applications.modal.cancel')}
+                  Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={!((selectedResume || resumeFile) && coverLetter)}
+                  disabled={
+                    !((selectedResume || resumeFile) && coverLetter) ||
+                    isLoading
+                  }
                   className="flex items-center gap-2 px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Send className="w-4 h-4" />
-                  {t('applications.modal.submit')}
+                  {isLoading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      Submit Application
+                    </>
+                  )}
                 </button>
               </div>
             </form>

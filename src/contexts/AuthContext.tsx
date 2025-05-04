@@ -1,3 +1,5 @@
+"use client";
+
 import {
   createContext,
   useState,
@@ -258,3 +260,5 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     </AuthContext.Provider>
   );
 }
+
+export default AuthContext;

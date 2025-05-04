@@ -1,6 +1,8 @@
+"use client";
+
 import { NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   BriefcaseIcon,
   FileTextIcon,
@@ -16,11 +18,16 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import logo from "../../assets/logo.png";
+import messagesService from "../../services/messagesService";
+import chatsService from "../../services/chatsService";
+import applicationsService from "../../services/applicationsService";
+import { jobsApi, companiesApi } from "../../services/api";
 
 const Header = () => {
   const { t, i18n } = useTranslation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const toggleLanguage = () => {
     const newLang = i18n.language === "en" ? "ru" : "en";
@@ -34,6 +41,108 @@ const Header = () => {
 
   const isStudent = user?.role === "student";
 
+  // Fetch unread message count
+  useEffect(() => {
+    const fetchUnreadMessages = async () => {
+      if (!user) return;
+
+      try {
+        // Get all messages, chats, applications, and jobs
+        const allMessages = await messagesService.getAll();
+        const allChats = await chatsService.getAll();
+        const allApplications = await applicationsService.getAll();
+        const allJobs = await jobsApi.getAll();
+        const allCompanies = await companiesApi.getAll();
+
+        // Filter messages based on user role
+        let relevantUnreadMessages = 0;
+
+        if (user.role === "student") {
+          // For students, count unread messages in chats where they are the applicant
+          for (const chat of allChats) {
+            const application = allApplications.find(
+              (app) => app.id === chat.application
+            );
+            if (!application || application.user !== Number.parseInt(user.id))
+              continue;
+
+            const chatMessages = allMessages.filter(
+              (msg) =>
+                msg.chat === chat.id &&
+                !msg.read &&
+                msg.sender !== Number.parseInt(user.id)
+            );
+
+            relevantUnreadMessages += chatMessages.length;
+          }
+        } else if (user.role === "company") {
+          // For companies, count unread messages in chats for jobs they posted
+          // First, find the company associated with the current user
+          const userCompany = allCompanies.find(
+            (company) => company.user === Number.parseInt(user.id)
+          );
+
+          if (userCompany) {
+            for (const chat of allChats) {
+              const application = allApplications.find(
+                (app) => app.id === chat.application
+              );
+              if (!application) continue;
+
+              // Get job details
+              const job = allJobs.find((j) => j.id === application.job);
+              if (!job) continue;
+
+              // Check if this job belongs to the current company
+              const isCompanyJob =
+                typeof job.company === "number"
+                  ? job.company === userCompany.id
+                  : job.company.id === userCompany.id;
+
+              if (!isCompanyJob) continue;
+
+              const chatMessages = allMessages.filter(
+                (msg) =>
+                  msg.chat === chat.id &&
+                  !msg.read &&
+                  msg.sender !== Number.parseInt(user.id)
+              );
+
+              relevantUnreadMessages += chatMessages.length;
+            }
+          }
+        }
+
+        setUnreadCount(relevantUnreadMessages);
+      } catch (error) {
+        console.error("Error fetching unread messages:", error);
+      }
+    };
+
+    fetchUnreadMessages();
+
+    // Set up polling for new messages
+    const interval = setInterval(fetchUnreadMessages, 2000); // Check every 2 seconds
+
+    // Add event listener for when messages are marked as read
+    const handleUnreadMessagesUpdated = () => {
+      fetchUnreadMessages();
+    };
+
+    window.addEventListener(
+      "unreadMessagesUpdated",
+      handleUnreadMessagesUpdated
+    );
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener(
+        "unreadMessagesUpdated",
+        handleUnreadMessagesUpdated
+      );
+    };
+  }, [user]);
+
   return (
     <header className="fixed top-0 left-0 right-0 bg-gray-900/80 backdrop-blur-md z-50 border-b border-gray-800">
       <div className="max-w-7xl mx-auto">
@@ -44,7 +153,7 @@ const Header = () => {
             className="flex items-center gap-4 text-xl md:text-2xl font-bold text-emerald-400 hover:text-emerald-300 transition-colors shrink-0"
           >
             <span className="text-xl">Student's</span>
-            <img src={logo} alt="" className="w-10" />
+            <img src={logo || "/placeholder.svg"} alt="" className="w-10" />
             <span className="text-xl">Job</span>
           </NavLink>
 
@@ -104,7 +213,14 @@ const Header = () => {
                   }`
                 }
               >
-                <MessagesSquareIcon className="w-5 h-5" />
+                <div className="relative">
+                  <MessagesSquareIcon className="w-5 h-5" />
+                  {unreadCount > 0 && (
+                    <div className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </div>
+                  )}
+                </div>
                 {t("nav.chat")}
               </NavLink>
               <NavLink
@@ -156,7 +272,9 @@ const Header = () => {
                     <img
                       src={
                         user?.avatar ||
-                        `https://ui-avatars.com/api/?name=${user?.first_name}+${user?.last_name}&background=random`
+                        `https://ui-avatars.com/api/?name=${
+                          user?.first_name || "/placeholder.svg"
+                        }+${user?.last_name}&background=random`
                       }
                       alt={`${user?.first_name} ${user?.last_name}`}
                       className="w-8 h-8 rounded-lg object-cover"
@@ -249,7 +367,14 @@ const Header = () => {
                 }`
               }
             >
-              <MessagesSquareIcon className="w-5 h-5" />
+              <div className="relative">
+                <MessagesSquareIcon className="w-5 h-5" />
+                {unreadCount > 0 && (
+                  <div className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </div>
+                )}
+              </div>
               {t("nav.chat")}
             </NavLink>
             <NavLink

@@ -798,7 +798,7 @@ const Resumes = () => {
                     {filters.skills.map((skill, index) => (
                       <div
                         key={index}
-                        className="flex items-center gap-1 bg-gray-700 text-white px-2 py-1 rounded-full text-sm"
+                        className="flex items-center gap-1 bg-gray-700 text-white px-3 py-1 rounded-full text-sm"
                       >
                         <span>{skill}</span>
                         <button

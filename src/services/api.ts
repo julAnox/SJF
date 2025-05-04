@@ -2,22 +2,45 @@ import axios from "axios";
 
 const API_URL = "http://127.0.0.1:8000/app";
 
-// Configure axios
+// Configure axios with timeout and retry logic
 const api = axios.create({
   baseURL: API_URL,
   headers: {
     "Content-Type": "application/json",
   },
+  timeout: 10000, // 10 seconds timeout
 });
+
+// Add request interceptor for logging
+api.interceptors.request.use(
+  (config) => {
+    console.log("API Request:", config.method?.toUpperCase(), config.url);
+    return config;
+  },
+  (error) => {
+    console.error("API Request Error:", error);
+    return Promise.reject(error);
+  }
+);
 
 // Add response interceptor to log responses
 api.interceptors.response.use(
   (response) => {
-    console.log("API Response:", response.data);
+    console.log("API Response:", response.status, response.data);
     return response;
   },
   (error) => {
-    console.error("API Error:", error.response?.data || error.message);
+    if (error.response) {
+      console.error(
+        "API Error Response:",
+        error.response.status,
+        error.response.data
+      );
+    } else if (error.request) {
+      console.error("API Error Request:", error.request);
+    } else {
+      console.error("API Error:", error.message);
+    }
     return Promise.reject(error);
   }
 );
@@ -88,36 +111,6 @@ export interface Company {
   size: string;
   founded_year: number;
   status: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Application {
-  id: number;
-  user: number;
-  job: number;
-  resume: number;
-  cover_letter: string;
-  status: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Chat {
-  id: number;
-  application: number;
-  status: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Message {
-  id: number;
-  chat: number;
-  sender: number;
-  content: string;
-  message_type: string;
-  metadata: any;
   created_at: string;
   updated_at: string;
 }
