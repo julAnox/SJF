@@ -41,7 +41,6 @@ const CompanyViewModal = ({
   });
   const [error, setError] = useState<string | null>(null);
 
-  // Initialize form with initial data
   useEffect(() => {
     if (initialData) {
       setFormData({
@@ -90,7 +89,6 @@ const CompanyViewModal = ({
       setIsLoading(true);
       setError(null);
 
-      // Call the onComplete callback with the updated data
       await onComplete(formData);
       onClose();
     } catch (error) {

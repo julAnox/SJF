@@ -103,7 +103,6 @@ const CreateCompanyModal = ({
             exit={{ opacity: 0, scale: 0.95 }}
             className="bg-gray-800 rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden"
           >
-            {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-700">
               <h2 className="text-xl font-bold text-white">
                 Create New Company

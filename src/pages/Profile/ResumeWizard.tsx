@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { resumesApi } from "../../services/api";
 import { useAuth } from "../../contexts/AuthContext";
-// Add import for SkillSelect component
 import SkillSelect from "../../components/SkillSelect/SkillSelect";
 
 interface ResumeWizardProps {
@@ -111,16 +110,13 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
     }));
   };
 
-  // Update the handleNext function to format skills as a JSON object
   const handleNext = async () => {
     if (step < 4) {
       setStep((prev) => prev + 1);
     } else {
       try {
-        // No need to format skills, they're already a comma-separated string
         const dataToSend = {
           ...formData,
-          // Ensure skills is a string
           skills: typeof formData.skills === "string" ? formData.skills : "",
         };
 

@@ -50,18 +50,15 @@ const ResumeViewModal = ({ isOpen, onClose, resume }: ResumeViewModalProps) => {
 
   if (!resume) return null;
 
-  // Update the renderSkills function to handle comma-separated skills
   const renderSkills = () => {
     if (!resume.skills) return [];
 
-    // If skills is a string, split by comma
     if (typeof resume.skills === "string") {
       return resume.skills
         .split(",")
         .filter((skill: string) => skill.trim() !== "")
         .map((skill: string) => skill.trim());
     } else if (typeof resume.skills === "object") {
-      // If it's an object (legacy format), convert to array
       try {
         return Object.keys(resume.skills).filter((key) => key.trim() !== "");
       } catch (e) {
@@ -72,24 +69,20 @@ const ResumeViewModal = ({ isOpen, onClose, resume }: ResumeViewModalProps) => {
     return [];
   };
 
-  // Add a function to render the appropriate icon for each skill
   const getSkillIcon = (skill: string) => {
     const designTools = ["figma", "sketch", "photoshop", "illustrator", "xd"];
     const designKeywords = ["design", "ui", "ux", "graphic"];
 
-    // Check if the skill is a design tool
     if (designTools.some((tool) => skill.toLowerCase().includes(tool))) {
       return <Figma className="w-4 h-4 text-emerald-400 mr-1" />;
     }
 
-    // Check if the skill contains design-related keywords
     if (
       designKeywords.some((keyword) => skill.toLowerCase().includes(keyword))
     ) {
       return <PenTool className="w-4 h-4 text-emerald-400 mr-1" />;
     }
 
-    // Default to code icon for programming and other skills
     return <Code className="w-4 h-4 text-emerald-400 mr-1" />;
   };
 

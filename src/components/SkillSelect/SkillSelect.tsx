@@ -14,7 +14,6 @@ const SkillSelect = ({ selectedSkills, onChange }: SkillSelectProps) => {
   const [inputValue, setInputValue] = useState("");
   const [skills, setSkills] = useState<string[]>([]);
 
-  // Initialize skills from selectedSkills string
   useEffect(() => {
     if (selectedSkills) {
       setSkills(
@@ -25,12 +24,10 @@ const SkillSelect = ({ selectedSkills, onChange }: SkillSelectProps) => {
     }
   }, [selectedSkills]);
 
-  // Handle input change
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setInputValue(value);
 
-    // If user types a space, add the current word as a skill
     if (value.endsWith(" ") && value.trim() !== "") {
       const newSkill = value.trim();
       if (newSkill && !skills.includes(newSkill)) {
@@ -44,9 +41,7 @@ const SkillSelect = ({ selectedSkills, onChange }: SkillSelectProps) => {
     }
   };
 
-  // Handle key press events
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    // Add skill on Enter key
     if (e.key === "Enter" && inputValue.trim() !== "") {
       e.preventDefault();
       const newSkill = inputValue.trim();
@@ -58,7 +53,6 @@ const SkillSelect = ({ selectedSkills, onChange }: SkillSelectProps) => {
       setInputValue("");
     }
 
-    // Remove last skill on Backspace if input is empty
     if (e.key === "Backspace" && inputValue === "" && skills.length > 0) {
       const updatedSkills = skills.slice(0, -1);
       setSkills(updatedSkills);
@@ -66,31 +60,26 @@ const SkillSelect = ({ selectedSkills, onChange }: SkillSelectProps) => {
     }
   };
 
-  // Remove a specific skill
   const removeSkill = (skillToRemove: string) => {
     const updatedSkills = skills.filter((skill) => skill !== skillToRemove);
     setSkills(updatedSkills);
     onChange(updatedSkills.join(","));
   };
 
-  // Get icon for skill based on its content
   const getSkillIcon = (skill: string) => {
     const designTools = ["figma", "sketch", "photoshop", "illustrator", "xd"];
     const designKeywords = ["design", "ui", "ux", "graphic"];
 
-    // Check if the skill is a design tool
     if (designTools.some((tool) => skill.toLowerCase().includes(tool))) {
       return <Figma className="w-4 h-4 text-emerald-400" />;
     }
 
-    // Check if the skill contains design-related keywords
     if (
       designKeywords.some((keyword) => skill.toLowerCase().includes(keyword))
     ) {
       return <PenTool className="w-4 h-4 text-emerald-400" />;
     }
 
-    // Default to code icon for programming and other skills
     return <Code className="w-4 h-4 text-emerald-400" />;
   };
 

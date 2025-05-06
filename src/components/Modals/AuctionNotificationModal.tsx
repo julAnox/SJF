@@ -1,30 +1,41 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Timer, GavelIcon, X, Briefcase, Building2, GraduationCap, Rocket } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Timer,
+  GavelIcon,
+  X,
+  Briefcase,
+  Building2,
+  GraduationCap,
+  Rocket,
+} from "lucide-react";
 
 interface AuctionNotificationModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const AuctionNotificationModal = ({ isOpen, onClose }: AuctionNotificationModalProps) => {
+const AuctionNotificationModal = ({
+  isOpen,
+  onClose,
+}: AuctionNotificationModalProps) => {
   const navigate = useNavigate();
   const [countdown, setCountdown] = useState(30);
 
   useEffect(() => {
     if (!isOpen) {
-      setCountdown(30); // Reset countdown when modal closes
+      setCountdown(30);
       return;
     }
-    
+
     let timer: NodeJS.Timeout;
     if (isOpen && countdown > 0) {
       timer = setInterval(() => {
-        setCountdown(prev => prev - 1);
+        setCountdown((prev) => prev - 1);
       }, 1000);
     } else if (countdown === 0) {
-      navigate('/auction');
+      navigate("/auction");
       onClose();
     }
 
@@ -83,7 +94,8 @@ const AuctionNotificationModal = ({ isOpen, onClose }: AuctionNotificationModalP
                 transition={{ delay: 0.4 }}
                 className="text-gray-300 text-center mb-8"
               >
-                Congratulations! You've applied to 3 positions. Companies will now compete for your talent in a live auction.
+                Congratulations! You've applied to 3 positions. Companies will
+                now compete for your talent in a live auction.
               </motion.p>
 
               <motion.div
@@ -110,7 +122,7 @@ const AuctionNotificationModal = ({ isOpen, onClose }: AuctionNotificationModalP
                 </button>
                 <button
                   onClick={() => {
-                    navigate('/auction');
+                    navigate("/auction");
                     onClose();
                   }}
                   className="px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors flex items-center gap-2"

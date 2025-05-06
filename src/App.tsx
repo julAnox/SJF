@@ -18,7 +18,6 @@ import enTranslations from "./locales/en.json";
 import ruTranslations from "./locales/ru.json";
 import AuctionNotificationModal from "./components/Modals/AuctionNotificationModal";
 
-// Create a context to share the application count and notification state
 export const ApplicationContext = React.createContext<{
   applicationCount: number;
   setApplicationCount: (count: number) => void;
@@ -44,9 +43,8 @@ i18n.use(initReactI18next).init({
 });
 
 function App() {
-  // Initialize application count from localStorage
   const [applicationCount, setApplicationCount] = useState(() => {
-    const applications = localStorage.getItem('applications');
+    const applications = localStorage.getItem("applications");
     return applications ? JSON.parse(applications).length : 0;
   });
   const [showAuctionNotification, setShowAuctionNotification] = useState(false);
@@ -93,7 +91,6 @@ function App() {
             </main>
             <Footer />
 
-            {/* Global Auction Notification */}
             <AuctionNotificationModal
               isOpen={showAuctionNotification}
               onClose={() => setShowAuctionNotification(false)}

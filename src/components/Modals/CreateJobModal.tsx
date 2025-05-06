@@ -48,7 +48,6 @@ const CreateJobModal = ({
     type_of_money: "USD",
   });
 
-  // Initialize form with initial data if provided
   useEffect(() => {
     if (initialData) {
       setFormData({
@@ -76,7 +75,6 @@ const CreateJobModal = ({
     const { name, value } = e.target;
 
     if (name === "type_of_money") {
-      // Limit currency to 3 characters and convert to uppercase
       const formattedValue = value.toUpperCase().slice(0, 3);
       setFormData((prev) => ({ ...prev, [name]: formattedValue }));
       return;
@@ -98,14 +96,12 @@ const CreateJobModal = ({
       setIsLoading(true);
 
       if (initialData) {
-        // Update existing job
         const updatedJob = await jobsApi.update(initialData.id.toString(), {
           ...formData,
           company: companyId,
         });
         onComplete(updatedJob);
       } else {
-        // Create new job
         const newJob = await jobsApi.create({
           ...formData,
           company: companyId,
@@ -116,7 +112,6 @@ const CreateJobModal = ({
       onClose();
     } catch (error) {
       console.error("Error saving job:", error);
-      // You could add error handling here
     } finally {
       setIsLoading(false);
     }

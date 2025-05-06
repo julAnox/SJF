@@ -3,15 +3,14 @@ import api from "./api";
 export interface Notification {
   id: number;
   user: number;
-  type: string; // message, application_status, etc.
+  type: string;
   content: string;
-  related_id: number | null; // ID of related object (chat, application, etc.)
+  related_id: number | null;
   read: boolean;
   created_at: string;
 }
 
 export const notificationsService = {
-  // Check if notifications endpoint exists
   endpointExists: async (): Promise<boolean> => {
     try {
       const response = await fetch(`${api.defaults.baseURL}/notifications/`, {

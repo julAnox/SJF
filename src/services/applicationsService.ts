@@ -56,7 +56,6 @@ export const applicationsService = {
     applicationData: Partial<Application>
   ): Promise<Application> => {
     try {
-      // Add retry logic
       const maxRetries = 3;
       let retries = 0;
       let lastError;
@@ -68,7 +67,6 @@ export const applicationsService = {
         } catch (error) {
           lastError = error;
           retries++;
-          // Wait before retrying (exponential backoff)
           await new Promise((resolve) => setTimeout(resolve, 1000 * retries));
         }
       }

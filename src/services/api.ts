@@ -2,16 +2,14 @@ import axios from "axios";
 
 const API_URL = "http://127.0.0.1:8000/app";
 
-// Configure axios with timeout and retry logic
 const api = axios.create({
   baseURL: API_URL,
   headers: {
     "Content-Type": "application/json",
   },
-  timeout: 10000, // 10 seconds timeout
+  timeout: 10000,
 });
 
-// Add request interceptor for logging
 api.interceptors.request.use(
   (config) => {
     console.log(
@@ -28,7 +26,6 @@ api.interceptors.request.use(
   }
 );
 
-// Add response interceptor to log responses
 api.interceptors.response.use(
   (response) => {
     console.log("API Response:", response.status, response.data);
@@ -50,7 +47,6 @@ api.interceptors.response.use(
   }
 );
 
-// Types matching Django models
 export interface User {
   id: number;
   email: string;
@@ -321,7 +317,6 @@ export const issuesApi = {
 
 // Analytics API
 export const analyticsApi = {
-  // Функция для получения количества заходов и регистраций за последние 24 часа
   estimateDailyLoginsSignups: async (): Promise<number> => {
     try {
       const users = await usersApi.getAll();
@@ -338,7 +333,7 @@ export const analyticsApi = {
         );
       });
 
-      return recentUsers.length; // Количество новых пользователей (регистраций и входов)
+      return recentUsers.length;
     } catch (error) {
       console.error("Ошибка при оценке посещений и регистраций:", error);
       return 0;

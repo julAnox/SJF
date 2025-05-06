@@ -30,7 +30,6 @@ import ResumeViewModal from "../../pages/Profile/ResumeViewModal";
 import ContactModal from "../../components/Modals/ContactModal";
 import { useAuth } from "../../contexts/AuthContext";
 
-// Define filter state interface
 interface FilterState {
   gender: string;
   profession: string;
@@ -51,14 +50,12 @@ const Resumes = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  // State for resumes and loading
   const [resumes, setResumes] = useState<Resume[]>([]);
   const [filteredResumes, setFilteredResumes] = useState<Resume[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userProfiles, setUserProfiles] = useState<Record<number, User>>({});
 
-  // State for filters
   const [isFiltersOpen, setIsFiltersOpen] = useState(true);
   const [filters, setFilters] = useState<FilterState>({
     gender: "",
@@ -75,19 +72,16 @@ const Resumes = () => {
     perPage: 10,
   });
 
-  // State for search and pagination
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [skillSuggestions, setSkillSuggestions] = useState<string[]>([]);
   const [showSkillSuggestions, setShowSkillSuggestions] = useState(false);
   const skillsInputRef = useRef<HTMLInputElement>(null);
 
-  // State for modals
   const [showResumeModal, setShowResumeModal] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
   const [selectedResume, setSelectedResume] = useState<Resume | null>(null);
 
-  // Filter options (will be populated from data)
   const [filterOptions, setFilterOptions] = useState({
     genders: [] as string[],
     professions: [] as string[],
@@ -98,7 +92,6 @@ const Resumes = () => {
     skillsList: [] as string[],
   });
 
-  // Sort and time frame options
   const sortOptions = [
     { value: "relevance", label: "Most Relevant" },
     { value: "newest", label: "Newest" },
@@ -120,7 +113,6 @@ const Resumes = () => {
     { value: 15, label: "15 Resumes" },
   ];
 
-  // Fetch resumes from API
   useEffect(() => {
     const fetchResumes = async () => {
       try {
@@ -129,10 +121,8 @@ const Resumes = () => {
         setResumes(data);
         setFilteredResumes(data);
 
-        // Extract unique filter options from data
         extractFilterOptions(data);
 
-        // Fetch user profiles for all resumes
         const userIds = [...new Set(data.map((resume) => resume.user))];
         const userProfilesData: Record<number, User> = {};
 
@@ -158,7 +148,6 @@ const Resumes = () => {
     fetchResumes();
   }, []);
 
-  // Extract filter options from resume data
   const extractFilterOptions = (data: Resume[]) => {
     const options = {
       genders: Array.from(
@@ -193,12 +182,10 @@ const Resumes = () => {
     setFilterOptions(options);
   };
 
-  // Apply filters when filters or search query changes
   useEffect(() => {
     applyFilters();
   }, [filters, searchQuery, resumes]);
 
-  // Update skill suggestions when skillsQuery changes
   useEffect(() => {
     if (filters.skillsQuery) {
       const query = filters.skillsQuery.toLowerCase();
@@ -218,7 +205,6 @@ const Resumes = () => {
     }
   }, [filters.skillsQuery, filterOptions.skillsList, filters.skills]);
 
-  // Handle click outside skill suggestions
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -235,11 +221,9 @@ const Resumes = () => {
     };
   }, []);
 
-  // Apply all filters to resumes
   const applyFilters = () => {
     let filtered = [...resumes];
 
-    // Apply search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
@@ -251,7 +235,6 @@ const Resumes = () => {
       );
     }
 
-    // Apply category filters
     if (filters.gender) {
       filtered = filtered.filter((resume) => resume.gender === filters.gender);
     }
@@ -311,7 +294,6 @@ const Resumes = () => {
       });
     }
 
-    // Apply time frame filter
     if (filters.timeFrame !== "all") {
       const now = new Date();
       const cutoffDate = new Date();
@@ -333,14 +315,12 @@ const Resumes = () => {
       );
     }
 
-    // Apply sorting
     filtered = sortResumes(filtered, filters.sortBy);
 
     setFilteredResumes(filtered);
-    setCurrentPage(1); // Reset to first page when filters change
+    setCurrentPage(1);
   };
 
-  // Sort resumes based on selected sort option
   const sortResumes = (resumes: Resume[], sortBy: string) => {
     switch (sortBy) {
       case "newest":
@@ -371,7 +351,6 @@ const Resumes = () => {
     }
   };
 
-  // Add a skill from suggestions
   const addSkill = (skill: string) => {
     if (!filters.skills.includes(skill)) {
       setFilters((prev) => ({
@@ -383,7 +362,6 @@ const Resumes = () => {
     setShowSkillSuggestions(false);
   };
 
-  // Remove a skill
   const removeSkill = (skill: string) => {
     setFilters((prev) => ({
       ...prev,
@@ -391,12 +369,10 @@ const Resumes = () => {
     }));
   };
 
-  // Update a filter value
   const updateFilter = (key: keyof FilterState, value: any) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
-  // Check if any filter is active
   const isAnyFilterActive = () => {
     return (
       filters.gender !== "" ||
@@ -410,7 +386,6 @@ const Resumes = () => {
     );
   };
 
-  // Clear all filters
   const clearAllFilters = () => {
     setFilters({
       gender: "",
@@ -429,23 +404,19 @@ const Resumes = () => {
     setSearchQuery("");
   };
 
-  // Handle view profile button click
   const handleViewProfile = (resume: Resume) => {
     setSelectedResume(resume);
     setShowResumeModal(true);
   };
 
-  // Handle contact button click
   const handleContact = (resume: Resume) => {
     setSelectedResume(resume);
     setShowContactModal(true);
   };
 
-  // Handle contact form submission
   const handleContactSubmit = (message: string) => {
     if (!selectedResume) return;
 
-    // Create a new chat
     const chats = JSON.parse(localStorage.getItem("chats") || "{}");
     const chatId = `chat_${Date.now()}`;
 
@@ -470,12 +441,10 @@ const Resumes = () => {
     chats[chatId] = newChat;
     localStorage.setItem("chats", JSON.stringify(chats));
 
-    // Navigate to the new chat
     navigate(`/chat/${chatId}`);
     setShowContactModal(false);
   };
 
-  // Format date for display
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat("en-US", {
@@ -485,16 +454,13 @@ const Resumes = () => {
     }).format(date);
   };
 
-  // Get paginated resumes
   const getPaginatedResumes = () => {
     const startIndex = (currentPage - 1) * filters.perPage;
     return filteredResumes.slice(startIndex, startIndex + filters.perPage);
   };
 
-  // Calculate total pages
   const totalPages = Math.ceil(filteredResumes.length / filters.perPage);
 
-  // Parse skills from string or object
   const parseSkills = (skills: any): string[] => {
     if (!skills) return [];
 
@@ -512,7 +478,6 @@ const Resumes = () => {
     return [];
   };
 
-  // Get user avatar URL
   const getUserAvatar = (userId: number) => {
     if (userProfiles[userId] && userProfiles[userId].avatar) {
       return userProfiles[userId].avatar;
@@ -520,7 +485,6 @@ const Resumes = () => {
     return `/placeholder.svg?height=100&width=100`;
   };
 
-  // Get active filters for display
   const getActiveFilters = () => {
     const activeFilters = [];
 

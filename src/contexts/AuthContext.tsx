@@ -10,9 +10,8 @@ import {
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-const API_URL = "http://127.0.0.1:8000/app"; // Base API URL
+const API_URL = "http://127.0.0.1:8000/app";
 
-// Add the default avatar constant to match the backend
 const DEFAULT_AVATAR =
   "https://static.vecteezy.com/system/resources/thumbnails/005/545/335/small/user-sign-icon-person-symbol-human-avatar-isolated-on-white-backogrund-vector.jpg";
 
@@ -66,7 +65,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
   const [isLoading, setIsLoading] = useState(true);
 
-  // Configure axios defaults
   axios.defaults.baseURL = API_URL;
   axios.defaults.headers.common["Content-Type"] = "application/json";
 
@@ -76,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: userData.email,
       first_name: userData.first_name || "",
       last_name: userData.last_name || "",
-      avatar: userData.avatar || DEFAULT_AVATAR, // Use the default avatar if none is provided
+      avatar: userData.avatar || DEFAULT_AVATAR,
       date_of_birth: userData.date_of_birth || "",
       phone: userData.phone || "",
       country: userData.country || "",
@@ -142,7 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password,
         first_name: "",
         last_name: "",
-        avatar: DEFAULT_AVATAR, // Set default avatar on signup
+        avatar: DEFAULT_AVATAR,
         date_of_birth: "",
         phone: "",
         country: "",

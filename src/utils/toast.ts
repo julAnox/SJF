@@ -1,6 +1,3 @@
-// Simple toast utility
-// You can replace this with a more robust solution like react-toastify or react-hot-toast
-
 type ToastType = "success" | "error" | "info" | "warning";
 
 interface ToastOptions {
@@ -26,7 +23,6 @@ function createToast(
 ) {
   const mergedOptions = { ...defaultOptions, ...options };
 
-  // Create toast element
   const toast = document.createElement("div");
   toast.className = `toast toast-${type} ${mergedOptions.position}`;
   toast.innerHTML = `
@@ -37,16 +33,13 @@ function createToast(
     </div>
   `;
 
-  // Add position styles
   const positionStyles = getPositionStyles(
     mergedOptions.position || "top-right"
   );
   Object.assign(toast.style, positionStyles);
 
-  // Add to DOM
   document.body.appendChild(toast);
 
-  // Remove after duration
   setTimeout(() => {
     toast.classList.add("animate-fade-out");
     setTimeout(() => {

@@ -52,15 +52,12 @@ export const chatsService = {
   },
 
   getByUserId: async (userId: string): Promise<Chat[]> => {
-    // This requires custom backend endpoint or client-side filtering
     const allChats = await chatsService.getAll();
-    // Filter chats by user ID would need to be implemented based on your backend structure
     return allChats;
   },
 
   create: async (chatData: Partial<Chat>): Promise<Chat> => {
     try {
-      // Add retry logic
       const maxRetries = 3;
       let retries = 0;
       let lastError;
@@ -72,7 +69,6 @@ export const chatsService = {
         } catch (error) {
           lastError = error;
           retries++;
-          // Wait before retrying (exponential backoff)
           await new Promise((resolve) => setTimeout(resolve, 1000 * retries));
         }
       }
@@ -112,7 +108,6 @@ export const chatsService = {
       });
       console.log(`Marked all messages as read in chat ${id}:`, response.data);
 
-      // Dispatch an event to notify that unread messages have been updated
       const event = new CustomEvent("unreadMessagesUpdated");
       window.dispatchEvent(event);
     } catch (error) {

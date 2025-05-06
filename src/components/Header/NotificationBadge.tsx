@@ -20,7 +20,6 @@ const NotificationBadge = ({ onClick }: NotificationBadgeProps) => {
       if (!user) return;
 
       try {
-        // First try to get unread count from notifications service if it exists
         try {
           const notificationsEndpointExists =
             await notificationsService.endpointExists();
@@ -36,7 +35,6 @@ const NotificationBadge = ({ onClick }: NotificationBadgeProps) => {
           );
         }
 
-        // Fall back to using the chat API's unread_count endpoint
         try {
           const response = await fetch(
             `${chatsService.getBaseUrl()}/chats/unread_count/?user_id=${
@@ -54,7 +52,6 @@ const NotificationBadge = ({ onClick }: NotificationBadgeProps) => {
           );
         }
 
-        // Fall back to manual counting as a last resort
         const allChats = await chatsService.getAll();
         let totalUnread = 0;
 
@@ -76,10 +73,8 @@ const NotificationBadge = ({ onClick }: NotificationBadgeProps) => {
 
     fetchUnreadMessages();
 
-    // Set up polling for new messages
     const interval = setInterval(fetchUnreadMessages, 5000); // Check every 5 seconds
 
-    // Listen for unread messages updated event
     const handleUnreadMessagesUpdated = () => {
       fetchUnreadMessages();
     };

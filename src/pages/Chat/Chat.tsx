@@ -32,7 +32,6 @@ import applicationsService from "../../services/applicationsService";
 import ShareContactModal from "../../components/Modals/ShareContactModal";
 import { toast } from "../../utils/toast";
 
-// Add this type declaration at the top of the file, after the imports
 declare global {
   interface Window {
     chatDataCache?: {
@@ -95,24 +94,19 @@ const Chat = () => {
   const hasMarkedMessagesAsRead = useRef<boolean>(false);
   const markingInProgress = useRef<boolean>(false);
 
-  // Add user scroll tracking to prevent automatic scrolling when user is manually scrolling
-  // Add these new state variables after the other state declarations:
   const [isUserScrolling, setIsUserScrolling] = useState(false);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Redirect to login if not authenticated
   useEffect(() => {
     if (!isAuthenticated && !isLoading) {
       navigate("/login");
     }
   }, [isAuthenticated, isLoading, navigate]);
 
-  // Track page visibility
   useEffect(() => {
     const handleVisibilityChange = () => {
       isPageActive.current = document.visibilityState === "visible";
 
-      // If page becomes visible and we're on the chat page, refresh data
       if (isPageActive.current && location.pathname.includes("/chat")) {
         fetchChats(true);
         if (selectedChat) {
@@ -121,14 +115,11 @@ const Chat = () => {
       }
     };
 
-    // Track when user switches tabs
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
-    // Track when user navigates to/from the chat page
     const handleRouteChange = () => {
       const isChatPage = location.pathname.includes("/chat");
 
-      // Start or stop polling based on whether we're on the chat page
       if (isChatPage) {
         startPolling();
       } else {
@@ -136,36 +127,30 @@ const Chat = () => {
       }
     };
 
-    // Initial check
     handleRouteChange();
 
-    // Listen for route changes
     window.addEventListener("popstate", handleRouteChange);
 
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("popstate", handleRouteChange);
-      stopPolling(); // Clean up intervals when component unmounts
+      stopPolling();
 
-      // Add this:
       if (scrollTimeoutRef.current) {
         clearTimeout(scrollTimeoutRef.current);
       }
     };
   }, [location.pathname]);
 
-  // Fetch chats
   const fetchChats = async (forceRefresh = false) => {
     if (!user) return;
 
     try {
       console.log(`Fetching chats (forceRefresh: ${forceRefresh})`);
 
-      // Use cached data if available and not forcing refresh
       const now = Date.now();
-      const cacheExpiry = 30000; // 30 seconds cache
+      const cacheExpiry = 30000;
 
-      // Only fetch if forcing refresh or cache expired
       if (
         !forceRefresh &&
         window.chatDataCache &&
@@ -176,12 +161,9 @@ const Chat = () => {
         return;
       }
 
-      // Fetch data
       const allChats = await chatsService.getAll();
       console.log(`Fetched ${allChats.length} chats from API`);
 
-      // If no chats or forcing refresh, fetch all related data
-      // Otherwise, use cached related data when possible
       let allApplications, allJobs, allUsers, allCompanies;
 
       if (
@@ -194,7 +176,6 @@ const Chat = () => {
         allUsers = await usersApi.getAll();
         allCompanies = await companiesApi.getAll();
 
-        // Cache related data
         window.chatRelatedDataCache = {
           applications: allApplications,
           jobs: allJobs,
@@ -204,14 +185,12 @@ const Chat = () => {
           timestamp: now,
         };
       } else {
-        // Use cached related data
         allApplications = window.chatRelatedDataCache.applications;
         allJobs = window.chatRelatedDataCache.jobs;
         allUsers = window.chatRelatedDataCache.users;
         allCompanies = window.chatRelatedDataCache.companies;
       }
 
-      // Process chats based on user role
       const processedChats = [];
 
       for (const chat of allChats) {
@@ -226,23 +205,18 @@ const Chat = () => {
         let isRelevant = false;
 
         if (user.role === "student") {
-          // For students, show chats where they are the applicant
           isRelevant = application.user === Number.parseInt(user.id);
         } else if (user.role === "company") {
-          // For companies, we need to check if this job belongs to the company
-          // First, find the company associated with the current user
           const userCompany = allCompanies.find(
             (company) => company.user === Number.parseInt(user.id)
           );
 
           if (userCompany) {
-            // Check if the job belongs to this company
             isRelevant =
               typeof job.company === "number"
                 ? job.company === userCompany.id
                 : job.company.id === userCompany.id;
           } else {
-            // Fallback to direct user ID comparison if company not found
             isRelevant =
               typeof job.company === "number"
                 ? job.company === Number.parseInt(user.id)
@@ -252,12 +226,10 @@ const Chat = () => {
 
         if (!isRelevant) continue;
 
-        // Get messages for this chat - only fetch if needed
         let chatMessages;
         let lastMessage = null;
         let unreadCount = 0;
 
-        // Only fetch messages if we need to (for unread count or last message)
         if (
           forceRefresh ||
           !window.chatMessagesCache ||
@@ -268,7 +240,6 @@ const Chat = () => {
             `Fetched ${chatMessages.length} messages for chat ${chat.id}`
           );
 
-          // Cache messages for this chat
           if (!window.chatMessagesCache) window.chatMessagesCache = {};
           window.chatMessagesCache[chat.id] = {
             messages: chatMessages,
@@ -283,12 +254,10 @@ const Chat = () => {
             ? chatMessages[chatMessages.length - 1]
             : null;
 
-        // Check if this chat is currently open
         const isChatOpen =
           selectedChat === chat.id.toString() ||
           window.currentOpenChat === chat.id.toString();
 
-        // If the chat is currently open, set unread count to 0
         if (isChatOpen) {
           unreadCount = 0;
         } else {
@@ -297,19 +266,15 @@ const Chat = () => {
           ).length;
         }
 
-        // Get company or applicant name
         let name = "";
         if (user.role === "student") {
-          // For students, show the company name
           try {
-            // Try to get company details from companies API
             const companyId =
               typeof job.company === "number" ? job.company : job.company.id;
             const companyDetails = allCompanies.find((c) => c.id === companyId);
             name = companyDetails?.name || "Company";
 
             if (!name || name === "Company") {
-              // Fallback to user name if company name not found
               const companyUser = allUsers.find(
                 (u) =>
                   u.id ===
@@ -323,7 +288,6 @@ const Chat = () => {
             name = "Company";
           }
         } else {
-          // For companies, show the applicant name
           const applicant = allUsers.find((u) => u.id === application.user);
           name = applicant
             ? `${applicant.first_name} ${applicant.last_name}`
@@ -343,13 +307,11 @@ const Chat = () => {
         });
       }
 
-      // Sort by timestamp (newest first)
       processedChats.sort(
         (a, b) =>
           new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
       );
 
-      // Cache the processed chats
       window.chatDataCache = {
         chats: processedChats,
         timestamp: now,
@@ -365,31 +327,25 @@ const Chat = () => {
     }
   };
 
-  // Add a scroll handler function after the other function declarations:
   const handleMessagesScroll = () => {
     setIsUserScrolling(true);
 
-    // Clear any existing timeout
     if (scrollTimeoutRef.current) {
       clearTimeout(scrollTimeoutRef.current);
     }
 
-    // Set a timeout to reset the scrolling state after user stops scrolling
     scrollTimeoutRef.current = setTimeout(() => {
       setIsUserScrolling(false);
-    }, 1000); // Reset after 1 second of no scrolling
+    }, 1000);
   };
 
-  // Initial fetch of chats
   useEffect(() => {
     if (user) {
-      // Only fetch on initial load, then rely on manual refresh or visibility changes
       fetchChats();
 
-      // Add event listener for focus/blur to detect when user returns to the tab
       const handleFocus = () => {
         if (location.pathname.includes("/chat")) {
-          fetchChats(true); // Force refresh when user returns to the tab
+          fetchChats(true);
           if (selectedChat) {
             fetchMessages(true);
           }
@@ -404,7 +360,6 @@ const Chat = () => {
     }
   }, [user]);
 
-  // Fetch messages when selected chat changes
   const fetchMessages = async (forceRefresh = false) => {
     if (!selectedChat || !user) return;
 
@@ -415,9 +370,8 @@ const Chat = () => {
 
       const now = Date.now();
       const messagesCacheKey = `messages_${selectedChat}`;
-      const cacheExpiry = 10000; // 10 seconds cache for messages
+      const cacheExpiry = 10000;
 
-      // Use cached data if available and not forcing refresh
       if (
         !forceRefresh &&
         window.messagesCache &&
@@ -428,24 +382,19 @@ const Chat = () => {
         setChatStatus(window.messagesCache[messagesCacheKey].status);
         setOtherUser(window.messagesCache[messagesCacheKey].otherUser);
 
-        // Mark messages as read even when using cached data
         markMessagesAsRead(selectedChat);
         return;
       }
 
-      // Get chat details
       const chat = await chatsService.getById(selectedChat);
       setChatStatus(chat.status as "active" | "closed" | "blocked");
 
-      // Get application details
       const application = await applicationsService.getById(
         chat.application.toString()
       );
 
-      // Get job details
       const job = await jobsApi.getById(application.job.toString());
 
-      // Get company or applicant details
       const isCompany = user.role === "company";
       const otherUserId = isCompany
         ? application.user
@@ -455,13 +404,11 @@ const Chat = () => {
       const otherUserDetails = await usersApi.getById(otherUserId);
       setOtherUser(otherUserDetails);
 
-      // Get messages
       const chatMessages = await messagesService.getByChatId(selectedChat);
       console.log(
         `Fetched ${chatMessages.length} messages for chat ${selectedChat}`
       );
 
-      // Transform messages
       const transformedMessages = chatMessages.map((msg) => ({
         id: msg.id.toString(),
         senderId: msg.sender.toString(),
@@ -472,7 +419,6 @@ const Chat = () => {
         read: msg.read,
       }));
 
-      // Cache the messages
       if (!window.messagesCache) window.messagesCache = {};
       window.messagesCache[messagesCacheKey] = {
         messages: transformedMessages,
@@ -483,7 +429,6 @@ const Chat = () => {
 
       setMessages(transformedMessages);
 
-      // Mark unread messages as read
       await markMessagesAsRead(selectedChat);
     } catch (error) {
       console.error("Error fetching messages:", error);
@@ -491,10 +436,8 @@ const Chat = () => {
     }
   };
 
-  // Initial fetch of messages when selected chat changes
   useEffect(() => {
     if (selectedChat) {
-      // Store the current open chat in window for reference
       window.currentOpenChat = selectedChat;
 
       setIsLoading(true);
@@ -502,11 +445,9 @@ const Chat = () => {
 
       fetchMessages(true).finally(() => {
         setIsLoading(false);
-        // Immediately mark messages as read when opening a chat
         if (user && !hasMarkedMessagesAsRead.current) {
           markMessagesAsRead(selectedChat);
 
-          // Force update the chat list to reflect the changes
           setTimeout(() => {
             fetchChats(true);
           }, 500);
@@ -514,19 +455,16 @@ const Chat = () => {
       });
     }
 
-    // Clean up when chat changes
     return () => {
       if (messagesUpdateIntervalRef.current) {
         clearInterval(messagesUpdateIntervalRef.current);
         messagesUpdateIntervalRef.current = null;
       }
 
-      // Clear the current open chat when component unmounts
       window.currentOpenChat = undefined;
     };
   }, [selectedChat, user]);
 
-  // Mark messages as read when chat is opened or when new messages arrive
   const markMessagesAsRead = async (chatId: string) => {
     if (!user || markingInProgress.current) return;
 
@@ -534,11 +472,9 @@ const Chat = () => {
       markingInProgress.current = true;
       console.log(`Attempting to mark messages as read in chat ${chatId}`);
 
-      // Use the new bulk endpoint to mark all messages as read
       await messagesService.markAllAsReadInChat(chatId, user.id);
       hasMarkedMessagesAsRead.current = true;
 
-      // Update the messages in state to reflect they are read
       setMessages((prevMessages) =>
         prevMessages.map((msg) => {
           if (msg.senderId !== user.id && !msg.read) {
@@ -548,7 +484,6 @@ const Chat = () => {
         })
       );
 
-      // Update the unread count in the chat list
       setChats((prevChats) =>
         prevChats.map((chat) => {
           if (chat.id === chatId) {
@@ -558,10 +493,8 @@ const Chat = () => {
         })
       );
 
-      // Force a refresh of the chat list to update unread counts
       fetchChats(true);
 
-      // Force refresh the unread count in the header by triggering a global event
       const event = new CustomEvent("unreadMessagesUpdated");
       window.dispatchEvent(event);
 
@@ -574,11 +507,8 @@ const Chat = () => {
     }
   };
 
-  // Add a function to immediately mark messages as read when entering a chat
   useEffect(() => {
-    // This effect runs when the URL changes to a chat
     if (selectedChat && location.pathname.includes(`/chat/${selectedChat}`)) {
-      // Mark all messages as read immediately when entering a chat
       const markAllMessagesAsRead = async () => {
         if (!user) return;
 
@@ -586,11 +516,9 @@ const Chat = () => {
           console.log(
             `Marking all messages as read in chat ${selectedChat} via markAllAsReadInChat`
           );
-          // Call the service to mark all messages as read
           await messagesService.markAllAsReadInChat(selectedChat, user.id);
           hasMarkedMessagesAsRead.current = true;
 
-          // Update local state
           setMessages((prev) =>
             prev.map((msg) => ({
               ...msg,
@@ -598,17 +526,14 @@ const Chat = () => {
             }))
           );
 
-          // Update chat list to show zero unread messages for this chat
           setChats((prev) =>
             prev.map((chat) =>
               chat.id === selectedChat ? { ...chat, unreadCount: 0 } : chat
             )
           );
 
-          // Force refresh the chat list and header unread counts
           fetchChats(true);
 
-          // Dispatch event to update header
           const event = new CustomEvent("unreadMessagesUpdated");
           window.dispatchEvent(event);
         } catch (error) {
@@ -621,16 +546,7 @@ const Chat = () => {
     }
   }, [selectedChat, location.pathname, user]);
 
-  // Modify the useEffect that handles scrolling to bottom when messages change:
-  // Find this useEffect:
-  // useEffect(() => {
-  //   messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  // }, [messages])
-
-  // Replace it with:
   useEffect(() => {
-    // Only auto-scroll if user is not manually scrolling
-    // or if this is a new message from the current user
     const isNewMessageFromCurrentUser =
       messages.length > 0 &&
       messages[messages.length - 1]?.senderId === user?.id;
@@ -640,7 +556,6 @@ const Chat = () => {
     }
   }, [messages, isUserScrolling, user?.id]);
 
-  // Update URL when selected chat changes
   useEffect(() => {
     if (selectedChat) {
       navigate(`/chat/${selectedChat}`);
@@ -649,43 +564,35 @@ const Chat = () => {
     }
   }, [selectedChat, navigate]);
 
-  // Update selected chat when URL param changes
   useEffect(() => {
     if (chatId) {
       setSelectedChat(chatId);
     }
   }, [chatId]);
 
-  // Mark messages as read when the user is viewing the chat
   useEffect(() => {
     if (selectedChat && location.pathname.includes(`/chat/${selectedChat}`)) {
       markMessagesAsRead(selectedChat);
     }
   }, [selectedChat, location.pathname]);
 
-  // Add useEffect to mark messages as read when viewing a chat
-  // This ensures messages are marked as read when the user is actively viewing them
   useEffect(() => {
-    // Check if user is currently viewing a chat
     if (
       selectedChat &&
       user &&
       location.pathname.includes(`/chat/${selectedChat}`)
     ) {
-      // Create an observer to check if user is viewing the messages
       const observer = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
             if (entry.isIntersecting) {
-              // User is viewing the messages, mark them as read
               markMessagesAsRead(selectedChat);
             }
           });
         },
-        { threshold: 0.1 } // Trigger when at least 10% of the element is visible
+        { threshold: 0.1 }
       );
 
-      // Observe the messages container
       const messagesContainer = document.querySelector(".messages-container");
       if (messagesContainer) {
         observer.observe(messagesContainer);
@@ -699,36 +606,28 @@ const Chat = () => {
     }
   }, [selectedChat, user, location.pathname]);
 
-  // Start polling functions
   const startPolling = () => {
-    // Clear any existing intervals first
     stopPolling();
 
-    // Only start polling if we're on the chat page and the tab is visible
     if (location.pathname.includes("/chat") && isPageActive.current) {
-      // Initial fetch
       fetchChats();
 
-      // Set up chat list polling
       chatUpdateIntervalRef.current = setInterval(() => {
         if (isPageActive.current && document.hasFocus()) {
-          // Check for new messages
           checkForNewMessages();
         }
-      }, 2000); // Check every 2 seconds
+      }, 2000);
 
-      // Set up messages polling if a chat is selected
       if (selectedChat) {
         messagesUpdateIntervalRef.current = setInterval(() => {
           if (isPageActive.current && document.hasFocus()) {
             checkForNewChatMessages();
           }
-        }, 2000); // Check every 2 seconds
+        }, 2000);
       }
     }
   };
 
-  // Stop polling function
   const stopPolling = () => {
     if (chatUpdateIntervalRef.current) {
       clearInterval(chatUpdateIntervalRef.current);
@@ -741,15 +640,12 @@ const Chat = () => {
     }
   };
 
-  // Update the checkForNewMessages function to properly handle the currently open chat
   const checkForNewMessages = async () => {
     if (!user) return;
 
     try {
-      // Only check for new messages, not full data
       const allChats = await chatsService.getAll();
 
-      // If chat count changed, do a full refresh
       if (
         !window.chatRelatedDataCache ||
         allChats.length !== window.chatRelatedDataCache.chatCount
@@ -758,7 +654,6 @@ const Chat = () => {
         return;
       }
 
-      // Check for new messages in existing chats
       let hasNewMessages = false;
       let updatedChats = [...chats];
       let needsUpdate = false;
@@ -766,11 +661,9 @@ const Chat = () => {
       for (const chat of chats) {
         const chatMessages = await messagesService.getByChatId(chat.id);
 
-        // Check if this chat is currently open
         const isChatOpen =
           selectedChat === chat.id || window.currentOpenChat === chat.id;
 
-        // Get unread messages count - if chat is open, count should be 0
         let unreadCount = 0;
         if (!isChatOpen) {
           unreadCount = chatMessages.filter(
@@ -778,7 +671,6 @@ const Chat = () => {
           ).length;
         }
 
-        // Check if unread count changed
         if (unreadCount !== chat.unreadCount) {
           hasNewMessages = true;
           updatedChats = updatedChats.map((c) =>
@@ -787,7 +679,6 @@ const Chat = () => {
           needsUpdate = true;
         }
 
-        // Check if we have new messages
         if (
           !window.chatMessagesCache ||
           !window.chatMessagesCache[chat.id] ||
@@ -796,14 +687,12 @@ const Chat = () => {
         ) {
           hasNewMessages = true;
 
-          // Update cache
           if (!window.chatMessagesCache) window.chatMessagesCache = {};
           window.chatMessagesCache[chat.id] = {
             messages: chatMessages,
             timestamp: Date.now(),
           };
 
-          // If this is the currently selected chat, update the messages and mark as read
           if (isChatOpen) {
             fetchMessages(true);
             markMessagesAsRead(chat.id);
@@ -812,16 +701,13 @@ const Chat = () => {
       }
 
       if (needsUpdate) {
-        // Update chat list with new unread counts without full refresh
         setChats(updatedChats);
       }
 
       if (hasNewMessages && !needsUpdate) {
-        // If we have new messages but didn't update counts, do a full refresh
         fetchChats(true);
       }
 
-      // Force refresh the unread count in the header
       const event = new CustomEvent("unreadMessagesUpdated");
       window.dispatchEvent(event);
     } catch (error) {
@@ -836,7 +722,6 @@ const Chat = () => {
     try {
       const chatMessages = await messagesService.getByChatId(selectedChat);
 
-      // Check if we have new messages in the current chat
       if (chatMessages.length > messages.length) {
         fetchMessages(true);
       }
@@ -846,13 +731,11 @@ const Chat = () => {
     }
   };
 
-  // Enhance the handleSendMessage function to properly handle message status
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !selectedChat || !user) return;
 
     try {
-      // Create message
       const messageData = {
         chat: Number.parseInt(selectedChat),
         sender: Number.parseInt(user.id),
@@ -861,7 +744,6 @@ const Chat = () => {
         read: false,
       };
 
-      // Add message to state immediately with temporary ID for better UX
       const tempId = `temp-${Date.now()}`;
       const tempMessage = {
         id: tempId,
@@ -876,18 +758,14 @@ const Chat = () => {
       setMessages((prev) => [...prev, tempMessage]);
       setNewMessage("");
 
-      // Scroll to bottom
       setTimeout(() => {
-        // Force scroll to bottom when user sends a message, regardless of scroll state
         setIsUserScrolling(false);
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
       }, 100);
 
-      // Actually send the message to the server
       const createdMessage = await messagesService.create(messageData);
       console.log(`Created new message with ID ${createdMessage.id}`);
 
-      // Replace the temporary message with the real one
       setMessages((prev) =>
         prev.map((msg) =>
           msg.id === tempId
@@ -904,7 +782,6 @@ const Chat = () => {
         )
       );
 
-      // Update cache
       if (
         window.messagesCache &&
         window.messagesCache[`messages_${selectedChat}`]
@@ -915,7 +792,6 @@ const Chat = () => {
     } catch (error) {
       console.error("Error sending message:", error);
       console.log(`Error sending message: ${error}`);
-      // Remove the temporary message if sending failed
       setMessages((prev) =>
         prev.filter((msg) => msg.id !== `temp-${Date.now()}`)
       );
@@ -932,19 +808,15 @@ const Chat = () => {
       switch (action) {
         case "delete":
           if (window.confirm(t("chat.settings.confirmDelete"))) {
-            // First delete all messages in the chat
             await messagesService.deleteAllInChat(selectedChat);
-            // Then delete the chat itself
             await chatsService.delete(selectedChat);
             toast.success("Chat deleted successfully");
             setSelectedChat(null);
-            // Refresh the chat list
             fetchChats();
           }
           break;
         case "clear":
           if (window.confirm(t("chat.settings.confirmClear"))) {
-            // Delete all messages
             await messagesService.deleteAllInChat(selectedChat);
             setMessages([]);
             toast.success("Messages cleared successfully");
@@ -963,7 +835,6 @@ const Chat = () => {
           toast.success("Chat closed successfully");
           break;
         case "share":
-          // Prepare shareable chats data
           const otherChats = chats
             .filter((chat) => chat.id !== selectedChat)
             .map((chat) => ({
@@ -999,7 +870,6 @@ const Chat = () => {
     try {
       const resume = await resumesApi.getById(message.metadata.resumeId);
 
-      // Create resume content
       const content = `
 Resume: ${resume.profession || "Resume"}
 
@@ -1031,7 +901,6 @@ Graduation Year: ${resume.graduationYear || "Not provided"}
 Specialization: ${resume.specialization || "Not provided"}
       `.trim();
 
-      // Create and download file
       const blob = new Blob([content], { type: "text/plain" });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -1061,7 +930,6 @@ Specialization: ${resume.specialization || "Not provided"}
     <div
       className="fixed inset-0 pt-20 bg-gray-900 flex"
       onClick={() => {
-        // Ensure polling is active when user interacts with the chat page
         if (!chatUpdateIntervalRef.current) {
           startPolling();
         }

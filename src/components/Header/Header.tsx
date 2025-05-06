@@ -41,24 +41,20 @@ const Header = () => {
 
   const isStudent = user?.role === "student";
 
-  // Fetch unread message count
   useEffect(() => {
     const fetchUnreadMessages = async () => {
       if (!user) return;
 
       try {
-        // Get all messages, chats, applications, and jobs
         const allMessages = await messagesService.getAll();
         const allChats = await chatsService.getAll();
         const allApplications = await applicationsService.getAll();
         const allJobs = await jobsApi.getAll();
         const allCompanies = await companiesApi.getAll();
 
-        // Filter messages based on user role
         let relevantUnreadMessages = 0;
 
         if (user.role === "student") {
-          // For students, count unread messages in chats where they are the applicant
           for (const chat of allChats) {
             const application = allApplications.find(
               (app) => app.id === chat.application
@@ -66,12 +62,10 @@ const Header = () => {
             if (!application || application.user !== Number.parseInt(user.id))
               continue;
 
-            // Check if this chat is currently open
             const isChatOpen = window.location.pathname.includes(
               `/chat/${chat.id}`
             );
 
-            // Only count unread messages for chats that aren't currently open
             if (!isChatOpen) {
               const chatMessages = allMessages.filter(
                 (msg) =>
@@ -84,8 +78,6 @@ const Header = () => {
             }
           }
         } else if (user.role === "company") {
-          // For companies, count unread messages in chats for jobs they posted
-          // First, find the company associated with the current user
           const userCompany = allCompanies.find(
             (company) => company.user === Number.parseInt(user.id)
           );
@@ -97,11 +89,9 @@ const Header = () => {
               );
               if (!application) continue;
 
-              // Get job details
               const job = allJobs.find((j) => j.id === application.job);
               if (!job) continue;
 
-              // Check if this job belongs to the current company
               const isCompanyJob =
                 typeof job.company === "number"
                   ? job.company === userCompany.id
@@ -109,12 +99,10 @@ const Header = () => {
 
               if (!isCompanyJob) continue;
 
-              // Check if this chat is currently open
               const isChatOpen = window.location.pathname.includes(
                 `/chat/${chat.id}`
               );
 
-              // Only count unread messages for chats that aren't currently open
               if (!isChatOpen) {
                 const chatMessages = allMessages.filter(
                   (msg) =>
@@ -131,7 +119,6 @@ const Header = () => {
 
         setUnreadCount(relevantUnreadMessages);
 
-        // Update the document title to show unread count
         if (relevantUnreadMessages > 0) {
           document.title = `(${relevantUnreadMessages}) Student Job Portal`;
         } else {
@@ -144,12 +131,9 @@ const Header = () => {
 
     fetchUnreadMessages();
 
-    // Set up polling for new messages with a shorter interval for better responsiveness
     const interval = setInterval(fetchUnreadMessages, 1500); // Check every 1.5 seconds
 
-    // Add event listener for when messages are marked as read
     const handleUnreadMessagesUpdated = () => {
-      // Add a small delay to ensure database updates have completed
       setTimeout(() => {
         fetchUnreadMessages();
       }, 300);

@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { motion, AnimatePresence } from "framer-motion";
+import { X, Send } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface ContactModalProps {
   isOpen: boolean;
@@ -12,19 +12,24 @@ interface ContactModalProps {
   recipientId: string;
 }
 
-const ContactModal = ({ isOpen, onClose, onSubmit, recipientName, recipientId }: ContactModalProps) => {
+const ContactModal = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  recipientName,
+  recipientId,
+}: ContactModalProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim()) return;
 
-    // Create a new chat
-    const chats = JSON.parse(localStorage.getItem('chats') || '{}');
+    const chats = JSON.parse(localStorage.getItem("chats") || "{}");
     const chatId = `chat_${Date.now()}`;
-    
+
     const newChat = {
       id: chatId,
       companyId: recipientId,
@@ -32,24 +37,22 @@ const ContactModal = ({ isOpen, onClose, onSubmit, recipientName, recipientId }:
       messages: [
         {
           id: Date.now().toString(),
-          senderId: 'currentUser',
-          type: 'text',
+          senderId: "currentUser",
+          type: "text",
           content: message,
-          timestamp: new Date().toISOString()
-        }
+          timestamp: new Date().toISOString(),
+        },
       ],
       lastMessage: message,
       timestamp: new Date().toISOString(),
-      status: 'active'
+      status: "active",
     };
 
     chats[chatId] = newChat;
-    localStorage.setItem('chats', JSON.stringify(chats));
+    localStorage.setItem("chats", JSON.stringify(chats));
 
-    // Submit the message
     onSubmit(message);
 
-    // Navigate to the new chat
     navigate(`/chat/${chatId}`);
     onClose();
   };

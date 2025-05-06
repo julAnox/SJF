@@ -54,18 +54,14 @@ const About = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        // Fetch all users
         const users = await usersApi.getAll();
         const userCount = users.length;
 
-        // Fetch all companies
         const companies = await companiesApi.getAll();
         const companyCount = companies.length;
 
-        // Fetch daily visits (login and signup counts)
         const dailyVisits = await estimateDailyLoginsSignups();
 
-        // Fetch and count 5-star reviews
         const comments = await commentsApi.getAll();
         const fiveStarReviews = comments.filter(
           (comment) => comment.stars === 5
@@ -79,7 +75,6 @@ const About = () => {
         });
       } catch (error) {
         console.error("Failed to fetch stats:", error);
-        // Можно добавить сообщение об ошибке или дефолтные значения
         setStats({
           userCount: 0,
           companyCount: 0,
@@ -90,7 +85,6 @@ const About = () => {
     };
 
     fetchStats();
-    // Reset dailyVisits at midnight
     const resetDailyVisits = () => {
       const now = new Date();
       const midnight = new Date(

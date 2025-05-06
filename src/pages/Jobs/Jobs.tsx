@@ -137,7 +137,6 @@ const Jobs = () => {
 
   const handleFilterChange = (key: keyof FilterState, value: any) => {
     if (key === "currency") {
-      // Convert to uppercase and limit to 3 characters
       value = value.toUpperCase().slice(0, 3);
     }
     setFilters((prev) => ({
@@ -172,12 +171,10 @@ const Jobs = () => {
     return `${Math.floor(days / 365)} years ago`;
   };
 
-  // Filter and sort jobs
   const filteredJobs = jobs
     .filter((job) => {
       if (!job) return false;
 
-      // Only show active jobs
       if (job.status !== "active") return false;
 
       const matchesSearch =

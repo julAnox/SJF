@@ -45,7 +45,6 @@ export const messagesService = {
 
   create: async (messageData: Partial<Message>): Promise<Message> => {
     try {
-      // Add retry logic
       const maxRetries = 3;
       let retries = 0;
       let lastError;
@@ -57,7 +56,6 @@ export const messagesService = {
         } catch (error) {
           lastError = error;
           retries++;
-          // Wait before retrying (exponential backoff)
           await new Promise((resolve) => setTimeout(resolve, 1000 * retries));
         }
       }
@@ -82,7 +80,6 @@ export const messagesService = {
     try {
       console.log(`Marking message ${id} as read - sending API request`);
 
-      // Use the dedicated endpoint for marking messages as read
       const response = await api.patch(`/messages/${id}/mark_as_read/`);
 
       console.log(`Message ${id} marked as read response:`, response.data);
@@ -102,7 +99,6 @@ export const messagesService = {
         `Marking all messages as read in chat ${chatId} for user ${userId}`
       );
 
-      // Use the dedicated endpoint for marking all messages as read
       const response = await api.post(`/messages/mark_all_as_read/`, {
         chat_id: chatId,
         user_id: userId,
@@ -113,23 +109,19 @@ export const messagesService = {
         response.data
       );
 
-      // Clear all caches to ensure fresh data
       if (window.messagesCache) {
         const messagesCacheKey = `messages_${chatId}`;
         delete window.messagesCache[messagesCacheKey];
       }
 
-      // Clear chat messages cache to force refresh
       if (window.chatMessagesCache && window.chatMessagesCache[chatId]) {
         delete window.chatMessagesCache[chatId];
       }
 
-      // Clear chat data cache to force refresh
       if (window.chatDataCache) {
         delete window.chatDataCache;
       }
 
-      // Dispatch an event to notify that unread messages have been updated
       const event = new CustomEvent("unreadMessagesUpdated");
       window.dispatchEvent(event);
     } catch (error) {
