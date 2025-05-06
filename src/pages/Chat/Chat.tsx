@@ -1069,7 +1069,7 @@ Specialization: ${resume.specialization || "Not provided"}
     >
       {/* Chat List */}
       <div className="w-96 border-r border-gray-700 bg-gray-800 flex flex-col">
-        <div className="p-4 border-b border-gray-700">
+        <div className="p-4 mt-0.5 border-b border-gray-700">
           <div className="relative">
             <input
               type="text"
