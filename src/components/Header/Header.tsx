@@ -66,14 +66,22 @@ const Header = () => {
             if (!application || application.user !== Number.parseInt(user.id))
               continue;
 
-            const chatMessages = allMessages.filter(
-              (msg) =>
-                msg.chat === chat.id &&
-                !msg.read &&
-                msg.sender !== Number.parseInt(user.id)
+            // Check if this chat is currently open
+            const isChatOpen = window.location.pathname.includes(
+              `/chat/${chat.id}`
             );
 
-            relevantUnreadMessages += chatMessages.length;
+            // Only count unread messages for chats that aren't currently open
+            if (!isChatOpen) {
+              const chatMessages = allMessages.filter(
+                (msg) =>
+                  msg.chat === chat.id &&
+                  !msg.read &&
+                  msg.sender !== Number.parseInt(user.id)
+              );
+
+              relevantUnreadMessages += chatMessages.length;
+            }
           }
         } else if (user.role === "company") {
           // For companies, count unread messages in chats for jobs they posted
@@ -101,19 +109,34 @@ const Header = () => {
 
               if (!isCompanyJob) continue;
 
-              const chatMessages = allMessages.filter(
-                (msg) =>
-                  msg.chat === chat.id &&
-                  !msg.read &&
-                  msg.sender !== Number.parseInt(user.id)
+              // Check if this chat is currently open
+              const isChatOpen = window.location.pathname.includes(
+                `/chat/${chat.id}`
               );
 
-              relevantUnreadMessages += chatMessages.length;
+              // Only count unread messages for chats that aren't currently open
+              if (!isChatOpen) {
+                const chatMessages = allMessages.filter(
+                  (msg) =>
+                    msg.chat === chat.id &&
+                    !msg.read &&
+                    msg.sender !== Number.parseInt(user.id)
+                );
+
+                relevantUnreadMessages += chatMessages.length;
+              }
             }
           }
         }
 
         setUnreadCount(relevantUnreadMessages);
+
+        // Update the document title to show unread count
+        if (relevantUnreadMessages > 0) {
+          document.title = `(${relevantUnreadMessages}) Student Job Portal`;
+        } else {
+          document.title = "Student Job Portal";
+        }
       } catch (error) {
         console.error("Error fetching unread messages:", error);
       }
@@ -121,12 +144,15 @@ const Header = () => {
 
     fetchUnreadMessages();
 
-    // Set up polling for new messages
-    const interval = setInterval(fetchUnreadMessages, 2000); // Check every 2 seconds
+    // Set up polling for new messages with a shorter interval for better responsiveness
+    const interval = setInterval(fetchUnreadMessages, 1500); // Check every 1.5 seconds
 
     // Add event listener for when messages are marked as read
     const handleUnreadMessagesUpdated = () => {
-      fetchUnreadMessages();
+      // Add a small delay to ensure database updates have completed
+      setTimeout(() => {
+        fetchUnreadMessages();
+      }, 300);
     };
 
     window.addEventListener(

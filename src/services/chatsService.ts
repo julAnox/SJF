@@ -16,6 +16,8 @@ export interface ChatWithDetails extends Chat {
 }
 
 export const chatsService = {
+  getBaseUrl: () => api.defaults.baseURL,
+
   getAll: async (): Promise<Chat[]> => {
     try {
       const response = await api.get("/chats/");
@@ -100,6 +102,32 @@ export const chatsService = {
     } catch (error) {
       console.error(`Error updating status for chat ${id}:`, error);
       throw error;
+    }
+  },
+
+  markAllAsRead: async (id: string, userId: string): Promise<void> => {
+    try {
+      const response = await api.post(`/chats/${id}/mark_all_read/`, {
+        user_id: userId,
+      });
+      console.log(`Marked all messages as read in chat ${id}:`, response.data);
+
+      // Dispatch an event to notify that unread messages have been updated
+      const event = new CustomEvent("unreadMessagesUpdated");
+      window.dispatchEvent(event);
+    } catch (error) {
+      console.error(`Error marking all messages as read in chat ${id}:`, error);
+      throw error;
+    }
+  },
+
+  getUnreadCount: async (userId: string): Promise<number> => {
+    try {
+      const response = await api.get(`/chats/unread_count/?user_id=${userId}`);
+      return response.data.unread_count;
+    } catch (error) {
+      console.error(`Error getting unread count for user ${userId}:`, error);
+      return 0;
     }
   },
 

@@ -56,9 +56,9 @@ export const notificationsService = {
         return 0;
       }
       const response = await api.get(
-        `/notifications/?user=${userId}&read=false`
+        `/notifications/unread_count/?user_id=${userId}`
       );
-      return response.data.length;
+      return response.data.unread_count;
     } catch (error) {
       console.error("Error fetching unread notifications count:", error);
       return 0;
@@ -88,7 +88,7 @@ export const notificationsService = {
       if (!(await notificationsService.endpointExists())) {
         return null;
       }
-      const response = await api.patch(`/notifications/${id}/`, { read: true });
+      const response = await api.patch(`/notifications/${id}/mark_as_read/`);
       return response.data;
     } catch (error) {
       console.error("Error marking notification as read:", error);
@@ -101,14 +101,7 @@ export const notificationsService = {
       if (!(await notificationsService.endpointExists())) {
         return;
       }
-      const notifications = await notificationsService.getByUserId(userId);
-      const unreadNotifications = notifications.filter(
-        (notification) => !notification.read
-      );
-
-      for (const notification of unreadNotifications) {
-        await notificationsService.markAsRead(notification.id.toString());
-      }
+      await api.post(`/notifications/mark_all_as_read/`, { user_id: userId });
     } catch (error) {
       console.error("Error marking all notifications as read:", error);
     }

@@ -6,7 +6,7 @@ export interface Message {
   sender: number;
   content: string;
   message_type: string;
-  metadata: any;
+  metadata?: any;
   read: boolean;
   created_at: string;
   updated_at: string;
@@ -80,7 +80,12 @@ export const messagesService = {
 
   markAsRead: async (id: string): Promise<Message> => {
     try {
-      const response = await api.patch(`/messages/${id}/`, { read: true });
+      console.log(`Marking message ${id} as read - sending API request`);
+
+      // Use the dedicated endpoint for marking messages as read
+      const response = await api.patch(`/messages/${id}/mark_as_read/`);
+
+      console.log(`Message ${id} marked as read response:`, response.data);
       return response.data;
     } catch (error) {
       console.error(`Error marking message ${id} as read:`, error);
@@ -93,19 +98,36 @@ export const messagesService = {
     userId: string
   ): Promise<void> => {
     try {
-      const unreadMessages = await messagesService.getUnreadByChatId(
-        chatId,
-        userId
+      console.log(
+        `Marking all messages as read in chat ${chatId} for user ${userId}`
       );
 
-      if (unreadMessages.length === 0) return;
+      // Use the dedicated endpoint for marking all messages as read
+      const response = await api.post(`/messages/mark_all_as_read/`, {
+        chat_id: chatId,
+        user_id: userId,
+      });
 
-      // Use Promise.all to mark all messages as read in parallel
-      const markPromises = unreadMessages.map((message) =>
-        messagesService.markAsRead(message.id.toString())
+      console.log(
+        `Successfully marked all messages as read in chat ${chatId}:`,
+        response.data
       );
 
-      await Promise.all(markPromises);
+      // Clear all caches to ensure fresh data
+      if (window.messagesCache) {
+        const messagesCacheKey = `messages_${chatId}`;
+        delete window.messagesCache[messagesCacheKey];
+      }
+
+      // Clear chat messages cache to force refresh
+      if (window.chatMessagesCache && window.chatMessagesCache[chatId]) {
+        delete window.chatMessagesCache[chatId];
+      }
+
+      // Clear chat data cache to force refresh
+      if (window.chatDataCache) {
+        delete window.chatDataCache;
+      }
 
       // Dispatch an event to notify that unread messages have been updated
       const event = new CustomEvent("unreadMessagesUpdated");

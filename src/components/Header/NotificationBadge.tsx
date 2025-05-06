@@ -5,9 +5,7 @@ import { Bell } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import messagesService from "../../services/messagesService";
 import chatsService from "../../services/chatsService";
-import applicationsService from "../../services/applicationsService";
 import notificationsService from "../../services/notificationsService";
-import jobsApi from "../../services/jobsService";
 
 interface NotificationBadgeProps {
   onClick?: () => void;
@@ -29,10 +27,8 @@ const NotificationBadge = ({ onClick }: NotificationBadgeProps) => {
           if (notificationsEndpointExists) {
             const unreadNotifications =
               await notificationsService.getUnreadCount(user.id);
-            if (unreadNotifications > 0) {
-              setUnreadCount(unreadNotifications);
-              return;
-            }
+            setUnreadCount(unreadNotifications);
+            return;
           }
         } catch (error) {
           console.log(
@@ -40,65 +36,39 @@ const NotificationBadge = ({ onClick }: NotificationBadgeProps) => {
           );
         }
 
-        // Fall back to counting unread messages
-        const allMessages = await messagesService.getAll();
-        const allChats = await chatsService.getAll();
-        const allApplications = await applicationsService.getAll();
-        const allJobs = await jobsApi.getAll();
-
-        // Filter messages based on user role
-        let relevantUnreadMessages = 0;
-
-        if (user.role === "student") {
-          // For students, count unread messages in chats where they are the applicant
-          for (const chat of allChats) {
-            const application = allApplications.find(
-              (app) => app.id === chat.application
-            );
-            if (!application || application.user !== Number.parseInt(user.id))
-              continue;
-
-            const chatMessages = allMessages.filter(
-              (msg) =>
-                msg.chat === chat.id &&
-                !msg.read &&
-                msg.sender !== Number.parseInt(user.id)
-            );
-
-            relevantUnreadMessages += chatMessages.length;
+        // Fall back to using the chat API's unread_count endpoint
+        try {
+          const response = await fetch(
+            `${chatsService.getBaseUrl()}/chats/unread_count/?user_id=${
+              user.id
+            }`
+          );
+          if (response.ok) {
+            const data = await response.json();
+            setUnreadCount(data.unread_count);
+            return;
           }
-        } else if (user.role === "company") {
-          // For companies, count unread messages in chats for jobs they posted
-          for (const chat of allChats) {
-            const application = allApplications.find(
-              (app) => app.id === chat.application
-            );
-            if (!application) continue;
-
-            // Get job details
-            const job = allJobs.find((j) => j.id === application.job);
-            if (!job) continue;
-
-            // Check if this job belongs to the current company user
-            const isCompanyJob =
-              typeof job.company === "number"
-                ? job.company === Number.parseInt(user.id)
-                : job.company.id === Number.parseInt(user.id);
-
-            if (!isCompanyJob) continue;
-
-            const chatMessages = allMessages.filter(
-              (msg) =>
-                msg.chat === chat.id &&
-                !msg.read &&
-                msg.sender !== Number.parseInt(user.id)
-            );
-
-            relevantUnreadMessages += chatMessages.length;
-          }
+        } catch (error) {
+          console.log(
+            "Chat unread_count endpoint not available, falling back to manual counting"
+          );
         }
 
-        setUnreadCount(relevantUnreadMessages);
+        // Fall back to manual counting as a last resort
+        const allChats = await chatsService.getAll();
+        let totalUnread = 0;
+
+        for (const chat of allChats) {
+          const chatMessages = await messagesService.getByChatId(
+            chat.id.toString()
+          );
+          const unreadMessages = chatMessages.filter(
+            (msg) => !msg.read && msg.sender !== Number.parseInt(user.id)
+          );
+          totalUnread += unreadMessages.length;
+        }
+
+        setUnreadCount(totalUnread);
       } catch (error) {
         console.error("Error fetching unread messages:", error);
       }
@@ -107,9 +77,24 @@ const NotificationBadge = ({ onClick }: NotificationBadgeProps) => {
     fetchUnreadMessages();
 
     // Set up polling for new messages
-    const interval = setInterval(fetchUnreadMessages, 2000); // Check every 2 seconds
+    const interval = setInterval(fetchUnreadMessages, 5000); // Check every 5 seconds
 
-    return () => clearInterval(interval);
+    // Listen for unread messages updated event
+    const handleUnreadMessagesUpdated = () => {
+      fetchUnreadMessages();
+    };
+    window.addEventListener(
+      "unreadMessagesUpdated",
+      handleUnreadMessagesUpdated
+    );
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener(
+        "unreadMessagesUpdated",
+        handleUnreadMessagesUpdated
+      );
+    };
   }, [user]);
 
   return (

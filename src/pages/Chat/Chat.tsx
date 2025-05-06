@@ -18,6 +18,7 @@ import {
   FileText,
   Briefcase,
   Download,
+  CheckCheck,
 } from "lucide-react";
 import {
   jobsApi,
@@ -60,6 +61,7 @@ declare global {
         timestamp: number;
       };
     };
+    currentOpenChat?: string;
   }
 }
 
@@ -90,6 +92,13 @@ const Chat = () => {
   const [shareableChats, setShareableChats] = useState<
     Array<{ id: string; userName: string; userAvatar: string }>
   >([]);
+  const hasMarkedMessagesAsRead = useRef<boolean>(false);
+  const markingInProgress = useRef<boolean>(false);
+
+  // Add user scroll tracking to prevent automatic scrolling when user is manually scrolling
+  // Add these new state variables after the other state declarations:
+  const [isUserScrolling, setIsUserScrolling] = useState(false);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -105,9 +114,9 @@ const Chat = () => {
 
       // If page becomes visible and we're on the chat page, refresh data
       if (isPageActive.current && location.pathname.includes("/chat")) {
-        fetchChats();
+        fetchChats(true);
         if (selectedChat) {
-          fetchMessages();
+          fetchMessages(true);
         }
       }
     };
@@ -137,6 +146,11 @@ const Chat = () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("popstate", handleRouteChange);
       stopPolling(); // Clean up intervals when component unmounts
+
+      // Add this:
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
     };
   }, [location.pathname]);
 
@@ -145,6 +159,8 @@ const Chat = () => {
     if (!user) return;
 
     try {
+      console.log(`Fetching chats (forceRefresh: ${forceRefresh})`);
+
       // Use cached data if available and not forcing refresh
       const now = Date.now();
       const cacheExpiry = 30000; // 30 seconds cache
@@ -162,6 +178,7 @@ const Chat = () => {
 
       // Fetch data
       const allChats = await chatsService.getAll();
+      console.log(`Fetched ${allChats.length} chats from API`);
 
       // If no chats or forcing refresh, fetch all related data
       // Otherwise, use cached related data when possible
@@ -247,6 +264,9 @@ const Chat = () => {
           !window.chatMessagesCache[chat.id]
         ) {
           chatMessages = await messagesService.getByChatId(chat.id.toString());
+          console.log(
+            `Fetched ${chatMessages.length} messages for chat ${chat.id}`
+          );
 
           // Cache messages for this chat
           if (!window.chatMessagesCache) window.chatMessagesCache = {};
@@ -262,9 +282,20 @@ const Chat = () => {
           chatMessages.length > 0
             ? chatMessages[chatMessages.length - 1]
             : null;
-        unreadCount = chatMessages.filter(
-          (msg) => !msg.read && msg.sender !== Number.parseInt(user.id)
-        ).length;
+
+        // Check if this chat is currently open
+        const isChatOpen =
+          selectedChat === chat.id.toString() ||
+          window.currentOpenChat === chat.id.toString();
+
+        // If the chat is currently open, set unread count to 0
+        if (isChatOpen) {
+          unreadCount = 0;
+        } else {
+          unreadCount = chatMessages.filter(
+            (msg) => !msg.read && msg.sender !== Number.parseInt(user.id)
+          ).length;
+        }
 
         // Get company or applicant name
         let name = "";
@@ -325,11 +356,28 @@ const Chat = () => {
       };
 
       setChats(processedChats);
+      console.log(`Processed ${processedChats.length} relevant chats`);
     } catch (error) {
       console.error("Error fetching chats:", error);
+      console.log(`Error fetching chats: ${error}`);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Add a scroll handler function after the other function declarations:
+  const handleMessagesScroll = () => {
+    setIsUserScrolling(true);
+
+    // Clear any existing timeout
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
+    }
+
+    // Set a timeout to reset the scrolling state after user stops scrolling
+    scrollTimeoutRef.current = setTimeout(() => {
+      setIsUserScrolling(false);
+    }, 1000); // Reset after 1 second of no scrolling
   };
 
   // Initial fetch of chats
@@ -361,6 +409,10 @@ const Chat = () => {
     if (!selectedChat || !user) return;
 
     try {
+      console.log(
+        `Fetching messages for chat ${selectedChat} (forceRefresh: ${forceRefresh})`
+      );
+
       const now = Date.now();
       const messagesCacheKey = `messages_${selectedChat}`;
       const cacheExpiry = 10000; // 10 seconds cache for messages
@@ -375,6 +427,9 @@ const Chat = () => {
         setMessages(window.messagesCache[messagesCacheKey].messages);
         setChatStatus(window.messagesCache[messagesCacheKey].status);
         setOtherUser(window.messagesCache[messagesCacheKey].otherUser);
+
+        // Mark messages as read even when using cached data
+        markMessagesAsRead(selectedChat);
         return;
       }
 
@@ -402,6 +457,9 @@ const Chat = () => {
 
       // Get messages
       const chatMessages = await messagesService.getByChatId(selectedChat);
+      console.log(
+        `Fetched ${chatMessages.length} messages for chat ${selectedChat}`
+      );
 
       // Transform messages
       const transformedMessages = chatMessages.map((msg) => ({
@@ -429,18 +487,29 @@ const Chat = () => {
       await markMessagesAsRead(selectedChat);
     } catch (error) {
       console.error("Error fetching messages:", error);
+      console.log(`Error fetching messages: ${error}`);
     }
   };
 
   // Initial fetch of messages when selected chat changes
   useEffect(() => {
     if (selectedChat) {
+      // Store the current open chat in window for reference
+      window.currentOpenChat = selectedChat;
+
       setIsLoading(true);
+      hasMarkedMessagesAsRead.current = false;
+
       fetchMessages(true).finally(() => {
         setIsLoading(false);
         // Immediately mark messages as read when opening a chat
-        if (user) {
+        if (user && !hasMarkedMessagesAsRead.current) {
           markMessagesAsRead(selectedChat);
+
+          // Force update the chat list to reflect the changes
+          setTimeout(() => {
+            fetchChats(true);
+          }, 500);
         }
       });
     }
@@ -451,27 +520,23 @@ const Chat = () => {
         clearInterval(messagesUpdateIntervalRef.current);
         messagesUpdateIntervalRef.current = null;
       }
+
+      // Clear the current open chat when component unmounts
+      window.currentOpenChat = undefined;
     };
   }, [selectedChat, user]);
 
   // Mark messages as read when chat is opened or when new messages arrive
   const markMessagesAsRead = async (chatId: string) => {
-    if (!user) return;
+    if (!user || markingInProgress.current) return;
 
     try {
-      const chatMessages = await messagesService.getByChatId(chatId);
-      const unreadMessages = chatMessages.filter(
-        (msg) => !msg.read && msg.sender !== Number.parseInt(user.id)
-      );
+      markingInProgress.current = true;
+      console.log(`Attempting to mark messages as read in chat ${chatId}`);
 
-      if (unreadMessages.length === 0) return;
-
-      // Mark each unread message as read
-      const markPromises = unreadMessages.map((message) =>
-        messagesService.markAsRead(message.id.toString())
-      );
-
-      await Promise.all(markPromises);
+      // Use the new bulk endpoint to mark all messages as read
+      await messagesService.markAllAsReadInChat(chatId, user.id);
+      hasMarkedMessagesAsRead.current = true;
 
       // Update the messages in state to reflect they are read
       setMessages((prevMessages) =>
@@ -493,18 +558,87 @@ const Chat = () => {
         })
       );
 
+      // Force a refresh of the chat list to update unread counts
+      fetchChats(true);
+
       // Force refresh the unread count in the header by triggering a global event
       const event = new CustomEvent("unreadMessagesUpdated");
       window.dispatchEvent(event);
+
+      console.log(`Successfully marked all messages as read in chat ${chatId}`);
     } catch (error) {
       console.error("Error marking messages as read:", error);
+      console.log(`Error marking messages as read: ${error}`);
+    } finally {
+      markingInProgress.current = false;
     }
   };
 
-  // Scroll to bottom when messages change
+  // Add a function to immediately mark messages as read when entering a chat
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    // This effect runs when the URL changes to a chat
+    if (selectedChat && location.pathname.includes(`/chat/${selectedChat}`)) {
+      // Mark all messages as read immediately when entering a chat
+      const markAllMessagesAsRead = async () => {
+        if (!user) return;
+
+        try {
+          console.log(
+            `Marking all messages as read in chat ${selectedChat} via markAllAsReadInChat`
+          );
+          // Call the service to mark all messages as read
+          await messagesService.markAllAsReadInChat(selectedChat, user.id);
+          hasMarkedMessagesAsRead.current = true;
+
+          // Update local state
+          setMessages((prev) =>
+            prev.map((msg) => ({
+              ...msg,
+              read: msg.senderId === user.id ? msg.read : true,
+            }))
+          );
+
+          // Update chat list to show zero unread messages for this chat
+          setChats((prev) =>
+            prev.map((chat) =>
+              chat.id === selectedChat ? { ...chat, unreadCount: 0 } : chat
+            )
+          );
+
+          // Force refresh the chat list and header unread counts
+          fetchChats(true);
+
+          // Dispatch event to update header
+          const event = new CustomEvent("unreadMessagesUpdated");
+          window.dispatchEvent(event);
+        } catch (error) {
+          console.error("Error marking all messages as read:", error);
+          console.log(`Error in markAllMessagesAsRead: ${error}`);
+        }
+      };
+
+      markAllMessagesAsRead();
+    }
+  }, [selectedChat, location.pathname, user]);
+
+  // Modify the useEffect that handles scrolling to bottom when messages change:
+  // Find this useEffect:
+  // useEffect(() => {
+  //   messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  // }, [messages])
+
+  // Replace it with:
+  useEffect(() => {
+    // Only auto-scroll if user is not manually scrolling
+    // or if this is a new message from the current user
+    const isNewMessageFromCurrentUser =
+      messages.length > 0 &&
+      messages[messages.length - 1]?.senderId === user?.id;
+
+    if (!isUserScrolling || isNewMessageFromCurrentUser) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, isUserScrolling, user?.id]);
 
   // Update URL when selected chat changes
   useEffect(() => {
@@ -607,7 +741,7 @@ const Chat = () => {
     }
   };
 
-  // Add these new helper functions for optimized checking
+  // Update the checkForNewMessages function to properly handle the currently open chat
   const checkForNewMessages = async () => {
     if (!user) return;
 
@@ -632,10 +766,17 @@ const Chat = () => {
       for (const chat of chats) {
         const chatMessages = await messagesService.getByChatId(chat.id);
 
-        // Get unread messages count
-        const unreadCount = chatMessages.filter(
-          (msg) => !msg.read && msg.sender !== Number.parseInt(user.id)
-        ).length;
+        // Check if this chat is currently open
+        const isChatOpen =
+          selectedChat === chat.id || window.currentOpenChat === chat.id;
+
+        // Get unread messages count - if chat is open, count should be 0
+        let unreadCount = 0;
+        if (!isChatOpen) {
+          unreadCount = chatMessages.filter(
+            (msg) => !msg.read && msg.sender !== Number.parseInt(user.id)
+          ).length;
+        }
 
         // Check if unread count changed
         if (unreadCount !== chat.unreadCount) {
@@ -661,6 +802,12 @@ const Chat = () => {
             messages: chatMessages,
             timestamp: Date.now(),
           };
+
+          // If this is the currently selected chat, update the messages and mark as read
+          if (isChatOpen) {
+            fetchMessages(true);
+            markMessagesAsRead(chat.id);
+          }
         }
       }
 
@@ -679,6 +826,7 @@ const Chat = () => {
       window.dispatchEvent(event);
     } catch (error) {
       console.error("Error checking for new messages:", error);
+      console.log(`Error checking for new messages: ${error}`);
     }
   };
 
@@ -694,9 +842,11 @@ const Chat = () => {
       }
     } catch (error) {
       console.error("Error checking for new chat messages:", error);
+      console.log(`Error checking for new chat messages: ${error}`);
     }
   };
 
+  // Enhance the handleSendMessage function to properly handle message status
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !selectedChat || !user) return;
@@ -711,25 +861,65 @@ const Chat = () => {
         read: false,
       };
 
-      const createdMessage = await messagesService.create(messageData);
+      // Add message to state immediately with temporary ID for better UX
+      const tempId = `temp-${Date.now()}`;
+      const tempMessage = {
+        id: tempId,
+        senderId: user.id,
+        content: newMessage,
+        type: "text",
+        metadata: null,
+        timestamp: new Date().toISOString(),
+        read: false,
+      };
 
-      // Add message to state
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: createdMessage.id.toString(),
-          senderId: user.id,
-          content: newMessage,
-          type: "text",
-          metadata: null,
-          timestamp: createdMessage.created_at,
-          read: false,
-        },
-      ]);
-
+      setMessages((prev) => [...prev, tempMessage]);
       setNewMessage("");
+
+      // Scroll to bottom
+      setTimeout(() => {
+        // Force scroll to bottom when user sends a message, regardless of scroll state
+        setIsUserScrolling(false);
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+
+      // Actually send the message to the server
+      const createdMessage = await messagesService.create(messageData);
+      console.log(`Created new message with ID ${createdMessage.id}`);
+
+      // Replace the temporary message with the real one
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === tempId
+            ? {
+                id: createdMessage.id.toString(),
+                senderId: user.id,
+                content: newMessage,
+                type: "text",
+                metadata: null,
+                timestamp: createdMessage.created_at,
+                read: false,
+              }
+            : msg
+        )
+      );
+
+      // Update cache
+      if (
+        window.messagesCache &&
+        window.messagesCache[`messages_${selectedChat}`]
+      ) {
+        window.messagesCache[`messages_${selectedChat}`].messages = messages;
+        window.messagesCache[`messages_${selectedChat}`].timestamp = Date.now();
+      }
     } catch (error) {
       console.error("Error sending message:", error);
+      console.log(`Error sending message: ${error}`);
+      // Remove the temporary message if sending failed
+      setMessages((prev) =>
+        prev.filter((msg) => msg.id !== `temp-${Date.now()}`)
+      );
+      toast.error("Failed to send message. Please try again.");
     }
   };
 
@@ -791,6 +981,7 @@ const Chat = () => {
       setShowSettings(false);
     } catch (error) {
       console.error(`Error performing action ${action}:`, error);
+      console.log(`Error performing action ${action}: ${error}`);
       toast.error(`Failed to ${action} chat. Please try again.`);
     }
   };
@@ -852,6 +1043,7 @@ Specialization: ${resume.specialization || "Not provided"}
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Error downloading resume:", error);
+      console.log(`Error downloading resume: ${error}`);
     }
   };
 
@@ -1023,7 +1215,10 @@ Specialization: ${resume.specialization || "Not provided"}
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 messages-container">
+          <div
+            className="flex-1 overflow-y-auto p-4 space-y-4 messages-container"
+            onScroll={handleMessagesScroll}
+          >
             {isLoading ? (
               <div className="flex justify-center items-center h-32">
                 <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-emerald-500"></div>
@@ -1073,9 +1268,24 @@ Specialization: ${resume.specialization || "Not provided"}
                       </div>
                     )}
                     <p>{message.content}</p>
-                    <span className="text-xs opacity-75 mt-1 block">
-                      {formatTime(message.timestamp)}
-                    </span>
+                    <div className="flex justify-between items-center mt-1">
+                      <span className="text-xs opacity-75 block">
+                        {formatTime(message.timestamp)}
+                      </span>
+                      {message.senderId === user?.id && (
+                        <div className="text-xs">
+                          {message.read ? (
+                            <div className="text-gray-800" title="Read">
+                              <CheckCheck className="w-4 h-4" />
+                            </div>
+                          ) : (
+                            <div className="text-gray-300" title="Sent">
+                              <CheckCheck className="w-4 h-4" />
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))
