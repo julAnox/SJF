@@ -108,6 +108,7 @@ export const chatsService = {
       });
       console.log(`Marked all messages as read in chat ${id}:`, response.data);
 
+      // Dispatch event to update unread counts in the UI
       const event = new CustomEvent("unreadMessagesUpdated");
       window.dispatchEvent(event);
     } catch (error) {
@@ -129,6 +130,10 @@ export const chatsService = {
   delete: async (id: string): Promise<void> => {
     try {
       await api.delete(`/chats/${id}/`);
+
+      // Trigger event to update unread counts
+      const event = new CustomEvent("unreadMessagesUpdated");
+      window.dispatchEvent(event);
     } catch (error) {
       console.error(`Error deleting chat ${id}:`, error);
       throw error;

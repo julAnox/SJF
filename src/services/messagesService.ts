@@ -17,30 +17,124 @@ export interface MessageWithSenderDetails extends Message {
   senderAvatar: string;
 }
 
+// Cache configuration
+const CACHE_DURATION = 60000; // 1 minute cache
+let messageCache: Record<string, { data: any; timestamp: number }> = {};
+
+// Helper function to check if cache is valid
+const isCacheValid = (key: string): boolean => {
+  return (
+    messageCache[key] &&
+    Date.now() - messageCache[key].timestamp < CACHE_DURATION
+  );
+};
+
 export const messagesService = {
   getAll: async (): Promise<Message[]> => {
-    const response = await api.get("/messages/");
-    return response.data;
+    const cacheKey = "all_messages";
+
+    // Return cached data if valid
+    if (isCacheValid(cacheKey)) {
+      return messageCache[cacheKey].data;
+    }
+
+    try {
+      const response = await api.get("/messages/");
+
+      // Cache the result
+      messageCache[cacheKey] = {
+        data: response.data,
+        timestamp: Date.now(),
+      };
+
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      throw error;
+    }
   },
 
   getById: async (id: string): Promise<Message> => {
-    const response = await api.get(`/messages/${id}/`);
-    return response.data;
+    const cacheKey = `message_${id}`;
+
+    // Return cached data if valid
+    if (isCacheValid(cacheKey)) {
+      return messageCache[cacheKey].data;
+    }
+
+    try {
+      const response = await api.get(`/messages/${id}/`);
+
+      // Cache the result
+      messageCache[cacheKey] = {
+        data: response.data,
+        timestamp: Date.now(),
+      };
+
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching message ${id}:`, error);
+      throw error;
+    }
   },
 
   getByChatId: async (chatId: string): Promise<Message[]> => {
-    const response = await api.get(`/messages/?chat=${chatId}`);
-    return response.data;
+    const cacheKey = `chat_messages_${chatId}`;
+
+    // Return cached data if valid
+    if (isCacheValid(cacheKey)) {
+      return messageCache[cacheKey].data;
+    }
+
+    try {
+      const response = await api.get(`/messages/?chat=${chatId}`);
+
+      // Cache the result
+      messageCache[cacheKey] = {
+        data: response.data,
+        timestamp: Date.now(),
+      };
+
+      // Update window cache for chat messages
+      if (window.chatMessagesCache) {
+        window.chatMessagesCache[chatId] = {
+          messages: response.data,
+          timestamp: Date.now(),
+        };
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching messages for chat ${chatId}:`, error);
+      throw error;
+    }
   },
 
   getUnreadByChatId: async (
     chatId: string,
     userId: string
   ): Promise<Message[]> => {
-    const messages = await messagesService.getByChatId(chatId);
-    return messages.filter(
-      (message) => !message.read && message.sender.toString() !== userId
-    );
+    try {
+      // Try to use cached messages if available
+      const cacheKey = `chat_messages_${chatId}`;
+      let messages;
+
+      if (isCacheValid(cacheKey)) {
+        messages = messageCache[cacheKey].data;
+      } else {
+        messages = await messagesService.getByChatId(chatId);
+      }
+
+      return messages.filter(
+        (message) => !message.read && message.sender.toString() !== userId
+      );
+    } catch (error) {
+      console.error(
+        `Error fetching unread messages for chat ${chatId}:`,
+        error
+      );
+      throw error;
+    }
   },
 
   create: async (messageData: Partial<Message>): Promise<Message> => {
@@ -52,6 +146,35 @@ export const messagesService = {
       while (retries < maxRetries) {
         try {
           const response = await api.post("/messages/", messageData);
+
+          // Invalidate relevant caches
+          const chatId = messageData.chat?.toString();
+          if (chatId) {
+            delete messageCache[`chat_messages_${chatId}`];
+
+            // Also clear window caches for this chat
+            if (window.chatMessagesCache && window.chatMessagesCache[chatId]) {
+              delete window.chatMessagesCache[chatId];
+            }
+
+            if (window.messagesCache) {
+              const messagesCacheKey = `messages_${chatId}`;
+              delete window.messagesCache[messagesCacheKey];
+            }
+          }
+
+          // Clear all messages cache
+          delete messageCache["all_messages"];
+
+          // Clear chat data cache to force refresh of chat list
+          if (window.chatDataCache) {
+            delete window.chatDataCache;
+          }
+
+          // Trigger event to update unread counts
+          const event = new CustomEvent("unreadMessagesUpdated");
+          window.dispatchEvent(event);
+
           return response.data;
         } catch (error) {
           lastError = error;
@@ -72,17 +195,46 @@ export const messagesService = {
     id: string,
     messageData: Partial<Message>
   ): Promise<Message> => {
-    const response = await api.patch(`/messages/${id}/`, messageData);
-    return response.data;
+    try {
+      const response = await api.patch(`/messages/${id}/`, messageData);
+
+      // Invalidate relevant caches
+      delete messageCache[`message_${id}`];
+      delete messageCache["all_messages"];
+
+      // If we know the chat ID, invalidate that cache too
+      if (response.data.chat) {
+        delete messageCache[`chat_messages_${response.data.chat}`];
+      }
+
+      // Trigger event to update unread counts
+      const event = new CustomEvent("unreadMessagesUpdated");
+      window.dispatchEvent(event);
+
+      return response.data;
+    } catch (error) {
+      console.error(`Error updating message ${id}:`, error);
+      throw error;
+    }
   },
 
   markAsRead: async (id: string): Promise<Message> => {
     try {
-      console.log(`Marking message ${id} as read - sending API request`);
-
       const response = await api.patch(`/messages/${id}/mark_as_read/`);
 
-      console.log(`Message ${id} marked as read response:`, response.data);
+      // Invalidate relevant caches
+      delete messageCache[`message_${id}`];
+      delete messageCache["all_messages"];
+
+      // If we know the chat ID, invalidate that cache too
+      if (response.data.chat) {
+        delete messageCache[`chat_messages_${response.data.chat}`];
+      }
+
+      // Trigger event to update unread counts
+      const event = new CustomEvent("unreadMessagesUpdated");
+      window.dispatchEvent(event);
+
       return response.data;
     } catch (error) {
       console.error(`Error marking message ${id} as read:`, error);
@@ -95,35 +247,53 @@ export const messagesService = {
     userId: string
   ): Promise<void> => {
     try {
-      console.log(
-        `Marking all messages as read in chat ${chatId} for user ${userId}`
-      );
-
       const response = await api.post(`/messages/mark_all_as_read/`, {
         chat_id: chatId,
         user_id: userId,
       });
 
-      console.log(
-        `Successfully marked all messages as read in chat ${chatId}:`,
-        response.data
-      );
+      // Invalidate relevant caches
+      delete messageCache[`chat_messages_${chatId}`];
+      delete messageCache["all_messages"];
 
+      // Clear window caches thoroughly
       if (window.messagesCache) {
+        // Clear specific chat messages cache
         const messagesCacheKey = `messages_${chatId}`;
         delete window.messagesCache[messagesCacheKey];
+
+        // Also clear any other related caches that might contain this chat's messages
+        Object.keys(window.messagesCache).forEach((key) => {
+          if (key.includes(chatId)) {
+            delete window.messagesCache[key];
+          }
+        });
       }
 
-      if (window.chatMessagesCache && window.chatMessagesCache[chatId]) {
+      if (window.chatMessagesCache) {
+        // Clear this chat's messages
         delete window.chatMessagesCache[chatId];
       }
 
+      // Force refresh of chat data
       if (window.chatDataCache) {
         delete window.chatDataCache;
       }
 
+      if (window.chatRelatedDataCache) {
+        // Update the timestamp to force a refresh
+        window.chatRelatedDataCache.timestamp = 0;
+      }
+
+      // Trigger event to update unread counts
       const event = new CustomEvent("unreadMessagesUpdated");
       window.dispatchEvent(event);
+
+      // Dispatch a second event after a small delay to ensure UI updates
+      setTimeout(() => {
+        const secondEvent = new CustomEvent("unreadMessagesUpdated");
+        window.dispatchEvent(secondEvent);
+      }, 300);
     } catch (error) {
       console.error(
         `Error marking all messages as read in chat ${chatId}:`,
@@ -134,20 +304,84 @@ export const messagesService = {
   },
 
   delete: async (id: string): Promise<void> => {
-    await api.delete(`/messages/${id}/`);
+    try {
+      // Get the message first to know which chat it belongs to
+      const message = await messagesService.getById(id);
+      const chatId = message.chat.toString();
+
+      await api.delete(`/messages/${id}/`);
+
+      // Invalidate relevant caches
+      delete messageCache[`message_${id}`];
+      delete messageCache[`chat_messages_${chatId}`];
+      delete messageCache["all_messages"];
+
+      // Trigger event to update unread counts
+      const event = new CustomEvent("unreadMessagesUpdated");
+      window.dispatchEvent(event);
+    } catch (error) {
+      console.error(`Error deleting message ${id}:`, error);
+      throw error;
+    }
   },
 
   deleteAllInChat: async (chatId: string): Promise<void> => {
     try {
-      const messages = await messagesService.getByChatId(chatId);
-      const deletePromises = messages.map((message) =>
-        api.delete(`/messages/${message.id}/`)
-      );
-      await Promise.all(deletePromises);
+      await api.post(`/messages/delete_all/`, { chat_id: chatId });
+
+      // Invalidate relevant caches
+      delete messageCache[`chat_messages_${chatId}`];
+      delete messageCache["all_messages"];
+
+      // Clear window caches
+      if (window.messagesCache) {
+        const messagesCacheKey = `messages_${chatId}`;
+        delete window.messagesCache[messagesCacheKey];
+      }
+
+      if (window.chatMessagesCache && window.chatMessagesCache[chatId]) {
+        delete window.chatMessagesCache[chatId];
+      }
+
+      // Trigger event to update unread counts
+      const event = new CustomEvent("unreadMessagesUpdated");
+      window.dispatchEvent(event);
     } catch (error) {
-      console.error("Error deleting all messages in chat:", error);
-      throw error;
+      // Fallback to individual deletion if bulk delete endpoint doesn't exist
+      try {
+        const messages = await messagesService.getByChatId(chatId);
+        const deletePromises = messages.map((message) =>
+          api.delete(`/messages/${message.id}/`)
+        );
+        await Promise.all(deletePromises);
+
+        // Invalidate relevant caches
+        delete messageCache[`chat_messages_${chatId}`];
+        delete messageCache["all_messages"];
+
+        // Clear window caches
+        if (window.messagesCache) {
+          const messagesCacheKey = `messages_${chatId}`;
+          delete window.messagesCache[messagesCacheKey];
+        }
+
+        if (window.chatMessagesCache && window.chatMessagesCache[chatId]) {
+          delete window.chatMessagesCache[chatId];
+        }
+
+        // Trigger event to update unread counts
+        const event = new CustomEvent("unreadMessagesUpdated");
+        window.dispatchEvent(event);
+      } catch (innerError) {
+        console.error("Error deleting all messages in chat:", innerError);
+        throw innerError;
+      }
     }
+  },
+
+  // Clear cache method for testing or manual cache invalidation
+  clearCache: () => {
+    messageCache = {};
   },
 };
 

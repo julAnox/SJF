@@ -2,7 +2,7 @@
 
 import { NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   BriefcaseIcon,
   FileTextIcon,
@@ -28,6 +28,8 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
+  const lastFetchTimeRef = useRef<number>(0);
+  const unreadCountCacheRef = useRef<number>(0);
 
   const toggleLanguage = () => {
     const newLang = i18n.language === "en" ? "ru" : "en";
@@ -41,117 +43,306 @@ const Header = () => {
 
   const isStudent = user?.role === "student";
 
-  useEffect(() => {
-    const fetchUnreadMessages = async () => {
-      if (!user) return;
+  // Throttle function to prevent excessive API calls
+  const throttle = (func: Function, delay: number) => {
+    return (...args: any[]) => {
+      const now = Date.now();
+      if (now - lastFetchTimeRef.current >= delay) {
+        lastFetchTimeRef.current = now;
+        return func(...args);
+      }
+      return Promise.resolve(); // Return a resolved promise when throttled
+    };
+  };
 
+  // Optimized fetch unread messages function
+  const fetchUnreadMessages = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      // Check if we've fetched recently (within 5 seconds)
+      const now = Date.now();
+      if (now - lastFetchTimeRef.current < 5000) {
+        // Use cached value if available
+        setUnreadCount(unreadCountCacheRef.current);
+        return;
+      }
+
+      // Update last fetch time
+      lastFetchTimeRef.current = now;
+
+      // Check if we have a cached count from the server
       try {
-        const allMessages = await messagesService.getAll();
-        const allChats = await chatsService.getAll();
-        const allApplications = await applicationsService.getAll();
-        const allJobs = await jobsApi.getAll();
-        const allCompanies = await companiesApi.getAll();
+        // Try to use the dedicated endpoint for unread count if available
+        const unreadCountResponse = await chatsService.getUnreadCount(user.id);
+        setUnreadCount(unreadCountResponse);
+        unreadCountCacheRef.current = unreadCountResponse;
 
-        let relevantUnreadMessages = 0;
+        // Update the document title
+        if (unreadCountResponse > 0) {
+          document.title = `(${unreadCountResponse}) Student Job Portal`;
+        } else {
+          document.title = "Student Job Portal";
+        }
 
-        if (user.role === "student") {
-          for (const chat of allChats) {
-            const application = allApplications.find(
-              (app) => app.id === chat.application
+        return;
+      } catch (error) {
+        // If the endpoint fails or doesn't exist, fall back to manual counting
+        console.log("Falling back to manual unread count calculation");
+      }
+
+      // Use cached data when possible
+      let allChats, allApplications, allJobs, allCompanies, allMessages;
+
+      // Check if we have cached data and it's still valid
+      const cacheValid =
+        window.chatDataCache &&
+        window.chatRelatedDataCache &&
+        now - window.chatDataCache.timestamp < 60000; // 1 minute cache
+
+      if (cacheValid) {
+        // Use cached data
+        allChats = window.chatDataCache.chats;
+        allApplications = window.chatRelatedDataCache.applications;
+        allJobs = window.chatRelatedDataCache.jobs;
+        allCompanies = window.chatRelatedDataCache.companies;
+
+        // For messages, we need to check which chats are relevant first
+        const relevantChatIds: string[] = [];
+
+        // Filter chats based on user role
+        for (const chat of allChats) {
+          const application = allApplications.find(
+            (app) => app.id === chat.application
+          );
+          if (!application) continue;
+
+          const job = allJobs.find((j) => j.id === application.job);
+          if (!job) continue;
+
+          let isRelevant = false;
+
+          if (user.role === "student") {
+            // For students, show chats where they are the applicant
+            isRelevant = application.user === Number.parseInt(user.id);
+          } else if (user.role === "company") {
+            // For companies, check if this job belongs to the company
+            const userCompany = allCompanies.find(
+              (company) => company.user === Number.parseInt(user.id)
             );
-            if (!application || application.user !== Number.parseInt(user.id))
-              continue;
 
-            const isChatOpen = window.location.pathname.includes(
-              `/chat/${chat.id}`
-            );
-
-            if (!isChatOpen) {
-              const chatMessages = allMessages.filter(
-                (msg) =>
-                  msg.chat === chat.id &&
-                  !msg.read &&
-                  msg.sender !== Number.parseInt(user.id)
-              );
-
-              relevantUnreadMessages += chatMessages.length;
+            if (userCompany) {
+              // Check if the job belongs to this company
+              isRelevant =
+                typeof job.company === "number"
+                  ? job.company === userCompany.id
+                  : job.company.id === userCompany.id;
+            } else {
+              // Fallback to direct user ID comparison if company not found
+              isRelevant =
+                typeof job.company === "number"
+                  ? job.company === Number.parseInt(user.id)
+                  : job.company.id === Number.parseInt(user.id);
             }
           }
+
+          if (isRelevant) {
+            relevantChatIds.push(chat.id.toString());
+          }
+        }
+
+        // Only fetch messages for relevant chats
+        allMessages = [];
+        for (const chatId of relevantChatIds) {
+          if (window.chatMessagesCache && window.chatMessagesCache[chatId]) {
+            // Use cached messages if available
+            allMessages = [
+              ...allMessages,
+              ...window.chatMessagesCache[chatId].messages,
+            ];
+          }
+        }
+
+        // If we don't have cached messages, fetch them
+        if (allMessages.length === 0) {
+          allMessages = await messagesService.getAll();
+        }
+      } else {
+        // Fetch only essential data for unread count
+        [allChats, allMessages] = await Promise.all([
+          chatsService.getAll(),
+          messagesService.getAll(),
+        ]);
+
+        // Only fetch additional data if needed
+        if (allChats.length > 0) {
+          [allApplications, allJobs, allCompanies] = await Promise.all([
+            applicationsService.getAll(),
+            jobsApi.getAll(),
+            companiesApi.getAll(),
+          ]);
+        } else {
+          allApplications = [];
+          allJobs = [];
+          allCompanies = [];
+        }
+      }
+
+      // Calculate unread count
+      let relevantUnreadMessages = 0;
+
+      // Check which chats are currently open
+      const currentOpenChat = window.currentOpenChat;
+
+      // Process based on user role
+      for (const chat of allChats) {
+        const application = allApplications.find(
+          (app) => app.id === chat.application
+        );
+        if (!application) continue;
+
+        const job = allJobs.find((j) => j.id === application.job);
+        if (!job) continue;
+
+        let isRelevant = false;
+
+        if (user.role === "student") {
+          // For students, show chats where they are the applicant
+          isRelevant = application.user === Number.parseInt(user.id);
         } else if (user.role === "company") {
+          // For companies, check if this job belongs to the company
           const userCompany = allCompanies.find(
             (company) => company.user === Number.parseInt(user.id)
           );
 
           if (userCompany) {
-            for (const chat of allChats) {
-              const application = allApplications.find(
-                (app) => app.id === chat.application
-              );
-              if (!application) continue;
-
-              const job = allJobs.find((j) => j.id === application.job);
-              if (!job) continue;
-
-              const isCompanyJob =
-                typeof job.company === "number"
-                  ? job.company === userCompany.id
-                  : job.company.id === userCompany.id;
-
-              if (!isCompanyJob) continue;
-
-              const isChatOpen = window.location.pathname.includes(
-                `/chat/${chat.id}`
-              );
-
-              if (!isChatOpen) {
-                const chatMessages = allMessages.filter(
-                  (msg) =>
-                    msg.chat === chat.id &&
-                    !msg.read &&
-                    msg.sender !== Number.parseInt(user.id)
-                );
-
-                relevantUnreadMessages += chatMessages.length;
-              }
-            }
+            // Check if the job belongs to this company
+            isRelevant =
+              typeof job.company === "number"
+                ? job.company === userCompany.id
+                : job.company.id === userCompany.id;
+          } else {
+            // Fallback to direct user ID comparison if company not found
+            isRelevant =
+              typeof job.company === "number"
+                ? job.company === Number.parseInt(user.id)
+                : job.company.id === Number.parseInt(user.id);
           }
         }
 
-        setUnreadCount(relevantUnreadMessages);
+        if (!isRelevant) continue;
 
-        if (relevantUnreadMessages > 0) {
-          document.title = `(${relevantUnreadMessages}) Student Job Portal`;
+        // Check if this chat is currently open
+        const isChatOpen = currentOpenChat === chat.id.toString();
+
+        // Only count unread messages for chats that aren't currently open
+        if (!isChatOpen) {
+          const chatMessages = allMessages.filter(
+            (msg) => msg.chat === chat.id
+          );
+
+          const unreadMessagesCount = chatMessages.filter(
+            (msg) => !msg.read && msg.sender !== Number.parseInt(user.id)
+          ).length;
+
+          relevantUnreadMessages += unreadMessagesCount;
+        }
+      }
+
+      // Update state and cache
+      setUnreadCount(relevantUnreadMessages);
+      unreadCountCacheRef.current = relevantUnreadMessages;
+
+      // Update the document title to show unread count
+      if (relevantUnreadMessages > 0) {
+        document.title = `(${relevantUnreadMessages}) Student Job Portal`;
+      } else {
+        document.title = "Student Job Portal";
+      }
+
+      // Update the global window object with the current unread count
+      // This helps synchronize the count across components
+      if (typeof window !== "undefined") {
+        window.globalUnreadCount = relevantUnreadMessages;
+      }
+    } catch (error) {
+      console.error("Error fetching unread messages:", error);
+    }
+  }, [user]);
+
+  // Throttled version of fetchUnreadMessages
+  const throttledFetchUnreadMessages = useCallback(
+    throttle(fetchUnreadMessages, 5000), // Throttle to once every 5 seconds
+    [fetchUnreadMessages]
+  );
+
+  // Fetch unread messages
+  useEffect(() => {
+    if (!user) return;
+
+    // Initial fetch
+    fetchUnreadMessages();
+
+    // Set up polling with a longer interval to reduce server load
+    const interval = setInterval(() => {
+      throttledFetchUnreadMessages();
+    }, 10000); // Check every 10 seconds instead of 1.5 seconds
+
+    // Add event listener for when messages are marked as read
+    const handleUnreadMessagesUpdated = (event: CustomEvent) => {
+      // If the event has detail with unreadCount, use that value directly
+      if (event.detail && typeof event.detail.unreadCount === "number") {
+        setUnreadCount(event.detail.unreadCount);
+        unreadCountCacheRef.current = event.detail.unreadCount;
+
+        // Update document title
+        if (event.detail.unreadCount > 0) {
+          document.title = `(${event.detail.unreadCount}) Student Job Portal`;
         } else {
           document.title = "Student Job Portal";
         }
-      } catch (error) {
-        console.error("Error fetching unread messages:", error);
+        return;
       }
-    };
 
-    fetchUnreadMessages();
+      // Otherwise, clear any cached unread count to force a fresh fetch
+      unreadCountCacheRef.current = 0;
+      lastFetchTimeRef.current = 0;
 
-    const interval = setInterval(fetchUnreadMessages, 1500); // Check every 1.5 seconds
+      // Immediately fetch new unread count
+      fetchUnreadMessages();
 
-    const handleUnreadMessagesUpdated = () => {
+      // Also fetch again after a delay to ensure all updates are processed
       setTimeout(() => {
         fetchUnreadMessages();
-      }, 300);
+      }, 500);
+
+      // And one more time after a longer delay to catch any late updates
+      setTimeout(() => {
+        fetchUnreadMessages();
+      }, 2000);
     };
 
     window.addEventListener(
       "unreadMessagesUpdated",
-      handleUnreadMessagesUpdated
+      handleUnreadMessagesUpdated as EventListener
     );
+
+    // Add event listener for focus to update count when user returns to tab
+    const handleFocus = () => {
+      fetchUnreadMessages(); // Use non-throttled version for immediate update
+    };
+
+    window.addEventListener("focus", handleFocus);
 
     return () => {
       clearInterval(interval);
       window.removeEventListener(
         "unreadMessagesUpdated",
-        handleUnreadMessagesUpdated
+        handleUnreadMessagesUpdated as EventListener
       );
+      window.removeEventListener("focus", handleFocus);
     };
-  }, [user]);
+  }, [user, throttledFetchUnreadMessages, fetchUnreadMessages]);
 
   return (
     <header className="fixed top-0 left-0 right-0 bg-gray-900/80 backdrop-blur-md z-50 border-b border-gray-800">
@@ -226,7 +417,7 @@ const Header = () => {
                 <div className="relative">
                   <MessagesSquareIcon className="w-5 h-5" />
                   {unreadCount > 0 && (
-                    <div className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs">
+                    <div className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
                       {unreadCount > 99 ? "99+" : unreadCount}
                     </div>
                   )}
@@ -380,7 +571,7 @@ const Header = () => {
               <div className="relative">
                 <MessagesSquareIcon className="w-5 h-5" />
                 {unreadCount > 0 && (
-                  <div className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs">
+                  <div className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
                     {unreadCount > 99 ? "99+" : unreadCount}
                   </div>
                 )}

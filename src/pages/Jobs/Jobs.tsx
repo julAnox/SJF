@@ -14,6 +14,7 @@ import {
   XIcon,
   CalendarIcon,
   Building2,
+  CheckCircle,
 } from "lucide-react";
 import ApplicationModal from "../../components/Modals/ApplicationModal";
 import {
@@ -22,6 +23,8 @@ import {
   type Job,
   type Company,
 } from "../../services/api";
+import applicationsService from "../../services/applicationsService";
+import { useAuth } from "../../contexts/AuthContext";
 
 interface FilterState {
   city: string;
@@ -57,11 +60,16 @@ const Jobs = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showApplicationModal, setShowApplicationModal] = useState(false);
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(
+    null
+  );
   const [jobs, setJobs] = useState<Job[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [companies, setCompanies] = useState<Record<number, Company>>({});
   const [imageError, setImageError] = useState<Record<number, boolean>>({});
+  const [userApplications, setUserApplications] = useState<number[]>([]);
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -110,6 +118,24 @@ const Jobs = () => {
 
     fetchJobs();
   }, []);
+
+  // Fetch user applications to check which jobs they've already applied to
+  useEffect(() => {
+    const fetchUserApplications = async () => {
+      if (!user) return;
+
+      try {
+        const applications = await applicationsService.getByUserId(user.id);
+        // Extract job IDs from applications
+        const appliedJobIds = applications.map((app) => app.job);
+        setUserApplications(appliedJobIds);
+      } catch (err) {
+        console.error("Error fetching user applications:", err);
+      }
+    };
+
+    fetchUserApplications();
+  }, [user]);
 
   const handleImageError = (jobId: number) => {
     setImageError((prev) => ({
@@ -169,6 +195,11 @@ const Jobs = () => {
     if (days < 30) return `${Math.floor(days / 7)} weeks ago`;
     if (days < 365) return `${Math.floor(days / 30)} months ago`;
     return `${Math.floor(days / 365)} years ago`;
+  };
+
+  // Check if user has already applied to a job
+  const hasApplied = (jobId: number) => {
+    return userApplications.includes(jobId);
   };
 
   const filteredJobs = jobs
@@ -286,32 +317,6 @@ const Jobs = () => {
   };
 
   const activeFilters = getActiveFilters();
-
-  const handleApplicationSubmit = async (data: {
-    resumeId: string;
-    coverLetter: string;
-    resumeFile?: File;
-  }) => {
-    if (!selectedJobId) return;
-
-    try {
-      // Store application in localStorage
-      const applications = JSON.parse(
-        localStorage.getItem("applications") || "[]"
-      );
-      applications.push({
-        jobId: selectedJobId,
-        ...data,
-        timestamp: new Date().toISOString(),
-      });
-      localStorage.setItem("applications", JSON.stringify(applications));
-
-      setShowApplicationModal(false);
-    } catch (err) {
-      console.error("Failed to submit application:", err);
-      alert("Failed to submit application. Please try again.");
-    }
-  };
 
   return (
     <div className="pt-20 bg-gray-900">
@@ -668,106 +673,125 @@ const Jobs = () => {
             {/* Jobs List */}
             {!isLoading && !error && (
               <div className="space-y-6">
-                {paginatedJobs.map((job) => (
-                  <div
-                    key={job.id}
-                    className="bg-gray-800 rounded-lg p-6 hover:bg-gray-750 transition-colors"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="flex items-center gap-4">
-                        {/* Company Logo */}
-                        {job.company && (job.company as Company).logo ? (
-                          <img
-                            src={
-                              (job.company as Company).logo ||
-                              "/placeholder.svg"
-                            }
-                            alt={(job.company as Company).name}
-                            className="w-20 h-20 rounded-lg object-cover"
-                            onError={() => handleImageError(job.id)}
-                            loading="lazy"
-                          />
+                {paginatedJobs.map((job) => {
+                  const jobApplied = hasApplied(job.id);
+                  const companyId =
+                    typeof job.company === "object"
+                      ? job.company.id
+                      : job.company;
+
+                  return (
+                    <div
+                      key={job.id}
+                      className={`bg-gray-800 rounded-lg p-6 hover:bg-gray-750 transition-colors ${
+                        jobApplied ? "opacity-70" : ""
+                      }`}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-center gap-4">
+                          {/* Company Logo */}
+                          {job.company && (job.company as Company).logo ? (
+                            <img
+                              src={
+                                (job.company as Company).logo ||
+                                "/placeholder.svg" ||
+                                "/placeholder.svg"
+                              }
+                              alt={(job.company as Company).name}
+                              className="w-20 h-20 rounded-lg object-cover"
+                              onError={() => handleImageError(job.id)}
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="w-20 h-20 bg-emerald-600 rounded-lg flex items-center justify-center text-white">
+                              <Building2 className="w-6 h-6" />
+                            </div>
+                          )}
+                          <div>
+                            <h3 className="text-xl font-semibold text-white mb-2">
+                              {job.title}
+                            </h3>
+                            <div className="flex items-center gap-4 text-gray-400">
+                              <div className="flex items-center gap-2">
+                                <MapPinIcon className="w-4 h-4" />
+                                <span>
+                                  {job.city || "No location"} •{" "}
+                                  {job.metro || "No metro"}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <BriefcaseIcon className="w-4 h-4" />
+                                <span>
+                                  {job.experiense || 0} years experience
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        {jobApplied ? (
+                          <div className="flex items-center gap-2 text-emerald-400 px-4 py-2 bg-emerald-600/20 rounded-lg">
+                            <CheckCircle className="w-5 h-5" />
+                            <span>You've already applied</span>
+                          </div>
                         ) : (
-                          <div className="w-20 h-20 bg-emerald-600 rounded-lg flex items-center justify-center text-white">
-                            <Building2 className="w-6 h-6" />
-                          </div>
+                          <button
+                            onClick={() => {
+                              setSelectedJobId(job.id);
+                              setSelectedCompanyId(companyId.toString());
+                              setShowApplicationModal(true);
+                            }}
+                            className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors"
+                          >
+                            Apply Now
+                          </button>
                         )}
-                        <div>
-                          <h3 className="text-xl font-semibold text-white mb-2">
-                            {job.title}
-                          </h3>
-                          <div className="flex items-center gap-4 text-gray-400">
-                            <div className="flex items-center gap-2">
-                              <MapPinIcon className="w-4 h-4" />
-                              <span>
-                                {job.city || "No location"} •{" "}
-                                {job.metro || "No metro"}
-                              </span>
+                      </div>
+
+                      <div className="mt-4">
+                        <p className="text-gray-300">{job.description}</p>
+                        {typeof job.requirements === "object" &&
+                          Object.keys(job.requirements).length > 0 && (
+                            <div className="mt-4">
+                              <h4 className="text-lg font-semibold text-white mb-2">
+                                Requirements
+                              </h4>
+                              <ul className="list-disc list-inside text-gray-300 space-y-1">
+                                {Object.entries(job.requirements).map(
+                                  ([key, value]) => (
+                                    <li key={key}>{`${key}: ${value}`}</li>
+                                  )
+                                )}
+                              </ul>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <BriefcaseIcon className="w-4 h-4" />
-                              <span>
-                                {job.experiense || 0} years experience
-                              </span>
-                            </div>
+                          )}
+                      </div>
+
+                      <div className="mt-4 flex items-center justify-between">
+                        <div className="flex items-center gap-4 text-gray-400">
+                          <div className="flex items-center gap-2">
+                            <BanknoteIcon className="w-4 h-4" />
+                            <span>
+                              {formatSalary(job.salary_min || 0)} -{" "}
+                              {formatSalary(job.salary_max || 0)}{" "}
+                              {job.type_of_money}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <ClockIcon className="w-4 h-4" />
+                            <span>
+                              {job.type || "Full-time"} •{" "}
+                              {job.schedule || "Standard"}
+                            </span>
                           </div>
                         </div>
-                      </div>
-                      <button
-                        onClick={() => {
-                          setSelectedJobId(job.id);
-                          setShowApplicationModal(true);
-                        }}
-                        className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors"
-                      >
-                        Apply Now
-                      </button>
-                    </div>
-
-                    <div className="mt-4">
-                      <p className="text-gray-300">{job.description}</p>
-                      {typeof job.requirements === "object" &&
-                        Object.keys(job.requirements).length > 0 && (
-                          <div className="mt-4">
-                            <h4 className="text-lg font-semibold text-white mb-2">
-                              Requirements
-                            </h4>
-                            <ul className="list-disc list-inside text-gray-300 space-y-1">
-                              {Object.entries(job.requirements).map(
-                                ([key, value]) => (
-                                  <li key={key}>{`${key}: ${value}`}</li>
-                                )
-                              )}
-                            </ul>
-                          </div>
-                        )}
-                    </div>
-
-                    <div className="mt-4 flex items-center justify-between">
-                      <div className="flex items-center gap-4 text-gray-400">
-                        <div className="flex items-center gap-2">
-                          <BanknoteIcon className="w-4 h-4" />
-                          <span>
-                            {formatSalary(job.salary_min || 0)} -{" "}
-                            {formatSalary(job.salary_max || 0)}{" "}
-                            {job.type_of_money}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <ClockIcon className="w-4 h-4" />
-                          <span>
-                            {job.type || "Full-time"} •{" "}
-                            {job.schedule || "Standard"}
-                          </span>
+                        <div className="flex items-center gap-2 text-gray-500">
+                          <CalendarIcon className="w-4 h-4" />
+                          <span>Posted {formatDate(job.created_at)}</span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 text-gray-500">
-                        <CalendarIcon className="w-4 h-4" />
-                        <span>Posted {formatDate(job.created_at)}</span>
-                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 
@@ -851,14 +875,15 @@ const Jobs = () => {
           onClose={() => {
             setShowApplicationModal(false);
             setSelectedJobId(null);
+            setSelectedCompanyId(null);
           }}
-          onSubmit={handleApplicationSubmit}
           jobId={selectedJobId.toString()}
           jobTitle={jobs.find((j) => j.id === selectedJobId)?.title || ""}
           companyName={
             (jobs.find((j) => j.id === selectedJobId)?.company as Company)
               ?.name || "Unknown Company"
           }
+          companyId={selectedCompanyId || ""}
         />
       )}
     </div>

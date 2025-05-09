@@ -2,17 +2,17 @@
 
 import type React from "react";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Upload, Send, FileText, AlertCircle } from "lucide-react";
+import { X, Send, FileText, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { resumesApi } from "../../services/api";
 import applicationsService from "../../services/applicationsService";
 import chatsService from "../../services/chatsService";
 import messagesService from "../../services/messagesService";
-import { toast } from "../../utils/toast"; // Assuming you have a toast utility
+import { toast } from "../../utils/toast";
 
 interface ApplicationModalProps {
   isOpen: boolean;
@@ -20,7 +20,7 @@ interface ApplicationModalProps {
   jobId: string;
   jobTitle: string;
   companyName: string;
-  companyId: string;
+  companyId?: string;
 }
 
 const ApplicationModal = ({
@@ -36,12 +36,10 @@ const ApplicationModal = ({
   const { user } = useAuth();
   const [selectedResume, setSelectedResume] = useState("");
   const [coverLetter, setCoverLetter] = useState("");
-  const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [resumes, setResumes] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitAttempts, setSubmitAttempts] = useState(0);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch user's resumes
   useEffect(() => {
@@ -65,27 +63,9 @@ const ApplicationModal = ({
     }
   }, [isOpen, user]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (
-        file.type === "application/msword" ||
-        file.type ===
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-        file.name.endsWith(".doc") ||
-        file.name.endsWith(".docx")
-      ) {
-        setResumeFile(file);
-        setSelectedResume(""); // Clear selected profile resume when file is uploaded
-      } else {
-        setError("Please upload a DOC or DOCX file");
-      }
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!((selectedResume || resumeFile) && coverLetter)) {
+    if (!(selectedResume && coverLetter)) {
       setError("Please select a resume and provide a cover letter");
       return;
     }
@@ -136,8 +116,6 @@ const ApplicationModal = ({
               resumes.find((r) => r.id === Number.parseInt(selectedResume))
                 ?.profession || "My Resume"
             }`
-          : resumeFile
-          ? `Resume: ${resumeFile.name}`
           : "Resume uploaded as document",
         message_type: "resume",
         metadata: selectedResume ? { resumeId: selectedResume } : null,
@@ -173,12 +151,17 @@ const ApplicationModal = ({
     }
   };
 
+  // Navigate to profile page to create resume
+  const handleNavigateToProfile = () => {
+    navigate("/profile");
+    onClose();
+  };
+
   // Reset form when modal opens
   useEffect(() => {
     if (isOpen) {
       setSelectedResume("");
       setCoverLetter("");
-      setResumeFile(null);
       setError(null);
       setSubmitAttempts(0);
     }
@@ -241,7 +224,6 @@ const ApplicationModal = ({
                           type="button"
                           onClick={() => {
                             setSelectedResume(resume.id.toString());
-                            setResumeFile(null); // Clear uploaded file when profile resume is selected
                           }}
                           className={`flex items-center gap-2 p-4 rounded-lg border ${
                             selectedResume === resume.id.toString()
@@ -256,46 +238,20 @@ const ApplicationModal = ({
                         </button>
                       ))
                     ) : (
-                      <p className="col-span-2 text-gray-400 text-sm">
-                        No resumes found in your profile
-                      </p>
+                      <div className="col-span-2 p-4 border border-gray-600 border-dashed rounded-lg">
+                        <p className="text-gray-400 text-sm text-center mb-3">
+                          No resumes found in your profile
+                        </p>
+                        <button
+                          type="button"
+                          onClick={handleNavigateToProfile}
+                          className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-colors"
+                        >
+                          Create Resume in Profile
+                        </button>
+                      </div>
                     )}
                   </div>
-                </div>
-
-                {/* File Upload */}
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-400">Or Upload New Resume</p>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileChange}
-                    accept=".doc,.docx"
-                    className="hidden"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className={`w-full flex items-center justify-center gap-2 p-4 rounded-lg border ${
-                      resumeFile
-                        ? "border-emerald-500 bg-emerald-500/10"
-                        : "border-gray-600 border-dashed hover:border-gray-500"
-                    } transition-colors`}
-                  >
-                    {resumeFile ? (
-                      <>
-                        <FileText className="w-5 h-5 text-emerald-400" />
-                        <span className="text-white">{resumeFile.name}</span>
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="w-5 h-5 text-gray-400" />
-                        <span className="text-gray-400">
-                          Click to upload resume (DOC, DOCX)
-                        </span>
-                      </>
-                    )}
-                  </button>
                 </div>
               </div>
 
@@ -323,10 +279,7 @@ const ApplicationModal = ({
                 </button>
                 <button
                   type="submit"
-                  disabled={
-                    !((selectedResume || resumeFile) && coverLetter) ||
-                    isLoading
-                  }
+                  disabled={!(selectedResume && coverLetter) || isLoading}
                   className="flex items-center gap-2 px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoading ? (
