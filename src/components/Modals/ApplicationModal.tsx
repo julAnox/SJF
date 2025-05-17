@@ -3,7 +3,6 @@
 import type React from "react";
 
 import { useState, useEffect } from "react";
-import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Send, FileText, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -20,7 +19,7 @@ interface ApplicationModalProps {
   jobId: string;
   jobTitle: string;
   companyName: string;
-  companyId?: string;
+  companyId: string;
 }
 
 const ApplicationModal = ({
@@ -31,7 +30,6 @@ const ApplicationModal = ({
   companyName,
   companyId,
 }: ApplicationModalProps) => {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [selectedResume, setSelectedResume] = useState("");
@@ -81,6 +79,7 @@ const ApplicationModal = ({
       }
 
       // 1. Create application
+      // Note: The backend will automatically set the company based on the job
       const applicationData = {
         user: Number.parseInt(user.id),
         job: Number.parseInt(jobId),
@@ -136,9 +135,7 @@ const ApplicationModal = ({
       await messagesService.create(coverLetterMessage);
 
       // Show success message
-      if (typeof toast?.success === "function") {
-        toast.success("Application submitted successfully!");
-      }
+      toast.success("Application submitted successfully!");
 
       // 5. Navigate to chat
       navigate(`/chat/${chat.id}`);

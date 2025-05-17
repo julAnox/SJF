@@ -5,6 +5,7 @@ export interface Application {
   user: number;
   job: number;
   resume: number | null;
+  company: number | null;
   cover_letter: string;
   status: string;
   created_at: string;
@@ -62,6 +63,7 @@ export const applicationsService = {
 
       while (retries < maxRetries) {
         try {
+          // The backend will automatically set the company based on the job
           const response = await api.post("/applications/", applicationData);
           return response.data;
         } catch (error) {
