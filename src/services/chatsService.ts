@@ -40,7 +40,9 @@ export const chatsService = {
 
   getByApplicationId: async (applicationId: string): Promise<Chat[]> => {
     try {
-      const response = await api.get(`/chats/?application=${applicationId}`);
+      const response = await api.get(
+        `/chats/?job_applications=${applicationId}`
+      );
       return response.data;
     } catch (error) {
       console.error(

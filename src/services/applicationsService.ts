@@ -15,7 +15,7 @@ export interface Application {
 export const applicationsService = {
   getAll: async (): Promise<Application[]> => {
     try {
-      const response = await api.get("/applications/");
+      const response = await api.get("/job_applications/");
       return response.data;
     } catch (error) {
       console.error("Error fetching applications:", error);
@@ -25,7 +25,7 @@ export const applicationsService = {
 
   getById: async (id: string): Promise<Application> => {
     try {
-      const response = await api.get(`/applications/${id}/`);
+      const response = await api.get(`/job_applications/${id}/`);
       return response.data;
     } catch (error) {
       console.error(`Error fetching application ${id}:`, error);
@@ -35,7 +35,7 @@ export const applicationsService = {
 
   getByUserId: async (userId: string): Promise<Application[]> => {
     try {
-      const response = await api.get(`/applications/?user=${userId}`);
+      const response = await api.get(`/job_applications/?user=${userId}`);
       return response.data;
     } catch (error) {
       console.error(`Error fetching applications for user ${userId}:`, error);
@@ -45,7 +45,7 @@ export const applicationsService = {
 
   getByJobId: async (jobId: string): Promise<Application[]> => {
     try {
-      const response = await api.get(`/applications/?job=${jobId}`);
+      const response = await api.get(`/job_applications/?job=${jobId}`);
       return response.data;
     } catch (error) {
       console.error(`Error fetching applications for job ${jobId}:`, error);
@@ -64,7 +64,10 @@ export const applicationsService = {
       while (retries < maxRetries) {
         try {
           // The backend will automatically set the company based on the job
-          const response = await api.post("/applications/", applicationData);
+          const response = await api.post(
+            "/job_applications/",
+            applicationData
+          );
           return response.data;
         } catch (error) {
           lastError = error;
@@ -86,7 +89,10 @@ export const applicationsService = {
     applicationData: Partial<Application>
   ): Promise<Application> => {
     try {
-      const response = await api.patch(`/applications/${id}/`, applicationData);
+      const response = await api.patch(
+        `/job_applications/${id}/`,
+        applicationData
+      );
       return response.data;
     } catch (error) {
       console.error(`Error updating application ${id}:`, error);
@@ -96,7 +102,7 @@ export const applicationsService = {
 
   updateStatus: async (id: string, status: string): Promise<Application> => {
     try {
-      const response = await api.patch(`/applications/${id}/`, { status });
+      const response = await api.patch(`/job_applications/${id}/`, { status });
       return response.data;
     } catch (error) {
       console.error(`Error updating status for application ${id}:`, error);
@@ -106,7 +112,7 @@ export const applicationsService = {
 
   delete: async (id: string): Promise<void> => {
     try {
-      await api.delete(`/applications/${id}/`);
+      await api.delete(`/job_applications/${id}/`);
     } catch (error) {
       console.error(`Error deleting application ${id}:`, error);
       throw error;

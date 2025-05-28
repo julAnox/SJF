@@ -499,37 +499,41 @@ const Chat = () => {
           totalUnreadMessages += unreadCount;
         }
 
-        // Get company or applicant name
+        // Get company or applicant name and avatar
         let name = "";
+        let avatarUrl = "";
         if (user.role === "student") {
-          // For students, show the company name
+          // For students, show the company name and avatar
           try {
-            // Try to get company details from companies API
             const companyId =
               typeof job.company === "number" ? job.company : job.company.id;
             const companyDetails = allCompanies.find((c) => c.id === companyId);
             name = companyDetails?.name || "Company";
 
-            if (!name || name === "Company") {
-              // Fallback to user name if company name not found
-              const companyUser = allUsers.find(
-                (u) =>
-                  u.id ===
-                  (typeof job.company === "number"
-                    ? job.company
-                    : job.company.user)
-              );
-              name = companyUser ? companyUser.first_name : "Company";
-            }
+            // Get company user for avatar
+            const companyUser = allUsers.find(
+              (u) => u.id === (companyDetails?.user || job.company)
+            );
+            avatarUrl =
+              companyUser?.avatar ||
+              `https://ui-avatars.com/api/?name=${name.charAt(
+                0
+              )}&background=10B981&color=fff`;
           } catch (error) {
             name = "Company";
+            avatarUrl = `https://ui-avatars.com/api/?name=C&background=10B981&color=fff`;
           }
         } else {
-          // For companies, show the applicant name
+          // For companies, show the applicant name and avatar
           const applicant = allUsers.find((u) => u.id === application.user);
           name = applicant
             ? `${applicant.first_name} ${applicant.last_name}`
             : "Applicant";
+          avatarUrl =
+            applicant?.avatar ||
+            `https://ui-avatars.com/api/?name=${name.charAt(
+              0
+            )}&background=10B981&color=fff`;
         }
 
         processedChats.push({
@@ -543,6 +547,7 @@ const Chat = () => {
           application,
           job,
           isPinned: pinnedChats.includes(chat.id.toString()),
+          avatarUrl, // Add avatar URL to chat object
         });
       }
 
@@ -595,15 +600,17 @@ const Chat = () => {
     setShowScrollButton(!isNearBottom);
 
     // Set user scrolling state
-    if (!isUserScrolling) {
-      console.log("User started scrolling");
-      setIsUserScrolling(true);
-    }
+    setIsUserScrolling(true);
 
-    // Сбрасываем любой существующий таймаут
+    // Clear any existing timeout
     if (scrollTimeoutRef.current) {
       clearTimeout(scrollTimeoutRef.current);
     }
+
+    // Reset user scrolling state after 1 second of inactivity
+    scrollTimeoutRef.current = setTimeout(() => {
+      setIsUserScrolling(false);
+    }, 1000);
   };
 
   // Initial fetch of chats
@@ -921,29 +928,28 @@ const Chat = () => {
 
   // Auto-scroll when messages change
   useEffect(() => {
-    // Определяем, является ли это новым сообщением от текущего пользователя
+    // Only auto-scroll in two cases:
+    // 1. Initial load of messages
+    // 2. When the user sends a new message themselves
+
+    const isInitialLoad = !initialScrollDone.current && messages.length > 0;
     const isNewMessageFromCurrentUser =
       messages.length > 0 &&
       messages[messages.length - 1]?.senderId === user?.id;
 
-    // Выполняем начальную прокрутку только при первой загрузке чата
-    const isInitialLoad = !initialScrollDone.current && messages.length > 0;
-
     if (isInitialLoad) {
-      // Используем таймаут, чтобы DOM успел обновиться
+      // Initial load - scroll to bottom immediately
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
         initialScrollDone.current = true;
       }, 100);
-    } else if (isNewMessageFromCurrentUser) {
-      // Прокручиваем вниз только если это новое сообщение от текущего пользователя
+    } else if (isNewMessageFromCurrentUser && !isUserScrolling) {
+      // User sent a message - scroll smoothly
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
       }, 100);
     } else if (messages.length > 0 && !isUserScrolling && !isInitialLoad) {
-      // Если у нас есть новые сообщения, но мы не прокручиваем к ним, обновляем индикаторы
-      setHasNewMessages(true);
-      setNewMessageCount((prev) => prev + 1);
+      // New message from other user - just show the scroll button
       setShowScrollButton(true);
     }
   }, [messages, user?.id]);
@@ -1176,6 +1182,113 @@ const Chat = () => {
         }
       }, 500);
     });
+  };
+
+  const generateCoverLetter = async (application: any, job: any) => {
+    if (!selectedChat || !user) return;
+
+    try {
+      // Get user's resume for context
+      const userResumes = await resumesApi.getByUserId(user.id);
+      const latestResume = userResumes[0]; // Get the most recent resume
+
+      // Generate cover letter content
+      const coverLetterContent = `Dear Hiring Manager,
+
+I am writing to express my strong interest in the ${job.title} position at ${
+        job.company?.name || "your company"
+      }. 
+
+${
+  latestResume
+    ? `With my background in ${
+        latestResume.profession || "the field"
+      } and experience in ${
+        latestResume.specialization || "relevant technologies"
+      }, I am confident that I would be a valuable addition to your team.`
+    : "I am excited about the opportunity to contribute to your team."
+}
+
+Key qualifications I bring:
+${
+  latestResume?.skills
+    ? Object.entries(latestResume.skills)
+        .map(([skill, level]) => `• ${skill}: ${level}`)
+        .join("\n")
+    : "• Strong technical skills\n• Problem-solving abilities\n• Team collaboration"
+}
+
+${
+  latestResume?.experience
+    ? `My experience includes: ${latestResume.experience}`
+    : "I am eager to apply my skills and learn new technologies in this role."
+}
+
+I would welcome the opportunity to discuss how my background and enthusiasm can contribute to your team's success.
+
+Thank you for your consideration.
+
+Best regards,
+${user.first_name} ${user.last_name}`;
+
+      // Create cover letter message
+      const messageData = {
+        chat: parseInt(selectedChat),
+        sender: parseInt(user.id),
+        content: coverLetterContent,
+        message_type: "coverLetter",
+        metadata: {
+          applicationId: application.id,
+          jobId: job.id,
+          resumeId: latestResume?.id,
+        },
+        read: false,
+      };
+
+      // Add message to state immediately
+      const tempId = `temp-cover-${Date.now()}`;
+      const tempMessage = {
+        id: tempId,
+        senderId: user.id,
+        content: coverLetterContent,
+        type: "coverLetter",
+        metadata: messageData.metadata,
+        timestamp: new Date().toISOString(),
+        read: false,
+      };
+
+      setMessages((prev) => [...prev, tempMessage]);
+
+      // Send to server
+      const createdMessage = await messagesService.create(messageData);
+
+      // Replace temp message with real one
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === tempId
+            ? {
+                ...msg,
+                id: createdMessage.id.toString(),
+                timestamp: createdMessage.created_at,
+              }
+            : msg
+        )
+      );
+
+      // Update application with cover letter
+      await applicationsService.update(application.id.toString(), {
+        cover_letter: coverLetterContent,
+      });
+
+      toast.success("Cover letter generated and sent!");
+    } catch (error) {
+      console.error("Error generating cover letter:", error);
+      toast.error("Failed to generate cover letter. Please try again.");
+      // Remove temp message on error
+      setMessages((prev) =>
+        prev.filter((msg) => !msg.id.startsWith("temp-cover-"))
+      );
+    }
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -1636,9 +1749,16 @@ Specialization: ${resume.specialization || "Not provided"}
       );
     } else if (message.type === "coverLetter") {
       return (
-        <div className="flex items-center gap-2 mb-2 bg-gray-800/30 p-2 rounded">
-          <FileText className="w-5 h-5" />
-          <span>{t("chat.messages.coverLetter")}</span>
+        <div className="border border-gray-800/30 rounded-lg overflow-hidden">
+          <div className="flex items-center gap-2 bg-gray-800/30 p-3 border-b border-gray-800/20">
+            <FileText className="w-5 h-5 flex-shrink-0" />
+            <span className="font-medium truncate">
+              {t("chat.messages.coverLetter")}
+            </span>
+          </div>
+          <div className="whitespace-pre-wrap text-sm p-4 bg-gray-900/10">
+            {message.content}
+          </div>
         </div>
       );
     } else if (message.type === "jobOffer") {
@@ -1732,8 +1852,23 @@ Specialization: ${resume.specialization || "Not provided"}
               >
                 <div className="flex items-center gap-4">
                   <div className="relative">
-                    <div className="w-12 h-12 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold">
-                      {chat.companyName.charAt(0)}
+                    <div className="w-12 h-12 rounded-full bg-red-500 flex items-center justify-center text-white font-bold overflow-hidden">
+                      {chat.avatarUrl ? (
+                        <img
+                          src={chat.avatarUrl || "/placeholder.svg"}
+                          alt={chat.companyName}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (
+                              e.target as HTMLImageElement
+                            ).src = `https://ui-avatars.com/api/?name=${chat.companyName.charAt(
+                              0
+                            )}&background=FF4500&color=fff`;
+                          }}
+                        />
+                      ) : (
+                        <span>{chat.companyName.charAt(0)}</span>
+                      )}
                     </div>
                     {chat.unreadCount > 0 && (
                       <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg">
@@ -1802,10 +1937,35 @@ Specialization: ${resume.specialization || "Not provided"}
               </div>
             ) : (
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold">
-                  {chats
-                    .find((c) => c.id === selectedChat)
-                    ?.companyName.charAt(0)}
+                <div className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center text-white font-bold overflow-hidden">
+                  {chats.find((c) => c.id === selectedChat)?.avatarUrl ? (
+                    <img
+                      src={
+                        chats.find((c) => c.id === selectedChat)?.avatarUrl ||
+                        "/placeholder.svg"
+                      }
+                      alt={
+                        chats.find((c) => c.id === selectedChat)?.companyName
+                      }
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const chatName =
+                          chats.find((c) => c.id === selectedChat)
+                            ?.companyName || "User";
+                        (
+                          e.target as HTMLImageElement
+                        ).src = `https://ui-avatars.com/api/?name=${chatName.charAt(
+                          0
+                        )}&background=FF4500&color=fff`;
+                      }}
+                    />
+                  ) : (
+                    <span>
+                      {chats
+                        .find((c) => c.id === selectedChat)
+                        ?.companyName.charAt(0)}
+                    </span>
+                  )}
                 </div>
                 <div>
                   <h2 className="font-semibold text-white">
@@ -1896,14 +2056,14 @@ Specialization: ${resume.specialization || "Not provided"}
                         }`}
                       >
                         {renderMessageContent(message)}
-                        <div className="flex justify-between items-center mt-1">
+                        <div className="flex justify-between items-center mt-1 gap-2">
                           <span className="text-xs opacity-75 block">
                             {formatTime(message.timestamp)}
                           </span>
                           {message.senderId === user?.id && (
-                            <div className="text-xs">
+                            <div className="text-lg">
                               {message.read ? (
-                                <div className="text-yellow-300" title="Read">
+                                <div className="text-gray-900" title="Read">
                                   <CheckCheck className="w-4 h-4" />
                                 </div>
                               ) : (
@@ -1931,17 +2091,10 @@ Specialization: ${resume.specialization || "Not provided"}
           {/* Scroll to bottom button */}
           {showScrollButton && (
             <div
-              className="fixed bottom-24 right-8 bg-gray-800 text-white rounded-full p-3 shadow-lg cursor-pointer z-10 hover:bg-gray-700 transition-colors border-2 border-emerald-500"
+              className="fixed bottom-24 right-8 bg-gray-900 text-white rounded-full p-3 shadow-lg cursor-pointer z-10 hover:bg-emerald-600 transition-colors"
               onClick={scrollToBottom}
             >
-              <div className="relative">
-                <ArrowDown className="w-5 h-5 text-emerald-400" />
-                {newMessageCount > 0 && (
-                  <div className="absolute -top-3 -right-3 min-w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg border border-gray-900 px-1.5">
-                    {newMessageCount > 99 ? "99+" : newMessageCount}
-                  </div>
-                )}
-              </div>
+              <ArrowDown className="w-5 h-5 text-white" />
             </div>
           )}
 
