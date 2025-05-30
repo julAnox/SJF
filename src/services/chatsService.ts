@@ -2,7 +2,8 @@ import api from "./api";
 
 export interface Chat {
   id: number;
-  application: number;
+  application?: number;
+  resume_application?: number;
   status: string;
   created_at: string;
   updated_at: string;
@@ -13,6 +14,9 @@ export interface ChatWithDetails extends Chat {
   jobTitle: string;
   lastMessage: string;
   unreadCount: number;
+  isResumeChat?: boolean;
+  avatarUrl?: string;
+  isPinned?: boolean;
 }
 
 export const chatsService = {
@@ -47,6 +51,23 @@ export const chatsService = {
     } catch (error) {
       console.error(
         `Error fetching chats for application ${applicationId}:`,
+        error
+      );
+      throw error;
+    }
+  },
+
+  getByResumeApplicationId: async (
+    resumeApplicationId: string
+  ): Promise<Chat[]> => {
+    try {
+      const response = await api.get(
+        `/chats/?resume_application=${resumeApplicationId}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error(
+        `Error fetching chats for resume application ${resumeApplicationId}:`,
         error
       );
       throw error;
@@ -133,6 +154,55 @@ export const chatsService = {
       await api.delete(`/chats/${id}/`);
     } catch (error) {
       console.error(`Error deleting chat ${id}:`, error);
+      throw error;
+    }
+  },
+
+  // Add a debug method to help troubleshoot chat issues
+  getDebugInfo: async (chatId: string): Promise<any> => {
+    try {
+      const chat = await chatsService.getById(chatId);
+      const details: any = { chat };
+
+      // Get related data based on chat type
+      if (chat.application) {
+        const application = await api.get(
+          `/job_applications/${chat.application}/`
+        );
+        details.application = application.data;
+
+        if (application.data.job) {
+          const job = await api.get(`/jobs/${application.data.job}/`);
+          details.job = job.data;
+        }
+      } else if (chat.resume_application) {
+        const resumeApplication = await api.get(
+          `/resume_applications/${chat.resume_application}/`
+        );
+        details.resumeApplication = resumeApplication.data;
+
+        if (resumeApplication.data.resume) {
+          const resume = await api.get(
+            `/resumes/${resumeApplication.data.resume}/`
+          );
+          details.resume = resume.data;
+        }
+
+        if (resumeApplication.data.company) {
+          const company = await api.get(
+            `/companies/${resumeApplication.data.company}/`
+          );
+          details.company = company.data;
+        }
+      }
+
+      // Get messages
+      const messages = await api.get(`/messages/?chat=${chatId}`);
+      details.messages = messages.data;
+
+      return details;
+    } catch (error) {
+      console.error(`Error getting debug info for chat ${chatId}:`, error);
       throw error;
     }
   },

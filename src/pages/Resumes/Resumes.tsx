@@ -27,7 +27,7 @@ import {
   type User,
 } from "../../services/api";
 import ResumeViewModal from "../../pages/Profile/ResumeViewModal";
-import ContactModal from "../../components/Modals/ContactModal";
+import ResumeContactModal from "../../components/Modals/ResumeContactModal";
 import { useAuth } from "../../contexts/AuthContext";
 
 interface FilterState {
@@ -410,39 +410,22 @@ const Resumes = () => {
   };
 
   const handleContact = (resume: Resume) => {
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+
+    if (user.role !== "company") {
+      alert("Only companies can contact students about resumes.");
+      return;
+    }
+
     setSelectedResume(resume);
     setShowContactModal(true);
   };
 
-  const handleContactSubmit = (message: string) => {
-    if (!selectedResume) return;
-
-    const chats = JSON.parse(localStorage.getItem("chats") || "{}");
-    const chatId = `chat_${Date.now()}`;
-
-    const newChat = {
-      id: chatId,
-      companyId: selectedResume.user.toString(),
-      companyName: selectedResume.profession || "User",
-      messages: [
-        {
-          id: Date.now().toString(),
-          senderId: "currentUser",
-          type: "text",
-          content: message,
-          timestamp: new Date().toISOString(),
-        },
-      ],
-      lastMessage: message,
-      timestamp: new Date().toISOString(),
-      status: "active",
-    };
-
-    chats[chatId] = newChat;
-    localStorage.setItem("chats", JSON.stringify(chats));
-
+  const handleContactSuccess = (chatId: string) => {
     navigate(`/chat/${chatId}`);
-    setShowContactModal(false);
   };
 
   const formatDate = (dateString: string) => {
@@ -574,7 +557,7 @@ const Resumes = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 py-8 ">
         <div className="flex gap-8">
           {/* Filters Sidebar */}
           <motion.div
@@ -866,7 +849,7 @@ const Resumes = () => {
               </div>
             )}
 
-            {/* Resume Cards - Update the layout */}
+            {/* Resume Cards */}
             {!isLoading && !error && (
               <div className="space-y-6">
                 {getPaginatedResumes().map((resume) => (
@@ -911,13 +894,15 @@ const Resumes = () => {
                             </div>
                           </div>
                           <div className="flex gap-2">
-                            <button
-                              onClick={() => handleContact(resume)}
-                              className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors flex items-center gap-2"
-                            >
-                              <MessageCircle className="w-4 h-4" />
-                              Contact
-                            </button>
+                            {user && user.role === "company" && (
+                              <button
+                                onClick={() => handleContact(resume)}
+                                className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors flex items-center gap-2"
+                              >
+                                <MessageCircle className="w-4 h-4" />
+                                Contact
+                              </button>
+                            )}
                             <button
                               onClick={() => handleViewProfile(resume)}
                               className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors flex items-center gap-2"
@@ -1068,6 +1053,26 @@ const Resumes = () => {
                 </button>
               </div>
             )}
+
+            {/* Loading State */}
+            {isLoading && (
+              <div className="flex justify-center items-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
+              </div>
+            )}
+
+            {/* Error State */}
+            {error && (
+              <div className="text-center py-12 bg-red-900/20 border border-red-700 rounded-lg">
+                <p className="text-red-400 text-lg">{error}</p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-500 transition-colors"
+                >
+                  Try Again
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -1081,14 +1086,14 @@ const Resumes = () => {
         />
       )}
 
-      {/* Contact Modal */}
+      {/* Resume Contact Modal */}
       {selectedResume && (
-        <ContactModal
+        <ResumeContactModal
           isOpen={showContactModal}
           onClose={() => setShowContactModal(false)}
-          onSubmit={handleContactSubmit}
-          recipientName={selectedResume.profession || "User"}
-          recipientId={selectedResume.user.toString()}
+          onSuccess={handleContactSuccess}
+          resume={selectedResume}
+          resumeUser={userProfiles[selectedResume.user]}
         />
       )}
 

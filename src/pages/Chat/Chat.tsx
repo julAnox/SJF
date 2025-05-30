@@ -1,7 +1,6 @@
 "use client";
 
 import type React from "react";
-
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -27,6 +26,7 @@ import {
   Pin,
   File,
   X,
+  GraduationCap,
 } from "lucide-react";
 import {
   jobsApi,
@@ -37,6 +37,7 @@ import {
 import chatsService from "../../services/chatsService";
 import messagesService from "../../services/messagesService";
 import applicationsService from "../../services/applicationsService";
+import { resumeApplicationsService } from "../../services/resumeApplicationsService";
 import pinnedChatsService from "../../services/pinnedChatsService";
 import ShareContactModal from "../../components/Modals/ShareContactModal";
 import { toast } from "../../utils/toast";
@@ -51,9 +52,11 @@ declare global {
     };
     chatRelatedDataCache?: {
       applications: any[];
+      resumeApplications: any[];
       jobs: any[];
       users: any[];
       companies: any[];
+      resumes: any[];
       chatCount: number;
       timestamp: number;
     };
@@ -390,7 +393,12 @@ const Chat = () => {
 
       // If no chats or forcing refresh, fetch all related data
       // Otherwise, use cached related data when possible
-      let allApplications, allJobs, allUsers, allCompanies;
+      let allApplications,
+        allResumeApplications,
+        allJobs,
+        allUsers,
+        allCompanies,
+        allResumes;
 
       if (
         !window.chatRelatedDataCache ||
@@ -398,25 +406,31 @@ const Chat = () => {
         allChats.length !== window.chatRelatedDataCache.chatCount
       ) {
         allApplications = await applicationsService.getAll();
+        allResumeApplications = await resumeApplicationsService.getAll();
         allJobs = await jobsApi.getAll();
         allUsers = await usersApi.getAll();
         allCompanies = await companiesApi.getAll();
+        allResumes = await resumesApi.getAll();
 
         // Cache related data
         window.chatRelatedDataCache = {
           applications: allApplications,
+          resumeApplications: allResumeApplications,
           jobs: allJobs,
           users: allUsers,
           companies: allCompanies,
+          resumes: allResumes,
           chatCount: allChats.length,
           timestamp: now,
         };
       } else {
         // Use cached related data
         allApplications = window.chatRelatedDataCache.applications;
+        allResumeApplications = window.chatRelatedDataCache.resumeApplications;
         allJobs = window.chatRelatedDataCache.jobs;
         allUsers = window.chatRelatedDataCache.users;
         allCompanies = window.chatRelatedDataCache.companies;
+        allResumes = window.chatRelatedDataCache.resumes;
       }
 
       // Process chats based on user role
@@ -424,131 +438,285 @@ const Chat = () => {
       let totalUnreadMessages = 0;
 
       for (const chat of allChats) {
-        const application = allApplications.find(
-          (app) => app.id === chat.application
-        );
-        if (!application) continue;
+        // Handle job application chats
+        if (chat.application) {
+          const application = allApplications.find(
+            (app) => app.id === chat.application
+          );
+          if (!application) continue;
 
-        const job = allJobs.find((j) => j.id === application.job);
-        if (!job) continue;
+          const job = allJobs.find((j) => j.id === application.job);
+          if (!job) continue;
 
-        let isRelevant = false;
+          let isRelevant = false;
 
-        if (user.role === "student") {
-          // For students, show chats where they are the applicant
-          isRelevant = application.user === Number.parseInt(user.id);
-        } else if (user.role === "company") {
-          // For companies, we need to check if this job belongs to the company
-          // First, find the company associated with the current user
-          const userCompany = allCompanies.find(
-            (company) => company.user === Number.parseInt(user.id)
+          if (user.role === "student") {
+            // For students, show chats where they are the applicant
+            isRelevant = application.user === Number.parseInt(user.id);
+          } else if (user.role === "company") {
+            // For companies, we need to check if this job belongs to the company
+            // First, find the company associated with the current user
+            const userCompany = allCompanies.find(
+              (company) => company.user === Number.parseInt(user.id)
+            );
+
+            if (userCompany) {
+              // Check if the job belongs to this company
+              isRelevant =
+                typeof job.company === "number"
+                  ? job.company === userCompany.id
+                  : job.company.id === userCompany.id;
+            } else {
+              // Fallback to direct user ID comparison if company not found
+              isRelevant =
+                typeof job.company === "number"
+                  ? job.company === Number.parseInt(user.id)
+                  : job.company.id === Number.parseInt(user.id);
+            }
+          }
+
+          if (!isRelevant) continue;
+
+          // Get messages for this chat - only fetch if needed
+          let chatMessages;
+          let lastMessage = null;
+          let unreadCount = 0;
+
+          // Always fetch messages for unread count to ensure accuracy
+          chatMessages = await messagesService.getByChatId(chat.id.toString());
+          console.log(
+            `Fetched ${chatMessages.length} messages for job application chat ${chat.id}`
           );
 
-          if (userCompany) {
-            // Check if the job belongs to this company
-            isRelevant =
-              typeof job.company === "number"
-                ? job.company === userCompany.id
-                : job.company.id === userCompany.id;
+          // Cache messages for this chat
+          if (!window.chatMessagesCache) window.chatMessagesCache = {};
+          window.chatMessagesCache[chat.id] = {
+            messages: chatMessages,
+            timestamp: now,
+          };
+
+          lastMessage =
+            chatMessages.length > 0
+              ? chatMessages[chatMessages.length - 1]
+              : null;
+
+          // Check if this chat is currently open
+          const isChatOpen =
+            selectedChat === chat.id.toString() ||
+            window.currentOpenChat === chat.id.toString();
+
+          // If the chat is currently open, set unread count to 0
+          if (isChatOpen) {
+            unreadCount = 0;
           } else {
-            // Fallback to direct user ID comparison if company not found
-            isRelevant =
-              typeof job.company === "number"
-                ? job.company === Number.parseInt(user.id)
-                : job.company.id === Number.parseInt(user.id);
+            unreadCount = chatMessages.filter(
+              (msg) => !msg.read && msg.sender !== Number.parseInt(user.id)
+            ).length;
+            totalUnreadMessages += unreadCount;
           }
-        }
 
-        if (!isRelevant) continue;
+          // Get company or applicant name and avatar
+          let name = "";
+          let avatarUrl = "";
+          if (user.role === "student") {
+            // For students, show the company name and avatar
+            try {
+              const companyId =
+                typeof job.company === "number" ? job.company : job.company.id;
+              const companyDetails = allCompanies.find(
+                (c) => c.id === companyId
+              );
+              name = companyDetails?.name || "Company";
 
-        // Get messages for this chat - only fetch if needed
-        let chatMessages;
-        let lastMessage = null;
-        let unreadCount = 0;
-
-        // Always fetch messages for unread count to ensure accuracy
-        chatMessages = await messagesService.getByChatId(chat.id.toString());
-        console.log(
-          `Fetched ${chatMessages.length} messages for chat ${chat.id}`
-        );
-
-        // Cache messages for this chat
-        if (!window.chatMessagesCache) window.chatMessagesCache = {};
-        window.chatMessagesCache[chat.id] = {
-          messages: chatMessages,
-          timestamp: now,
-        };
-
-        lastMessage =
-          chatMessages.length > 0
-            ? chatMessages[chatMessages.length - 1]
-            : null;
-
-        // Check if this chat is currently open
-        const isChatOpen =
-          selectedChat === chat.id.toString() ||
-          window.currentOpenChat === chat.id.toString();
-
-        // If the chat is currently open, set unread count to 0
-        if (isChatOpen) {
-          unreadCount = 0;
-        } else {
-          unreadCount = chatMessages.filter(
-            (msg) => !msg.read && msg.sender !== Number.parseInt(user.id)
-          ).length;
-          totalUnreadMessages += unreadCount;
-        }
-
-        // Get company or applicant name and avatar
-        let name = "";
-        let avatarUrl = "";
-        if (user.role === "student") {
-          // For students, show the company name and avatar
-          try {
-            const companyId =
-              typeof job.company === "number" ? job.company : job.company.id;
-            const companyDetails = allCompanies.find((c) => c.id === companyId);
-            name = companyDetails?.name || "Company";
-
-            // Get company user for avatar
-            const companyUser = allUsers.find(
-              (u) => u.id === (companyDetails?.user || job.company)
-            );
+              // Get company user for avatar
+              const companyUser = allUsers.find(
+                (u) => u.id === (companyDetails?.user || job.company)
+              );
+              avatarUrl =
+                companyUser?.avatar ||
+                `https://ui-avatars.com/api/?name=${name.charAt(
+                  0
+                )}&background=10B981&color=fff`;
+            } catch (error) {
+              name = "Company";
+              avatarUrl = `https://ui-avatars.com/api/?name=C&background=10B981&color=fff`;
+            }
+          } else {
+            // For companies, show the applicant name and avatar
+            const applicant = allUsers.find((u) => u.id === application.user);
+            name = applicant
+              ? `${applicant.first_name} ${applicant.last_name}`
+              : "Applicant";
             avatarUrl =
-              companyUser?.avatar ||
+              applicant?.avatar ||
               `https://ui-avatars.com/api/?name=${name.charAt(
                 0
               )}&background=10B981&color=fff`;
-          } catch (error) {
-            name = "Company";
-            avatarUrl = `https://ui-avatars.com/api/?name=C&background=10B981&color=fff`;
           }
-        } else {
-          // For companies, show the applicant name and avatar
-          const applicant = allUsers.find((u) => u.id === application.user);
-          name = applicant
-            ? `${applicant.first_name} ${applicant.last_name}`
-            : "Applicant";
-          avatarUrl =
-            applicant?.avatar ||
-            `https://ui-avatars.com/api/?name=${name.charAt(
-              0
-            )}&background=10B981&color=fff`;
-        }
 
-        processedChats.push({
-          id: chat.id.toString(),
-          companyName: name,
-          jobTitle: job.title,
-          lastMessage: lastMessage?.content || "",
-          timestamp: lastMessage?.created_at || chat.created_at,
-          unreadCount,
-          status: chat.status as "active" | "closed" | "blocked",
-          application,
-          job,
-          isPinned: pinnedChats.includes(chat.id.toString()),
-          avatarUrl, // Add avatar URL to chat object
-        });
+          processedChats.push({
+            id: chat.id.toString(),
+            companyName: name,
+            jobTitle: job.title,
+            lastMessage: lastMessage?.content || "",
+            timestamp: lastMessage?.created_at || chat.created_at,
+            unreadCount,
+            status: chat.status as "active" | "closed" | "blocked",
+            application,
+            job,
+            isPinned: pinnedChats.includes(chat.id.toString()),
+            avatarUrl,
+            isResumeChat: false,
+          });
+        }
+        // Handle resume application chats
+        else if (chat.resume_application) {
+          try {
+            // Get the resume application
+            const resumeApplication = allResumeApplications.find(
+              (app) => app.id === chat.resume_application
+            );
+            if (!resumeApplication) {
+              console.error(
+                `Resume application ${chat.resume_application} not found for chat ${chat.id}`
+              );
+              continue;
+            }
+
+            // Get the resume
+            const resume = allResumes.find(
+              (r) => r.id === resumeApplication.resume
+            );
+            if (!resume) {
+              console.error(
+                `Resume ${resumeApplication.resume} not found for resume application ${resumeApplication.id}`
+              );
+              continue;
+            }
+
+            let isRelevant = false;
+
+            if (user.role === "student") {
+              // For students, show chats where they are the resume owner
+              isRelevant = resume.user === Number.parseInt(user.id);
+              console.log(
+                `Student check: resume.user=${resume.user}, user.id=${user.id}, isRelevant=${isRelevant}`
+              );
+            } else if (user.role === "company") {
+              // For companies, show chats where they are the company that contacted the student
+              const userCompany = allCompanies.find(
+                (company) => company.user === Number.parseInt(user.id)
+              );
+              if (userCompany) {
+                isRelevant = resumeApplication.company === userCompany.id;
+                console.log(
+                  `Company check: resumeApplication.company=${resumeApplication.company}, userCompany.id=${userCompany.id}, isRelevant=${isRelevant}`
+                );
+              }
+            }
+
+            // Debug logging
+            console.log(
+              `Processing resume chat ${chat.id}: isRelevant=${isRelevant}, user.role=${user.role}`
+            );
+
+            if (!isRelevant) {
+              console.log(`Chat ${chat.id} not relevant for current user`);
+              continue;
+            }
+
+            // Get messages for this chat
+            let chatMessages;
+            let lastMessage = null;
+            let unreadCount = 0;
+
+            chatMessages = await messagesService.getByChatId(
+              chat.id.toString()
+            );
+            console.log(
+              `Fetched ${chatMessages.length} messages for resume application chat ${chat.id}`
+            );
+
+            // Cache messages for this chat
+            if (!window.chatMessagesCache) window.chatMessagesCache = {};
+            window.chatMessagesCache[chat.id] = {
+              messages: chatMessages,
+              timestamp: now,
+            };
+
+            lastMessage =
+              chatMessages.length > 0
+                ? chatMessages[chatMessages.length - 1]
+                : null;
+
+            // Check if this chat is currently open
+            const isChatOpen =
+              selectedChat === chat.id.toString() ||
+              window.currentOpenChat === chat.id.toString();
+
+            // If the chat is currently open, set unread count to 0
+            if (isChatOpen) {
+              unreadCount = 0;
+            } else {
+              unreadCount = chatMessages.filter(
+                (msg) => !msg.read && msg.sender !== Number.parseInt(user.id)
+              ).length;
+              totalUnreadMessages += unreadCount;
+            }
+
+            // Get student or company name and avatar
+            let name = "";
+            let avatarUrl = "";
+
+            if (user.role === "student") {
+              // For students, show the company name and avatar
+              const companyDetails = allCompanies.find(
+                (c) => c.id === resumeApplication.company
+              );
+              name = companyDetails?.name || "Company";
+
+              // Get company user for avatar
+              const companyUser = allUsers.find(
+                (u) =>
+                  u.id === (companyDetails?.user || resumeApplication.company)
+              );
+              avatarUrl =
+                companyUser?.avatar ||
+                `https://ui-avatars.com/api/?name=${name.charAt(
+                  0
+                )}&background=10B981&color=fff`;
+            } else {
+              // For companies, show the student name and avatar
+              const student = allUsers.find((u) => u.id === resume.user);
+              name = student
+                ? `${student.first_name} ${student.last_name}`
+                : "Student";
+              avatarUrl =
+                student?.avatar ||
+                `https://ui-avatars.com/api/?name=${name.charAt(
+                  0
+                )}&background=10B981&color=fff`;
+            }
+
+            processedChats.push({
+              id: chat.id.toString(),
+              companyName: name,
+              jobTitle: resume.profession || "Resume", // Use profession as the "job title"
+              lastMessage:
+                lastMessage?.content || resumeApplication.message || "",
+              timestamp: lastMessage?.created_at || chat.created_at,
+              unreadCount,
+              status: chat.status as "active" | "closed" | "blocked",
+              resumeApplication,
+              resume,
+              isPinned: pinnedChats.includes(chat.id.toString()),
+              avatarUrl,
+              isResumeChat: true, // Flag to identify resume chats
+            });
+          } catch (error) {
+            console.error("Error processing resume application chat:", error);
+          }
+        }
       }
 
       // Sort by pinned status first, then by timestamp
@@ -629,10 +797,29 @@ const Chat = () => {
         }
       };
 
+      // Add event listener for new chat creation
+      const handleChatCreated = (event: CustomEvent) => {
+        console.log("Chat created event received:", event.detail);
+        fetchChats(true); // Force refresh when a new chat is created
+
+        // If chatId is provided, select it
+        if (event.detail?.chatId) {
+          setSelectedChat(event.detail.chatId);
+        }
+      };
+
       window.addEventListener("focus", handleFocus);
+      window.addEventListener(
+        "chatCreated",
+        handleChatCreated as EventListener
+      );
 
       return () => {
         window.removeEventListener("focus", handleFocus);
+        window.removeEventListener(
+          "chatCreated",
+          handleChatCreated as EventListener
+        );
       };
     }
   }, [user, location.pathname, selectedChat]);
@@ -670,22 +857,53 @@ const Chat = () => {
       const chat = await chatsService.getById(selectedChat);
       setChatStatus(chat.status as "active" | "closed" | "blocked");
 
-      // Get application details
-      const application = await applicationsService.getById(
-        chat.application.toString()
-      );
+      let otherUserDetails;
 
-      // Get job details
-      const job = await jobsApi.getById(application.job.toString());
+      // Handle job application chats
+      if (chat.application) {
+        // Get application details
+        const application = await applicationsService.getById(
+          chat.application.toString()
+        );
 
-      // Get company or applicant details
-      const isCompany = user.role === "company";
-      const otherUserId = isCompany
-        ? application.user
-        : typeof job.company === "number"
-        ? job.company
-        : job.company.id;
-      const otherUserDetails = await usersApi.getById(otherUserId);
+        // Get job details
+        const job = await jobsApi.getById(application.job.toString());
+
+        // Get company or applicant details
+        const isCompany = user.role === "company";
+        const otherUserId = isCompany
+          ? application.user
+          : typeof job.company === "number"
+          ? job.company
+          : job.company.id;
+        otherUserDetails = await usersApi.getById(otherUserId);
+      }
+      // Handle resume application chats
+      else if (chat.resume_application) {
+        // Get resume application details
+        const resumeApplication = await resumeApplicationsService.getById(
+          chat.resume_application.toString()
+        );
+
+        // Get resume details
+        const resume = await resumesApi.getById(
+          resumeApplication.resume.toString()
+        );
+
+        // Get company or student details
+        const isCompany = user.role === "company";
+        const otherUserId = isCompany
+          ? resume.user
+          : await (async () => {
+              const company = await companiesApi.getById(
+                resumeApplication.company.toString()
+              );
+              return company.user;
+            })();
+
+        otherUserDetails = await usersApi.getById(otherUserId);
+      }
+
       setOtherUser(otherUserDetails);
 
       // Get messages
@@ -1233,8 +1451,8 @@ ${user.first_name} ${user.last_name}`;
 
       // Create cover letter message
       const messageData = {
-        chat: parseInt(selectedChat),
-        sender: parseInt(user.id),
+        chat: Number.parseInt(selectedChat),
+        sender: Number.parseInt(user.id),
         content: coverLetterContent,
         message_type: "coverLetter",
         metadata: {
@@ -1878,8 +2096,19 @@ Specialization: ${resume.specialization || "Not provided"}
                   </div>
                   <div className="flex-grow">
                     <div className="flex justify-between items-start">
-                      <h3 className="font-semibold text-white">
+                      <h3 className="font-semibold text-white flex items-center gap-2">
                         {chat.companyName}
+                        {user?.role === "student" ? (
+                          <Briefcase
+                            className="w-4 h-4 text-blue-400"
+                            title="Company"
+                          />
+                        ) : (
+                          <GraduationCap
+                            className="w-4 h-4 text-emerald-400"
+                            title="Student"
+                          />
+                        )}
                       </h3>
                       <span className="text-xs text-gray-400">
                         {formatTime(chat.timestamp)}
@@ -1942,6 +2171,7 @@ Specialization: ${resume.specialization || "Not provided"}
                     <img
                       src={
                         chats.find((c) => c.id === selectedChat)?.avatarUrl ||
+                        "/placeholder.svg" ||
                         "/placeholder.svg"
                       }
                       alt={
@@ -1968,8 +2198,19 @@ Specialization: ${resume.specialization || "Not provided"}
                   )}
                 </div>
                 <div>
-                  <h2 className="font-semibold text-white">
+                  <h2 className="font-semibold text-white flex items-center gap-2">
                     {chats.find((c) => c.id === selectedChat)?.companyName}
+                    {user?.role === "student" ? (
+                      <Briefcase
+                        className="w-4 h-4 text-blue-400"
+                        title="Company"
+                      />
+                    ) : (
+                      <GraduationCap
+                        className="w-4 h-4 text-emerald-400"
+                        title="Student"
+                      />
+                    )}
                   </h2>
                   <p className="text-sm text-gray-400">
                     {chats.find((c) => c.id === selectedChat)?.jobTitle}
@@ -2253,6 +2494,24 @@ Specialization: ${resume.specialization || "Not provided"}
         }}
         chats={shareableChats}
       />
+
+      {/* Custom Scrollbar Styles */}
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #374151;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #4b5563;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #6b7280;
+        }
+      `}</style>
     </div>
   );
 };
