@@ -1,17 +1,13 @@
 "use client";
 
 import type React from "react";
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   User,
   Mail,
-  Phone,
   Calendar,
-  MapPin,
-  Globe,
   Camera,
   Save,
   Loader2,
@@ -25,9 +21,12 @@ import {
   Edit,
   EyeOff,
   Eye,
+  MapPin,
+  Globe,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { companiesApi, jobsApi, resumesApi } from "../../services/api";
+import PhoneInputWithFlag from "../../components/PhoneRegionSelector/PhoneRegionSelector";
 import ResumeViewModal from "./ResumeViewModal";
 import ResumeEditModal from "./ResumeEditModal";
 import CreateCompanyModal from "../../components/Modals/CreateCompanyModal";
@@ -35,6 +34,7 @@ import CreateJobModal from "../../components/Modals/CreateJobModal";
 import CompanyViewModal from "../../components/Modals/CompanyViewModal";
 import ResumeWizard from "./ResumeWizard";
 import DeleteConfirmationModal from "../../components/Modals/DeleteConfirmationModal";
+import { Country, State, City } from "country-state-city";
 
 interface FormData {
   first_name: string;
@@ -93,6 +93,12 @@ interface DeleteModalState {
   message: string;
 }
 
+interface LocationData {
+  country: string;
+  region: string;
+  district: string;
+}
+
 const Profile = () => {
   const navigate = useNavigate();
   const {
@@ -115,7 +121,7 @@ const Profile = () => {
     last_name: "",
     email: "",
     date_of_birth: "",
-    phone: "",
+    phone: "+",
     country: "",
     region: "",
     district: "",
@@ -128,6 +134,13 @@ const Profile = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [userResumes, setUserResumes] = useState([]);
   const [editingJob, setEditingJob] = useState<Job | null>(null);
+
+  // Location data state
+  const [countries, setCountries] = useState<any[]>([]);
+  const [regions, setRegions] = useState<any[]>([]);
+  const [cities, setCities] = useState<any[]>([]);
+  const [countryObj, setCountryObj] = useState<any>(null);
+  const [regionObj, setRegionObj] = useState<any>(null);
 
   // Add state variables for the modals
   const [selectedResumeId, setSelectedResumeId] = useState<string | null>(null);
@@ -159,7 +172,7 @@ const Profile = () => {
         last_name: user.last_name || "",
         email: user.email || "",
         date_of_birth: user.date_of_birth || "",
-        phone: user.phone || "",
+        phone: user.phone || "+",
         country: user.country || "",
         region: user.region || "",
         district: user.district || "",
@@ -180,6 +193,87 @@ const Profile = () => {
       }
     }
   }, [user]);
+
+  // Load countries on component mount
+  useEffect(() => {
+    try {
+      const allCountries = Country.getAllCountries();
+      setCountries(allCountries);
+
+      // If we have an initial country value, find the country object
+      if (formData.country) {
+        const foundCountry = allCountries.find(
+          (country) =>
+            country.name.toLowerCase() === formData.country.toLowerCase()
+        );
+        if (foundCountry) {
+          setCountryObj(foundCountry);
+        }
+      }
+    } catch (error) {
+      console.error("Error loading countries:", error);
+    }
+  }, [formData.country]);
+
+  // When country changes, load regions
+  useEffect(() => {
+    if (countryObj) {
+      try {
+        const countryRegions = State.getStatesOfCountry(countryObj.isoCode);
+        setRegions(countryRegions);
+
+        // If we have an initial region value, find the region object
+        if (formData.region) {
+          const foundRegion = countryRegions.find(
+            (region) =>
+              region.name.toLowerCase() === formData.region.toLowerCase()
+          );
+          if (foundRegion) {
+            setRegionObj(foundRegion);
+          } else {
+            // Reset region if it doesn't exist in the new country
+            setFormData((prev) => ({ ...prev, region: "", district: "" }));
+          }
+        }
+      } catch (error) {
+        console.error("Error loading regions:", error);
+        setRegions([]);
+      }
+    } else {
+      setRegions([]);
+      setRegionObj(null);
+    }
+  }, [countryObj, formData.region]);
+
+  // When region changes, load cities/districts
+  useEffect(() => {
+    if (countryObj && regionObj) {
+      try {
+        const regionCities = City.getCitiesOfState(
+          countryObj.isoCode,
+          regionObj.isoCode
+        );
+        setCities(regionCities);
+
+        // If we have an initial district value, check if it exists
+        if (formData.district) {
+          const foundCity = regionCities.find(
+            (city) =>
+              city.name.toLowerCase() === formData.district.toLowerCase()
+          );
+          if (!foundCity) {
+            // Reset district if it doesn't exist in the new region
+            setFormData((prev) => ({ ...prev, district: "" }));
+          }
+        }
+      } catch (error) {
+        console.error("Error loading cities:", error);
+        setCities([]);
+      }
+    } else {
+      setCities([]);
+    }
+  }, [regionObj, countryObj, formData.district]);
 
   // Fetch company data
   const fetchCompanyData = async () => {
@@ -249,10 +343,55 @@ const Profile = () => {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value, type } = e.target;
+
+    if (name === "country") {
+      const selectedCountryObj = countries.find(
+        (country) => country.name === value
+      );
+      setCountryObj(selectedCountryObj || null);
+
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+        region: "", // Reset region when country changes
+        district: "", // Reset district when country changes
+      }));
+
+      // Reset region and district objects
+      setRegionObj(null);
+    } else if (name === "region") {
+      const selectedRegionObj = regions.find((region) => region.name === value);
+      setRegionObj(selectedRegionObj || null);
+
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+        district: "", // Reset district when region changes
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]:
+          type === "checkbox" ? (e.target as HTMLInputElement).checked : value,
+      }));
+    }
+  };
+
+  // Handle location data changes from CountryRegionSelector
+  const handleLocationChange = (locationData: LocationData) => {
     setFormData((prev) => ({
       ...prev,
-      [name]:
-        type === "checkbox" ? (e.target as HTMLInputElement).checked : value,
+      country: locationData.country,
+      region: locationData.region,
+      district: locationData.district,
+    }));
+  };
+
+  // Handle phone number changes from PhoneInputWithFlag
+  const handlePhoneChange = (phoneNumber: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      phone: phoneNumber,
     }));
   };
 
@@ -523,608 +662,677 @@ const Profile = () => {
     return null;
   }
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+      </div>
+    );
+  }
+
   return (
-    <div className="pt-20 min-h-screen bg-gray-900">
-      <div className="max-w-7xl mx-auto px-4 py-12">
-        {/* Notification Toast */}
-        <AnimatePresence>
-          {notification && (
+    <div className="min-h-screen bg-gray-900">
+      <div className="pt-20">
+        <div className="max-w-7xl mx-auto px-4 py-12">
+          {/* Notification Toast */}
+          <AnimatePresence>
+            {notification && (
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className={`fixed top-24 right-4 px-6 py-3 rounded-lg shadow-lg ${
+                  notification.type === "success"
+                    ? "bg-emerald-500"
+                    : "bg-red-500"
+                } text-white z-50`}
+              >
+                {notification.message}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <div className="flex flex-col lg:flex-row gap-8">
+            {/* Profile Section */}
             <motion.div
-              initial={{ opacity: 0, y: -20 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className={`fixed top-24 right-4 px-6 py-3 rounded-lg shadow-lg ${
-                notification.type === "success"
-                  ? "bg-emerald-500"
-                  : "bg-red-500"
-              } text-white z-50`}
+              className="flex-1 bg-gray-800 rounded-xl shadow-xl overflow-hidden"
             >
-              {notification.message}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Profile Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex-1 bg-gray-800 rounded-xl shadow-xl overflow-hidden"
-          >
-            {/* Header */}
-            <div className="relative h-48 bg-gradient-to-r from-emerald-600 to-blue-600">
-              <div className="absolute -bottom-16 left-8">
-                <div className="relative">
-                  <img
-                    src={
-                      formData.avatar ||
-                      `https://ui-avatars.com/api/?name=${
-                        formData.first_name || ""
-                      }+${formData.last_name || ""}&background=random`
-                    }
-                    alt={`${formData.first_name} ${formData.last_name}`}
-                    className="w-32 h-32 rounded-xl object-cover border-4 border-gray-800"
-                  />
-                  <label className="absolute bottom-2 right-2 w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-700 transition-colors">
-                    <Camera className="w-5 h-5 text-emerald-400" />
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleAvatarChange}
-                      className="hidden"
-                    />
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="p-8 pt-20">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* First Name */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">
-                    First Name
-                  </label>
+              {/* Header */}
+              <div className="relative h-48 bg-gradient-to-r from-emerald-600 to-blue-600">
+                <div className="absolute -bottom-16 left-8">
                   <div className="relative">
-                    <input
-                      type="text"
-                      name="first_name"
-                      value={formData.first_name}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      placeholder="Enter your first name"
-                    />
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  </div>
-                </div>
-
-                {/* Last Name */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">
-                    Last Name
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      name="last_name"
-                      value={formData.last_name}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      placeholder="Enter your last name"
-                    />
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  </div>
-                </div>
-
-                {/* Email */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">
-                    Email
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      placeholder="Enter your email"
-                      disabled
-                    />
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  </div>
-                </div>
-
-                {/* Date of Birth */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">
-                    Date of Birth
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="date"
-                      name="date_of_birth"
-                      value={
-                        formData.date_of_birth
-                          ? formData.date_of_birth
-                              .split(".")
-                              .reverse()
-                              .join("-")
-                          : ""
+                    <img
+                      src={
+                        formData.avatar ||
+                        `https://ui-avatars.com/api/?name=${
+                          formData.first_name || ""
+                        }+${formData.last_name || ""}&background=random`
                       }
-                      onChange={(e) => {
-                        const date = e.target.value;
-                        const formattedDate = date
-                          ? date.split("-").reverse().join(".")
-                          : "";
-                        setFormData((prev) => ({
-                          ...prev,
-                          date_of_birth: formattedDate,
-                        }));
-                      }}
-                      className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      alt={`${formData.first_name} ${formData.last_name}`}
+                      className="w-32 h-32 rounded-xl object-cover border-4 border-gray-800"
                     />
-                    <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <label className="absolute bottom-2 right-2 w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-700 transition-colors">
+                      <Camera className="w-5 h-5 text-emerald-400" />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarChange}
+                        className="hidden"
+                      />
+                    </label>
                   </div>
-                </div>
-
-                {/* Phone */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">
-                    Phone
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      placeholder="Enter your phone number"
-                    />
-                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  </div>
-                </div>
-
-                {/* Country */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">
-                    Country
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      name="country"
-                      value={formData.country}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      placeholder="Enter your country"
-                    />
-                    <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  </div>
-                </div>
-
-                {/* Region */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">
-                    Region
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      name="region"
-                      value={formData.region}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      placeholder="Enter your region"
-                    />
-                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  </div>
-                </div>
-
-                {/* District */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">
-                    District
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      name="district"
-                      value={formData.district}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      placeholder="Enter your district"
-                    />
-                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  </div>
-                </div>
-
-                {/* Publish Phone */}
-                <div>
-                  <label className="flex items-center space-x-3">
-                    <input
-                      type="checkbox"
-                      name="publish_phone"
-                      checked={formData.publish_phone}
-                      onChange={handleChange}
-                      className="w-5 h-5 bg-gray-700 border border-gray-600 rounded text-emerald-500 focus:ring-emerald-500"
-                    />
-                    <span className="text-sm font-medium text-gray-400">
-                      Publish Phone Number
-                    </span>
-                  </label>
-                </div>
-
-                {/* Public Status */}
-                <div>
-                  <label className="flex items-center space-x-3">
-                    <input
-                      type="checkbox"
-                      name="publish_status"
-                      checked={formData.publish_status}
-                      onChange={handleChange}
-                      className="w-5 h-5 bg-gray-700 border border-gray-600 rounded text-emerald-500 focus:ring-emerald-500"
-                    />
-                    <span className="text-sm font-medium text-gray-400">
-                      Public Profile
-                    </span>
-                  </label>
                 </div>
               </div>
 
-              {/* Submit Button */}
-              <div className="mt-6 flex justify-end">
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                >
-                  {isLoading ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <Save className="w-5 h-5" />
-                  )}
-                  Save Changes
-                </button>
-              </div>
-            </form>
-          </motion.div>
-
-          {/* Right Sidebar */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="lg:w-[400px] flex-shrink-0 space-y-4"
-          >
-            {/* Resumes Section (for students) */}
-            {formData.role === "student" && (
-              <div className="bg-gray-800 rounded-xl shadow-xl">
-                <div className="p-6 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-6 h-6 text-emerald-400" />
-                    <h2 className="text-xl font-bold text-white">
-                      Your Resumes
-                    </h2>
+              {/* Form */}
+              <form onSubmit={handleSubmit} className="p-8 pt-20">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* First Name */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-2">
+                      First Name
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        name="first_name"
+                        value={formData.first_name}
+                        onChange={handleChange}
+                        className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        placeholder="Enter your first name"
+                      />
+                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    </div>
                   </div>
+
+                  {/* Last Name */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-2">
+                      Last Name
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        name="last_name"
+                        value={formData.last_name}
+                        onChange={handleChange}
+                        className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        placeholder="Enter your last name"
+                      />
+                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    </div>
+                  </div>
+
+                  {/* Email */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-2">
+                      Email
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
+                        placeholder="Enter your email"
+                        disabled
+                      />
+                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    </div>
+                  </div>
+
+                  {/* Date of Birth */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-2">
+                      Date of Birth
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="date"
+                        name="date_of_birth"
+                        value={
+                          formData.date_of_birth
+                            ? formData.date_of_birth
+                                .split(".")
+                                .reverse()
+                                .join("-")
+                            : ""
+                        }
+                        onChange={(e) => {
+                          const date = e.target.value;
+                          const formattedDate = date
+                            ? date.split("-").reverse().join(".")
+                            : "";
+                          setFormData((prev) => ({
+                            ...prev,
+                            date_of_birth: formattedDate,
+                          }));
+                        }}
+                        className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      />
+                      <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    </div>
+                  </div>
+
+                  {/* Phone Number Row */}
+                  <div className="md:col-span-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Phone Number - Half Width */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-400 mb-2">
+                          Phone Number
+                        </label>
+                        <PhoneInputWithFlag
+                          value={formData.phone}
+                          onChange={handlePhoneChange}
+                        />
+                      </div>
+
+                      {/* Country Selector - Half Width */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-400 mb-2">
+                          Country
+                        </label>
+                        <div className="relative">
+                          <select
+                            name="country"
+                            value={formData.country}
+                            onChange={handleChange}
+                            className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none h-10"
+                          >
+                            <option value="">Select a country</option>
+                            {countries.map((country) => (
+                              <option
+                                key={country.isoCode}
+                                value={country.name}
+                              >
+                                {country.name}
+                              </option>
+                            ))}
+                          </select>
+                          <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
+                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+                            <svg
+                              className="fill-current h-4 w-4"
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 20 20"
+                            >
+                              <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Region and District Row */}
+                  <div className="md:col-span-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Region Selector */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-400 mb-2">
+                          Region
+                        </label>
+                        <div className="relative">
+                          <select
+                            name="region"
+                            value={formData.region}
+                            onChange={handleChange}
+                            disabled={!countryObj}
+                            className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none disabled:opacity-50 disabled:cursor-not-allowed h-10"
+                          >
+                            <option value="">Select a region</option>
+                            {regions.map((region) => (
+                              <option key={region.isoCode} value={region.name}>
+                                {region.name}
+                              </option>
+                            ))}
+                          </select>
+                          <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
+                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+                            <svg
+                              className="fill-current h-4 w-4"
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 20 20"
+                            >
+                              <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* District/City Selector */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-400 mb-2">
+                          District
+                        </label>
+                        <div className="relative">
+                          <select
+                            name="district"
+                            value={formData.district}
+                            onChange={handleChange}
+                            disabled={!regionObj}
+                            className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none disabled:opacity-50 disabled:cursor-not-allowed h-10"
+                          >
+                            <option value="">Select a district</option>
+                            {cities.map((city) => (
+                              <option
+                                key={city.id || city.name}
+                                value={city.name}
+                              >
+                                {city.name}
+                              </option>
+                            ))}
+                          </select>
+                          <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
+                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+                            <svg
+                              className="fill-current h-4 w-4"
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 20 20"
+                            >
+                              <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Publish Phone */}
+                  <div>
+                    <label className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        name="publish_phone"
+                        checked={formData.publish_phone}
+                        onChange={handleChange}
+                        className="w-5 h-5 bg-gray-700 border border-gray-600 rounded text-emerald-500 focus:ring-emerald-500"
+                      />
+                      <span className="text-sm font-medium text-gray-400">
+                        Publish Phone Number
+                      </span>
+                    </label>
+                  </div>
+
+                  {/* Public Status */}
+                  <div>
+                    <label className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        name="publish_status"
+                        checked={formData.publish_status}
+                        onChange={handleChange}
+                        className="w-5 h-5 bg-gray-700 border border-gray-600 rounded text-emerald-500 focus:ring-emerald-500"
+                      />
+                      <span className="text-sm font-medium text-gray-400">
+                        Public Profile
+                      </span>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Submit Button */}
+                <div className="mt-6 flex justify-end">
                   <button
-                    onClick={() => setShowResumeWizard(true)}
-                    className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center hover:bg-emerald-500 transition-colors"
+                    type="submit"
+                    disabled={isLoading}
+                    className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
-                    <Plus className="w-5 h-5 text-white" />
+                    {isLoading ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Save className="w-5 h-5" />
+                    )}
+                    Save Changes
                   </button>
                 </div>
+              </form>
+            </motion.div>
 
-                {/* Resume List */}
-                <div className="px-6 pb-6">
-                  {isLoading ? (
-                    <div className="flex justify-center py-4">
-                      <Loader2 className="w-6 h-6 text-emerald-400 animate-spin" />
-                    </div>
-                  ) : userResumes.length > 0 ? (
-                    <div className="space-y-3 mt-2">
-                      {userResumes.map((resume: any) => (
-                        <div
-                          key={resume.id}
-                          className="p-4 bg-gray-700 rounded-lg hover:bg-gray-650 transition-colors"
-                        >
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h3 className="font-medium text-white">
-                                {resume.profession}
-                              </h3>
-                              <p className="text-sm text-gray-400 mt-1">
-                                {resume.education} • {resume.specialization}
-                              </p>
-                            </div>
-                            <span className="text-xs text-gray-400">
-                              {new Date(resume.created_at).toLocaleDateString()}
-                            </span>
-                          </div>
-                          <div className="flex gap-2 mt-3">
-                            <button
-                              onClick={() => handleViewResume(resume.id)}
-                              className="px-3 py-1 bg-gray-600 text-white text-sm rounded hover:bg-gray-500 transition-colors"
-                            >
-                              View
-                            </button>
-                            <button
-                              onClick={() => handleEditResume(resume.id)}
-                              className="px-3 py-1 bg-emerald-600 text-white text-sm rounded hover:bg-emerald-500 transition-colors"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() =>
-                                openDeleteResumeModal(
-                                  resume.id,
-                                  resume.profession
-                                )
-                              }
-                              className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-500 transition-colors"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-gray-400 text-center py-4">
-                      You haven't created any resumes yet.
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Company Section (for companies) */}
-            {formData.role === "company" && (
-              <div className="bg-gray-800 rounded-xl shadow-xl">
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-4">
+            {/* Right Sidebar */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="lg:w-[400px] flex-shrink-0 space-y-4"
+            >
+              {/* Resumes Section (for students) */}
+              {formData.role === "student" && (
+                <div className="bg-gray-800 rounded-xl shadow-xl">
+                  <div className="p-6 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Building2 className="w-6 h-6 text-emerald-400" />
+                      <FileText className="w-6 h-6 text-emerald-400" />
                       <h2 className="text-xl font-bold text-white">
-                        Company Details
-                      </h2>
-                    </div>
-                    {company ? (
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => setShowCompanyViewModal(true)}
-                          className="p-2 text-gray-400 hover:text-emerald-500 transition-colors"
-                          title="Edit Company"
-                        >
-                          <Edit className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={openDeleteCompanyModal}
-                          className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-                          title="Delete Company"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => setShowCreateCompanyModal(true)}
-                        className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center hover:bg-emerald-500 transition-colors"
-                        title="Create Company"
-                      >
-                        <Plus className="w-5 h-5 text-white" />
-                      </button>
-                    )}
-                  </div>
-
-                  {company ? (
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-4">
-                        {company.logo ? (
-                          <img
-                            src={company.logo || "/placeholder.svg"}
-                            alt={company.name}
-                            className="w-16 h-16 rounded-lg object-cover bg-gray-700"
-                          />
-                        ) : (
-                          <div className="w-16 h-16 rounded-lg bg-gray-700 flex items-center justify-center">
-                            <Building2 className="w-8 h-8 text-gray-500" />
-                          </div>
-                        )}
-                        <div>
-                          <h3 className="font-medium text-white text-lg">
-                            {company.name}
-                          </h3>
-                          <p className="text-sm text-gray-400">
-                            {company.industry}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3 text-sm">
-                        <div>
-                          <p className="text-gray-400">Founded</p>
-                          <p className="text-white">{company.founded_year}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-400">Size</p>
-                          <p className="text-white">{company.size}</p>
-                        </div>
-                        <div className="col-span-2">
-                          <p className="text-gray-400">Website</p>
-                          <a
-                            href={company.website}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-emerald-400 hover:underline truncate block"
-                          >
-                            {company.website}
-                          </a>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={() => setShowCompanyViewModal(true)}
-                        className="w-full mt-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm"
-                      >
-                        View & Edit Details
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <p className="text-gray-400 mb-4">
-                        You haven't created a company yet.
-                      </p>
-                      <button
-                        onClick={() => setShowCreateCompanyModal(true)}
-                        className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors"
-                      >
-                        Create Company
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Jobs Section - Only visible if company exists */}
-            {company && (
-              <div className="bg-gray-800 rounded-xl shadow-xl">
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <Briefcase className="w-6 h-6 text-emerald-400" />
-                      <h2 className="text-xl font-bold text-white">
-                        Job Listings
+                        Your Resumes
                       </h2>
                     </div>
                     <button
-                      onClick={() => {
-                        setEditingJob(null);
-                        setShowCreateJobModal(true);
-                      }}
+                      onClick={() => setShowResumeWizard(true)}
                       className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center hover:bg-emerald-500 transition-colors"
-                      title="Add New Job"
                     >
                       <Plus className="w-5 h-5 text-white" />
                     </button>
                   </div>
 
-                  {/* Job List */}
-                  {isLoading ? (
-                    <div className="flex justify-center py-8">
-                      <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
-                    </div>
-                  ) : jobs.length === 0 ? (
-                    <div className="text-center py-8 text-gray-400">
-                      <p>No job listings yet. Create your first job posting!</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {jobs.map((job) => (
-                        <div
-                          key={job.id}
-                          className="bg-gray-700 rounded-lg overflow-hidden"
-                        >
-                          {/* Job Header */}
-                          <div className="p-4">
+                  {/* Resume List */}
+                  <div className="px-6 pb-6">
+                    {isLoading ? (
+                      <div className="flex justify-center py-4">
+                        <Loader2 className="w-6 h-6 text-emerald-400 animate-spin" />
+                      </div>
+                    ) : userResumes.length > 0 ? (
+                      <div className="space-y-3 mt-2">
+                        {userResumes.map((resume: any) => (
+                          <div
+                            key={resume.id}
+                            className="p-4 bg-gray-700 rounded-lg hover:bg-gray-650 transition-colors"
+                          >
                             <div className="flex justify-between items-start">
                               <div>
-                                <div className="flex items-center gap-2">
-                                  <h3 className="font-medium text-white">
-                                    {job.title}
-                                  </h3>
-                                  <span
-                                    className={`text-xs px-2 py-0.5 rounded ${
-                                      job.status === "active"
-                                        ? "bg-emerald-600"
-                                        : "bg-gray-500"
-                                    }`}
-                                  >
-                                    {job.status === "active"
-                                      ? "Active"
-                                      : "Hidden"}
-                                  </span>
-                                </div>
-                                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-400 mt-2">
-                                  <div className="flex items-center gap-1">
-                                    <MapPin className="w-4 h-4" />
-                                    <span>{job.city}</span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <DollarSign className="w-4 h-4" />
-                                    <span>{`${job.salary_min}-${job.salary_max} ${job.type_of_money}`}</span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <Clock className="w-4 h-4" />
-                                    <span>{job.type}</span>
-                                  </div>
-                                </div>
+                                <h3 className="font-medium text-white">
+                                  {resume.profession}
+                                </h3>
+                                <p className="text-sm text-gray-400 mt-1">
+                                  {resume.education} • {resume.specialization}
+                                </p>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <button
-                                  onClick={() => handleEditJob(job)}
-                                  className="p-1 text-gray-400 hover:text-white transition-colors"
-                                  title="Edit Job"
-                                >
-                                  <Edit className="w-5 h-5" />
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    handleToggleJobStatus(
-                                      job.id.toString(),
-                                      job.status
-                                    )
-                                  }
-                                  className="p-1 text-gray-400 hover:text-white transition-colors"
-                                  title={
-                                    job.status === "active"
-                                      ? "Hide Job"
-                                      : "Show Job"
-                                  }
-                                >
-                                  {job.status === "active" ? (
-                                    <EyeOff className="w-5 h-5" />
-                                  ) : (
-                                    <Eye className="w-5 h-5" />
-                                  )}
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    openDeleteJobModal(
-                                      job.id.toString(),
-                                      job.title
-                                    )
-                                  }
-                                  className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-                                  title="Delete Job"
-                                >
-                                  <Trash2 className="w-5 h-5" />
-                                </button>
+                              <span className="text-xs text-gray-400">
+                                {new Date(
+                                  resume.created_at
+                                ).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <div className="flex gap-2 mt-3">
+                              <button
+                                onClick={() => handleViewResume(resume.id)}
+                                className="px-3 py-1 bg-gray-600 text-white text-sm rounded hover:bg-gray-500 transition-colors"
+                              >
+                                View
+                              </button>
+                              <button
+                                onClick={() => handleEditResume(resume.id)}
+                                className="px-3 py-1 bg-emerald-600 text-white text-sm rounded hover:bg-emerald-500 transition-colors"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() =>
+                                  openDeleteResumeModal(
+                                    resume.id,
+                                    resume.profession
+                                  )
+                                }
+                                className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-500 transition-colors"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-400 text-center py-4">
+                        You haven't created any resumes yet.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Company Section (for companies) */}
+              {formData.role === "company" && (
+                <div className="bg-gray-800 rounded-xl shadow-xl">
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="w-6 h-6 text-emerald-400" />
+                        <h2 className="text-xl font-bold text-white">
+                          Company Details
+                        </h2>
+                      </div>
+                      {company ? (
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setShowCompanyViewModal(true)}
+                            className="p-2 text-gray-400 hover:text-emerald-500 transition-colors"
+                            title="Edit Company"
+                          >
+                            <Edit className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={openDeleteCompanyModal}
+                            className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                            title="Delete Company"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setShowCreateCompanyModal(true)}
+                          className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center hover:bg-emerald-500 transition-colors"
+                          title="Create Company"
+                        >
+                          <Plus className="w-5 h-5 text-white" />
+                        </button>
+                      )}
+                    </div>
+
+                    {company ? (
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-4">
+                          {company.logo ? (
+                            <img
+                              src={company.logo || "/placeholder.svg"}
+                              alt={company.name}
+                              className="w-16 h-16 rounded-lg object-cover bg-gray-700"
+                            />
+                          ) : (
+                            <div className="w-16 h-16 rounded-lg bg-gray-700 flex items-center justify-center">
+                              <Building2 className="w-8 h-8 text-gray-500" />
+                            </div>
+                          )}
+                          <div>
+                            <h3 className="font-medium text-white text-lg">
+                              {company.name}
+                            </h3>
+                            <p className="text-sm text-gray-400">
+                              {company.industry}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div>
+                            <p className="text-gray-400">Founded</p>
+                            <p className="text-white">{company.founded_year}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-400">Size</p>
+                            <p className="text-white">{company.size}</p>
+                          </div>
+                          <div className="col-span-2">
+                            <p className="text-gray-400">Website</p>
+                            <a
+                              href={company.website}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-emerald-400 hover:underline truncate block"
+                            >
+                              {company.website}
+                            </a>
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={() => setShowCompanyViewModal(true)}
+                          className="w-full mt-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm"
+                        >
+                          View & Edit Details
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <p className="text-gray-400 mb-4">
+                          You haven't created a company yet.
+                        </p>
+                        <button
+                          onClick={() => setShowCreateCompanyModal(true)}
+                          className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors"
+                        >
+                          Create Company
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Jobs Section - Only visible if company exists */}
+              {company && (
+                <div className="bg-gray-800 rounded-xl shadow-xl">
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <Briefcase className="w-6 h-6 text-emerald-400" />
+                        <h2 className="text-xl font-bold text-white">
+                          Job Listings
+                        </h2>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setEditingJob(null);
+                          setShowCreateJobModal(true);
+                        }}
+                        className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center hover:bg-emerald-500 transition-colors"
+                        title="Add New Job"
+                      >
+                        <Plus className="w-5 h-5 text-white" />
+                      </button>
+                    </div>
+
+                    {/* Job List */}
+                    {isLoading ? (
+                      <div className="flex justify-center py-8">
+                        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+                      </div>
+                    ) : jobs.length === 0 ? (
+                      <div className="text-center py-8 text-gray-400">
+                        <p>
+                          No job listings yet. Create your first job posting!
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {jobs.map((job) => (
+                          <div
+                            key={job.id}
+                            className="bg-gray-700 rounded-lg overflow-hidden"
+                          >
+                            {/* Job Header */}
+                            <div className="p-4">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <h3 className="font-medium text-white">
+                                      {job.title}
+                                    </h3>
+                                    <span
+                                      className={`text-xs px-2 py-0.5 rounded ${
+                                        job.status === "active"
+                                          ? "bg-emerald-600"
+                                          : "bg-gray-500"
+                                      }`}
+                                    >
+                                      {job.status === "active"
+                                        ? "Active"
+                                        : "Hidden"}
+                                    </span>
+                                  </div>
+                                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-400 mt-2">
+                                    <div className="flex items-center gap-1">
+                                      <MapPin className="w-4 h-4" />
+                                      <span>{job.city}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <DollarSign className="w-4 h-4" />
+                                      <span>{`${job.salary_min}-${job.salary_max} ${job.type_of_money}`}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <Clock className="w-4 h-4" />
+                                      <span>{job.type}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => handleEditJob(job)}
+                                    className="p-1 text-gray-400 hover:text-white transition-colors"
+                                    title="Edit Job"
+                                  >
+                                    <Edit className="w-5 h-5" />
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      handleToggleJobStatus(
+                                        job.id.toString(),
+                                        job.status
+                                      )
+                                    }
+                                    className="p-1 text-gray-400 hover:text-white transition-colors"
+                                    title={
+                                      job.status === "active"
+                                        ? "Hide Job"
+                                        : "Show Job"
+                                    }
+                                  >
+                                    {job.status === "active" ? (
+                                      <EyeOff className="w-5 h-5" />
+                                    ) : (
+                                      <Eye className="w-5 h-5" />
+                                    )}
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      openDeleteJobModal(
+                                        job.id.toString(),
+                                        job.title
+                                      )
+                                    }
+                                    className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                                    title="Delete Job"
+                                  >
+                                    <Trash2 className="w-5 h-5" />
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
-          </motion.div>
+              )}
+            </motion.div>
+          </div>
         </div>
       </div>
 
       {/* Modals */}
-      <CreateCompanyModal
-        isOpen={showCreateCompanyModal}
-        onClose={() => setShowCreateCompanyModal(false)}
-        onComplete={handleCompanyCreated}
-      />
+      {showCreateCompanyModal && (
+        <CreateCompanyModal
+          isOpen={showCreateCompanyModal}
+          onClose={() => setShowCreateCompanyModal(false)}
+          onComplete={handleCompanyCreated}
+        />
+      )}
 
-      {company && (
+      {company && showCreateJobModal && (
         <CreateJobModal
           isOpen={showCreateJobModal}
           onClose={() => {
@@ -1160,7 +1368,7 @@ const Profile = () => {
         )}
       </AnimatePresence>
 
-      {company && (
+      {company && showCompanyViewModal && (
         <CompanyViewModal
           isOpen={showCompanyViewModal}
           onClose={() => setShowCompanyViewModal(false)}
@@ -1178,14 +1386,16 @@ const Profile = () => {
       )}
 
       {/* Delete Confirmation Modal */}
-      <DeleteConfirmationModal
-        isOpen={deleteModal.isOpen}
-        onClose={() => setDeleteModal({ ...deleteModal, isOpen: false })}
-        onConfirm={handleDeleteConfirm}
-        title={deleteModal.title}
-        message={deleteModal.message}
-        itemType={deleteModal.type}
-      />
+      {deleteModal.isOpen && (
+        <DeleteConfirmationModal
+          isOpen={deleteModal.isOpen}
+          onClose={() => setDeleteModal({ ...deleteModal, isOpen: false })}
+          onConfirm={handleDeleteConfirm}
+          title={deleteModal.title}
+          message={deleteModal.message}
+          itemType={deleteModal.type}
+        />
+      )}
     </div>
   );
 };
