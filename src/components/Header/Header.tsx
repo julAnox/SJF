@@ -80,9 +80,9 @@ const Header = () => {
 
         // Update the document title
         if (unreadCountResponse > 0) {
-          document.title = `(${unreadCountResponse}) Student Job Portal`;
+          document.title = `(${unreadCountResponse}) Student's Job`;
         } else {
-          document.title = "Student Job Portal";
+          document.title = "Student's Job";
         }
 
         return;
@@ -255,9 +255,9 @@ const Header = () => {
 
       // Update the document title to show unread count
       if (relevantUnreadMessages > 0) {
-        document.title = `(${relevantUnreadMessages}) Student Job Portal`;
+        document.title = `(${relevantUnreadMessages}) Student's Job`;
       } else {
-        document.title = "Student Job Portal";
+        document.title = "Student's Job";
       }
 
       // Update the global window object with the current unread count
@@ -297,9 +297,9 @@ const Header = () => {
 
         // Update document title
         if (event.detail.unreadCount > 0) {
-          document.title = `(${event.detail.unreadCount}) Student Job Portal`;
+          document.title = `(${event.detail.unreadCount}) Student Job`;
         } else {
-          document.title = "Student Job Portal";
+          document.title = "Student's Job";
         }
         return;
       }
