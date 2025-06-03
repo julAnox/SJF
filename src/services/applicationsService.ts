@@ -63,7 +63,6 @@ export const applicationsService = {
 
       while (retries < maxRetries) {
         try {
-          // The backend will automatically set the company based on the job
           const response = await api.post(
             "/job_applications/",
             applicationData

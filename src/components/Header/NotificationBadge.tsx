@@ -73,7 +73,7 @@ const NotificationBadge = ({ onClick }: NotificationBadgeProps) => {
 
     fetchUnreadMessages();
 
-    const interval = setInterval(fetchUnreadMessages, 5000); // Check every 5 seconds
+    const interval = setInterval(fetchUnreadMessages, 5000);
 
     const handleUnreadMessagesUpdated = () => {
       fetchUnreadMessages();

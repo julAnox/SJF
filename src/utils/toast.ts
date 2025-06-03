@@ -16,7 +16,6 @@ const defaultOptions: ToastOptions = {
   position: "top-right",
 };
 
-// Add CSS to the document if it doesn't exist
 function ensureToastStyles() {
   const styleId = "toast-styles";
   if (!document.getElementById(styleId)) {
@@ -53,7 +52,6 @@ function ensureToastStyles() {
   }
 }
 
-// Get or create toast container
 function getToastContainer(position: string): HTMLElement {
   const containerId = `toast-container-${position}`;
   let container = document.getElementById(containerId);
@@ -102,7 +100,6 @@ function createToast(
         container.removeChild(toast);
       }
 
-      // Remove container if empty
       if (container.children.length === 0) {
         document.body.removeChild(container);
       }

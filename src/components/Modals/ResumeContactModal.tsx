@@ -3,7 +3,7 @@
 import type React from "react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, AlertCircle, User, Briefcase } from "lucide-react";
+import { X, Send, AlertCircle, Briefcase } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { resumeApplicationsService } from "../../services/resumeApplicationsService";
 import { companiesApi } from "../../services/api";
@@ -52,7 +52,6 @@ const ResumeContactModal = ({
         throw new Error("Only companies can contact students about resumes.");
       }
 
-      // Get the company for the current user
       const companies = await companiesApi.getAll();
       const userCompany = companies.find(
         (c) => c.user === Number.parseInt(user.id)
@@ -66,14 +65,11 @@ const ResumeContactModal = ({
 
       console.log("Found company:", userCompany);
 
-      // Check if there's an existing chat between this company and student
       const existingChats = await chatsService.getAll();
       let existingChat = null;
 
-      // Look for any chat that connects this company and student
       for (const chat of existingChats) {
         if (chat.application) {
-          // Check job application chats
           try {
             const application = await fetch(
               `${chatsService.getBaseUrl()}/job_applications/${
@@ -91,7 +87,6 @@ const ResumeContactModal = ({
             console.log("Error checking job application:", error);
           }
         } else if (chat.resume_application) {
-          // Check resume application chats
           try {
             const resumeApp = await fetch(
               `${chatsService.getBaseUrl()}/resume_applications/${
@@ -117,7 +112,6 @@ const ResumeContactModal = ({
         console.log("Found existing chat:", existingChat);
         chatId = existingChat.id;
       } else {
-        // Step 1: Create resume application
         const resumeApplication = await resumeApplicationsService.create({
           resume: resume.id,
           company: userCompany.id,
@@ -127,7 +121,6 @@ const ResumeContactModal = ({
 
         console.log("Created resume application:", resumeApplication);
 
-        // Step 2: Create chat linked to the resume application
         const chat = await chatsService.create({
           resume_application: resumeApplication.id,
           status: "active",
@@ -137,8 +130,7 @@ const ResumeContactModal = ({
         chatId = chat.id;
       }
 
-      // Step 3: Create the initial message from the company
-      const messageData = await messagesService.create({
+      const actualMessage = await messagesService.create({
         chat: chatId,
         sender: Number.parseInt(user.id),
         content: message.trim(),
@@ -146,14 +138,12 @@ const ResumeContactModal = ({
         read: false,
       });
 
-      console.log("Created message:", messageData);
+      console.log("Created actual message:", actualMessage);
 
-      // Add a small delay to ensure the message is processed
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       toast.success("Message sent successfully!");
 
-      // Force refresh the chat list in the Chat component
       const event = new CustomEvent("chatCreated", {
         detail: { chatId: chatId.toString() },
       });
@@ -182,22 +172,6 @@ const ResumeContactModal = ({
     }
   };
 
-  const generateSampleMessage = () => {
-    const sampleMessage = `Hello ${resumeUser?.first_name || "there"},
-
-I came across your resume for ${
-      resume?.profession || "your profession"
-    } and I'm impressed with your background. 
-
-We have an exciting opportunity at our company that might be a great fit for your skills and experience. I'd love to discuss this further with you.
-
-Would you be interested in learning more about this position?
-
-Best regards`;
-
-    setMessage(sampleMessage);
-  };
-
   return (
     <AnimatePresence>
       {isOpen && (
@@ -210,12 +184,29 @@ Best regards`;
           >
             <div className="flex items-center justify-between p-6 border-b border-gray-700">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center">
-                  <User className="w-5 h-5 text-white" />
+                <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-700">
+                  {resumeUser?.avatar ? (
+                    <img
+                      src={resumeUser.avatar || "/placeholder.svg"}
+                      alt={`${resumeUser.first_name} ${resumeUser.last_name}`}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = `https://ui-avatars.com/api/?name=${
+                          resumeUser?.first_name?.charAt(0) || "U"
+                        }&background=10B981&color=fff`;
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-emerald-600 flex items-center justify-center text-white font-bold">
+                      {resumeUser?.first_name?.charAt(0) || "U"}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <h2 className="text-xl font-semibold text-white">
-                    Contact {resumeUser?.first_name || "Student"}
+                    Contact {resumeUser?.first_name || "Student"}{" "}
+                    {resumeUser?.last_name || ""}
                   </h2>
                   <p className="text-sm text-gray-400 flex items-center gap-1">
                     <Briefcase className="w-4 h-4" />
@@ -249,18 +240,9 @@ Best regards`;
 
             <form onSubmit={handleSubmit} className="p-6">
               <div className="mb-4">
-                <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-medium text-gray-300">
-                    Your Message
-                  </label>
-                  <button
-                    type="button"
-                    onClick={generateSampleMessage}
-                    className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors"
-                  >
-                    Use sample message
-                  </button>
-                </div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Your Message
+                </label>
                 <textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}

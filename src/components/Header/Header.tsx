@@ -43,7 +43,6 @@ const Header = () => {
 
   const isStudent = user?.role === "student";
 
-  // Throttle function to prevent excessive API calls
   const throttle = (func: Function, delay: number) => {
     return (...args: any[]) => {
       const now = Date.now();
@@ -51,34 +50,27 @@ const Header = () => {
         lastFetchTimeRef.current = now;
         return func(...args);
       }
-      return Promise.resolve(); // Return a resolved promise when throttled
+      return Promise.resolve();
     };
   };
 
-  // Optimized fetch unread messages function
   const fetchUnreadMessages = useCallback(async () => {
     if (!user) return;
 
     try {
-      // Check if we've fetched recently (within 5 seconds)
       const now = Date.now();
       if (now - lastFetchTimeRef.current < 5000) {
-        // Use cached value if available
         setUnreadCount(unreadCountCacheRef.current);
         return;
       }
 
-      // Update last fetch time
       lastFetchTimeRef.current = now;
 
-      // Check if we have a cached count from the server
       try {
-        // Try to use the dedicated endpoint for unread count if available
         const unreadCountResponse = await chatsService.getUnreadCount(user.id);
         setUnreadCount(unreadCountResponse);
         unreadCountCacheRef.current = unreadCountResponse;
 
-        // Update the document title
         if (unreadCountResponse > 0) {
           document.title = `(${unreadCountResponse}) Student's Job`;
         } else {
@@ -87,30 +79,24 @@ const Header = () => {
 
         return;
       } catch (error) {
-        // If the endpoint fails or doesn't exist, fall back to manual counting
         console.log("Falling back to manual unread count calculation");
       }
 
-      // Use cached data when possible
       let allChats, allApplications, allJobs, allCompanies, allMessages;
 
-      // Check if we have cached data and it's still valid
       const cacheValid =
         window.chatDataCache &&
         window.chatRelatedDataCache &&
-        now - window.chatDataCache.timestamp < 60000; // 1 minute cache
+        now - window.chatDataCache.timestamp < 60000;
 
       if (cacheValid) {
-        // Use cached data
         allChats = window.chatDataCache.chats;
         allApplications = window.chatRelatedDataCache.applications;
         allJobs = window.chatRelatedDataCache.jobs;
         allCompanies = window.chatRelatedDataCache.companies;
 
-        // For messages, we need to check which chats are relevant first
         const relevantChatIds: string[] = [];
 
-        // Filter chats based on user role
         for (const chat of allChats) {
           const application = allApplications.find(
             (app) => app.id === chat.application
@@ -123,22 +109,18 @@ const Header = () => {
           let isRelevant = false;
 
           if (user.role === "student") {
-            // For students, show chats where they are the applicant
             isRelevant = application.user === Number.parseInt(user.id);
           } else if (user.role === "company") {
-            // For companies, check if this job belongs to the company
             const userCompany = allCompanies.find(
               (company) => company.user === Number.parseInt(user.id)
             );
 
             if (userCompany) {
-              // Check if the job belongs to this company
               isRelevant =
                 typeof job.company === "number"
                   ? job.company === userCompany.id
                   : job.company.id === userCompany.id;
             } else {
-              // Fallback to direct user ID comparison if company not found
               isRelevant =
                 typeof job.company === "number"
                   ? job.company === Number.parseInt(user.id)
@@ -151,11 +133,9 @@ const Header = () => {
           }
         }
 
-        // Only fetch messages for relevant chats
         allMessages = [];
         for (const chatId of relevantChatIds) {
           if (window.chatMessagesCache && window.chatMessagesCache[chatId]) {
-            // Use cached messages if available
             allMessages = [
               ...allMessages,
               ...window.chatMessagesCache[chatId].messages,
@@ -163,18 +143,15 @@ const Header = () => {
           }
         }
 
-        // If we don't have cached messages, fetch them
         if (allMessages.length === 0) {
           allMessages = await messagesService.getAll();
         }
       } else {
-        // Fetch only essential data for unread count
         [allChats, allMessages] = await Promise.all([
           chatsService.getAll(),
           messagesService.getAll(),
         ]);
 
-        // Only fetch additional data if needed
         if (allChats.length > 0) {
           [allApplications, allJobs, allCompanies] = await Promise.all([
             applicationsService.getAll(),
@@ -188,13 +165,10 @@ const Header = () => {
         }
       }
 
-      // Calculate unread count
       let relevantUnreadMessages = 0;
 
-      // Check which chats are currently open
       const currentOpenChat = window.currentOpenChat;
 
-      // Process based on user role
       for (const chat of allChats) {
         const application = allApplications.find(
           (app) => app.id === chat.application
@@ -207,22 +181,18 @@ const Header = () => {
         let isRelevant = false;
 
         if (user.role === "student") {
-          // For students, show chats where they are the applicant
           isRelevant = application.user === Number.parseInt(user.id);
         } else if (user.role === "company") {
-          // For companies, check if this job belongs to the company
           const userCompany = allCompanies.find(
             (company) => company.user === Number.parseInt(user.id)
           );
 
           if (userCompany) {
-            // Check if the job belongs to this company
             isRelevant =
               typeof job.company === "number"
                 ? job.company === userCompany.id
                 : job.company.id === userCompany.id;
           } else {
-            // Fallback to direct user ID comparison if company not found
             isRelevant =
               typeof job.company === "number"
                 ? job.company === Number.parseInt(user.id)
@@ -232,10 +202,8 @@ const Header = () => {
 
         if (!isRelevant) continue;
 
-        // Check if this chat is currently open
         const isChatOpen = currentOpenChat === chat.id.toString();
 
-        // Only count unread messages for chats that aren't currently open
         if (!isChatOpen) {
           const chatMessages = allMessages.filter(
             (msg) => msg.chat === chat.id
@@ -249,19 +217,15 @@ const Header = () => {
         }
       }
 
-      // Update state and cache
       setUnreadCount(relevantUnreadMessages);
       unreadCountCacheRef.current = relevantUnreadMessages;
 
-      // Update the document title to show unread count
       if (relevantUnreadMessages > 0) {
         document.title = `(${relevantUnreadMessages}) Student's Job`;
       } else {
         document.title = "Student's Job";
       }
 
-      // Update the global window object with the current unread count
-      // This helps synchronize the count across components
       if (typeof window !== "undefined") {
         window.globalUnreadCount = relevantUnreadMessages;
       }
@@ -270,32 +234,25 @@ const Header = () => {
     }
   }, [user]);
 
-  // Throttled version of fetchUnreadMessages
   const throttledFetchUnreadMessages = useCallback(
-    throttle(fetchUnreadMessages, 5000), // Throttle to once every 5 seconds
+    throttle(fetchUnreadMessages, 5000),
     [fetchUnreadMessages]
   );
 
-  // Fetch unread messages
   useEffect(() => {
     if (!user) return;
 
-    // Initial fetch
     fetchUnreadMessages();
 
-    // Set up polling with a longer interval to reduce server load
     const interval = setInterval(() => {
       throttledFetchUnreadMessages();
-    }, 10000); // Check every 10 seconds instead of 1.5 seconds
+    }, 10000);
 
-    // Add event listener for when messages are marked as read
     const handleUnreadMessagesUpdated = (event: CustomEvent) => {
-      // If the event has detail with unreadCount, use that value directly
       if (event.detail && typeof event.detail.unreadCount === "number") {
         setUnreadCount(event.detail.unreadCount);
         unreadCountCacheRef.current = event.detail.unreadCount;
 
-        // Update document title
         if (event.detail.unreadCount > 0) {
           document.title = `(${event.detail.unreadCount}) Student Job`;
         } else {
@@ -304,19 +261,15 @@ const Header = () => {
         return;
       }
 
-      // Otherwise, clear any cached unread count to force a fresh fetch
       unreadCountCacheRef.current = 0;
       lastFetchTimeRef.current = 0;
 
-      // Immediately fetch new unread count
       fetchUnreadMessages();
 
-      // Also fetch again after a delay to ensure all updates are processed
       setTimeout(() => {
         fetchUnreadMessages();
       }, 500);
 
-      // And one more time after a longer delay to catch any late updates
       setTimeout(() => {
         fetchUnreadMessages();
       }, 2000);
@@ -327,9 +280,8 @@ const Header = () => {
       handleUnreadMessagesUpdated as EventListener
     );
 
-    // Add event listener for focus to update count when user returns to tab
     const handleFocus = () => {
-      fetchUnreadMessages(); // Use non-throttled version for immediate update
+      fetchUnreadMessages();
     };
 
     window.addEventListener("focus", handleFocus);

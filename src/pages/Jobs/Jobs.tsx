@@ -58,6 +58,9 @@ const Jobs = () => {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [expandedDescriptions, setExpandedDescriptions] = useState<
+    Record<number, boolean>
+  >({});
   const [showApplicationModal, setShowApplicationModal] = useState(false);
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(
@@ -92,10 +95,32 @@ const Jobs = () => {
         const transformedJobs = jobsData.map((job: any) => ({
           ...job,
           company: companiesMap[job.company] || { name: "Unknown Company" },
-          requirements:
-            typeof job.requirements === "string"
-              ? JSON.parse(job.requirements)
-              : job.requirements || {},
+          requirements: (() => {
+            if (!job.requirements) return "";
+
+            // If it's already a string (new format), return as is
+            if (typeof job.requirements === "string") {
+              try {
+                // Try to parse as JSON (old format)
+                const parsed = JSON.parse(job.requirements);
+                if (typeof parsed === "object" && parsed !== null) {
+                  // Convert old JSON format to comma-separated string
+                  return Object.values(parsed).join(", ");
+                }
+                return job.requirements; // It's a plain string
+              } catch {
+                // If JSON.parse fails, it's already a plain string
+                return job.requirements;
+              }
+            }
+
+            // If it's an object (old format), convert to string
+            if (typeof job.requirements === "object") {
+              return Object.values(job.requirements).join(", ");
+            }
+
+            return "";
+          })(),
           salary_min: Number.parseFloat(job.salary_min) || 0,
           salary_max: Number.parseFloat(job.salary_max) || 0,
           experiense: Number.parseInt(job.experiense) || 0,
@@ -118,6 +143,13 @@ const Jobs = () => {
 
     fetchJobs();
   }, []);
+
+  const toggleDescription = (jobId: number) => {
+    setExpandedDescriptions((prev) => ({
+      ...prev,
+      [jobId]: !prev[jobId],
+    }));
+  };
 
   // Fetch user applications to check which jobs they've already applied to
   useEffect(() => {
@@ -287,7 +319,7 @@ const Jobs = () => {
       });
     }
 
-    if (filters.experiense > 0) {
+    if (filters.experiense > 0 && filters.experiense < 10) {
       active.push({
         type: "experiense",
         label: `Experience: ${filters.experiense} years`,
@@ -695,6 +727,7 @@ const Jobs = () => {
                               src={
                                 (job.company as Company).logo ||
                                 "/placeholder.svg" ||
+                                "/placeholder.svg" ||
                                 "/placeholder.svg"
                               }
                               alt={(job.company as Company).name}
@@ -748,22 +781,46 @@ const Jobs = () => {
                       </div>
 
                       <div className="mt-4">
-                        <p className="text-gray-300">{job.description}</p>
-                        {typeof job.requirements === "object" &&
-                          Object.keys(job.requirements).length > 0 && (
-                            <div className="mt-4">
-                              <h4 className="text-lg font-semibold text-white mb-2">
-                                Requirements
-                              </h4>
-                              <ul className="list-disc list-inside text-gray-300 space-y-1">
-                                {Object.entries(job.requirements).map(
-                                  ([key, value]) => (
-                                    <li key={key}>{`${key}: ${value}`}</li>
-                                  )
-                                )}
-                              </ul>
+                        <p className="text-gray-300">
+                          <h4 className="text-lg font-semibold text-white mb-2">
+                            Description
+                          </h4>
+                          {expandedDescriptions[job.id]
+                            ? job.description
+                            : `${job.description.substring(0, 350)}${
+                                job.description.length > 350 ? "..." : ""
+                              }`}
+                        </p>
+                        {job.description.length > 350 && (
+                          <button
+                            onClick={() => toggleDescription(job.id)}
+                            className="mt-2 text-emerald-400 hover:text-emerald-300 text-sm"
+                          >
+                            {expandedDescriptions[job.id]
+                              ? "Collapse"
+                              : "Expand"}
+                          </button>
+                        )}
+
+                        {job.requirements && job.requirements.length > 0 && (
+                          <div className="mt-4">
+                            <h4 className="text-lg font-semibold text-white mb-2">
+                              Requirements
+                            </h4>
+                            <div className="flex flex-wrap gap-2">
+                              {job.requirements
+                                .split(", ")
+                                .map((req, index) => (
+                                  <span
+                                    key={index}
+                                    className="px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-sm"
+                                  >
+                                    {req.trim()}
+                                  </span>
+                                ))}
                             </div>
-                          )}
+                          </div>
+                        )}
                       </div>
 
                       <div className="mt-4 flex items-center justify-between">

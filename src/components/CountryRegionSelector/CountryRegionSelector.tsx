@@ -38,13 +38,11 @@ const CountryRegionSelector = ({
   const [countryObj, setCountryObj] = useState<any>(null);
   const [regionObj, setRegionObj] = useState<any>(null);
 
-  // Load countries on component mount
   useEffect(() => {
     try {
       const allCountries = Country.getAllCountries();
       setCountries(allCountries);
 
-      // If we have an initial country value, find the country object
       if (initialValues.country) {
         const foundCountry = allCountries.find(
           (country) =>
@@ -60,14 +58,12 @@ const CountryRegionSelector = ({
     }
   }, [initialValues.country]);
 
-  // When country changes, load regions
   useEffect(() => {
     if (countryObj) {
       try {
         const countryRegions = State.getStatesOfCountry(countryObj.isoCode);
         setRegions(countryRegions);
 
-        // If we have an initial region value, find the region object
         if (initialValues.region) {
           const foundRegion = countryRegions.find(
             (region) =>
@@ -77,7 +73,6 @@ const CountryRegionSelector = ({
           if (foundRegion) {
             setRegionObj(foundRegion);
           } else {
-            // Reset region if it doesn't exist in the new country
             setSelectedRegion("");
             setRegionObj(null);
             onChange({
@@ -97,7 +92,6 @@ const CountryRegionSelector = ({
     }
   }, [countryObj, initialValues.region, selectedCountry, onChange]);
 
-  // When region changes, load cities/districts
   useEffect(() => {
     if (countryObj && regionObj) {
       try {
@@ -107,7 +101,6 @@ const CountryRegionSelector = ({
         );
         setCities(regionCities);
 
-        // If we have an initial district value, check if it exists
         if (initialValues.district) {
           const foundCity = regionCities.find(
             (city) =>
@@ -115,7 +108,6 @@ const CountryRegionSelector = ({
           );
 
           if (!foundCity) {
-            // Reset district if it doesn't exist in the new region
             setSelectedDistrict("");
             onChange({
               country: selectedCountry,
@@ -140,7 +132,6 @@ const CountryRegionSelector = ({
     onChange,
   ]);
 
-  // Handle country selection
   const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const countryName = e.target.value;
     setSelectedCountry(countryName);
@@ -150,7 +141,6 @@ const CountryRegionSelector = ({
     );
     setCountryObj(selectedCountryObj || null);
 
-    // Reset region and district when country changes
     setSelectedRegion("");
     setSelectedDistrict("");
     setRegionObj(null);
@@ -162,7 +152,6 @@ const CountryRegionSelector = ({
     });
   };
 
-  // Handle region selection
   const handleRegionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const regionName = e.target.value;
     setSelectedRegion(regionName);
@@ -172,7 +161,6 @@ const CountryRegionSelector = ({
     );
     setRegionObj(selectedRegionObj || null);
 
-    // Reset district when region changes
     setSelectedDistrict("");
 
     onChange({
@@ -182,7 +170,6 @@ const CountryRegionSelector = ({
     });
   };
 
-  // Handle district selection
   const handleDistrictChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const districtName = e.target.value;
     setSelectedDistrict(districtName);

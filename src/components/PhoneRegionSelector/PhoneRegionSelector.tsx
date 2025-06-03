@@ -19,7 +19,6 @@ const PhoneInputWithFlag = ({
 }: PhoneInputWithFlagProps) => {
   const [phoneNumber, setPhoneNumber] = useState(value || "");
 
-  // Update internal state if prop value changes
   useEffect(() => {
     if (value !== phoneNumber) {
       setPhoneNumber(value);
@@ -27,7 +26,6 @@ const PhoneInputWithFlag = ({
   }, [value, phoneNumber]);
 
   const handleChange = (value: string) => {
-    // Ensure the phone number always starts with +
     const formattedValue = value.startsWith("+") ? value : `+${value}`;
     setPhoneNumber(formattedValue);
     onChange(formattedValue);

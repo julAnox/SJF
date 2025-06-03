@@ -118,20 +118,15 @@ export const resumeApplicationsService = {
     }
   },
 
-  // Add a debug method to help troubleshoot resume application issues
   debug: async (id: string): Promise<any> => {
     try {
-      // Get the resume application
       const resumeApplication = await resumeApplicationsService.getById(id);
 
-      // Get related data
       const resume = await api.get(`/resumes/${resumeApplication.resume}/`);
       const company = await api.get(`/companies/${resumeApplication.company}/`);
 
-      // Get chats related to this resume application
       const chats = await api.get(`/chats/?resume_application=${id}`);
 
-      // Get messages for each chat
       const chatMessages = await Promise.all(
         chats.data.map(async (chat: any) => {
           const messages = await api.get(`/messages/?chat=${chat.id}`);

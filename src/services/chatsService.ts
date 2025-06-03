@@ -158,13 +158,11 @@ export const chatsService = {
     }
   },
 
-  // Add a debug method to help troubleshoot chat issues
   getDebugInfo: async (chatId: string): Promise<any> => {
     try {
       const chat = await chatsService.getById(chatId);
       const details: any = { chat };
 
-      // Get related data based on chat type
       if (chat.application) {
         const application = await api.get(
           `/job_applications/${chat.application}/`
@@ -196,7 +194,6 @@ export const chatsService = {
         }
       }
 
-      // Get messages
       const messages = await api.get(`/messages/?chat=${chatId}`);
       details.messages = messages.data;
 

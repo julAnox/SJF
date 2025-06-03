@@ -53,7 +53,9 @@ const CreateJobModal = ({
       setFormData({
         title: initialData.title || "",
         description: initialData.description || "",
-        requirements: initialData.requirements || "",
+        requirements: initialData.requirements
+          ? initialData.requirements.replace(/,\s*/g, " ").trim()
+          : "",
         salary_min: initialData.salary_min || 0,
         salary_max: initialData.salary_max || 0,
         city: initialData.city || "",
@@ -80,6 +82,11 @@ const CreateJobModal = ({
       return;
     }
 
+    if (name === "requirements") {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+      return;
+    }
+
     setFormData((prev) => ({
       ...prev,
       [name]:
@@ -95,15 +102,23 @@ const CreateJobModal = ({
     try {
       setIsLoading(true);
 
+      const processedFormData = {
+        ...formData,
+        requirements: formData.requirements
+          .split(/\s+/)
+          .filter((req) => req.trim() !== "")
+          .join(", "),
+      };
+
       if (initialData) {
         const updatedJob = await jobsApi.update(initialData.id.toString(), {
-          ...formData,
+          ...processedFormData,
           company: companyId,
         });
         onComplete(updatedJob);
       } else {
         const newJob = await jobsApi.create({
-          ...formData,
+          ...processedFormData,
           company: companyId,
         });
         onComplete(newJob);
@@ -181,17 +196,24 @@ const CreateJobModal = ({
                 {/* Requirements */}
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Requirements*
+                    Requirements* (separate with spaces)
                   </label>
-                  <textarea
-                    name="requirements"
-                    value={formData.requirements}
-                    onChange={handleChange}
-                    rows={4}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
-                    placeholder="Enter job requirements"
-                    required
-                  />
+                  <div className="relative">
+                    <Briefcase className="absolute left-3 top-3 text-gray-400 w-5 h-5" />
+                    <input
+                      type="text"
+                      name="requirements"
+                      value={formData.requirements}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      placeholder="react nodejs mongodb docker git"
+                      required
+                    />
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Enter requirements separated by spaces (e.g., "react nodejs
+                    mongodb docker")
+                  </p>
                 </div>
 
                 {/* Salary Range */}

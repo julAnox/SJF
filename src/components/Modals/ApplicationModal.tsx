@@ -39,7 +39,6 @@ const ApplicationModal = ({
   const [error, setError] = useState<string | null>(null);
   const [submitAttempts, setSubmitAttempts] = useState(0);
 
-  // Fetch user's resumes
   useEffect(() => {
     const fetchResumes = async () => {
       try {
@@ -78,8 +77,6 @@ const ApplicationModal = ({
         return;
       }
 
-      // 1. Create application
-      // Note: The backend will automatically set the company based on the job
       const applicationData = {
         user: Number.parseInt(user.id),
         job: Number.parseInt(jobId),
@@ -94,7 +91,6 @@ const ApplicationModal = ({
         throw new Error("Failed to create application");
       }
 
-      // 2. Create chat
       const chatData = {
         application: application.id,
         status: "active",
@@ -106,7 +102,6 @@ const ApplicationModal = ({
         throw new Error("Failed to create chat");
       }
 
-      // 3. Add resume message
       const resumeMessage = {
         chat: chat.id,
         sender: Number.parseInt(user.id),
@@ -123,7 +118,6 @@ const ApplicationModal = ({
 
       await messagesService.create(resumeMessage);
 
-      // 4. Add cover letter message
       const coverLetterMessage = {
         chat: chat.id,
         sender: Number.parseInt(user.id),
@@ -134,10 +128,8 @@ const ApplicationModal = ({
 
       await messagesService.create(coverLetterMessage);
 
-      // Show success message
       toast.success("Application submitted successfully!");
 
-      // 5. Navigate to chat
       navigate(`/chat/${chat.id}`);
       onClose();
     } catch (err) {
@@ -148,13 +140,11 @@ const ApplicationModal = ({
     }
   };
 
-  // Navigate to profile page to create resume
   const handleNavigateToProfile = () => {
     navigate("/profile");
     onClose();
   };
 
-  // Reset form when modal opens
   useEffect(() => {
     if (isOpen) {
       setSelectedResume("");

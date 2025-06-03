@@ -19,6 +19,7 @@ import {
   Award,
   Building,
   Sparkles,
+  CheckCircle,
 } from "lucide-react";
 import {
   resumesApi,
@@ -29,6 +30,8 @@ import {
 import ResumeViewModal from "../../pages/Profile/ResumeViewModal";
 import ResumeContactModal from "../../components/Modals/ResumeContactModal";
 import { useAuth } from "../../contexts/AuthContext";
+import resumeApplicationsService from "../../services/resumeApplicationsService";
+import { companiesApi } from "../../services/api";
 
 interface FilterState {
   gender: string;
@@ -55,6 +58,9 @@ const Resumes = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userProfiles, setUserProfiles] = useState<Record<number, User>>({});
+  const [userResumeApplications, setUserResumeApplications] = useState<
+    number[]
+  >([]);
 
   const [isFiltersOpen, setIsFiltersOpen] = useState(true);
   const [filters, setFilters] = useState<FilterState>({
@@ -147,6 +153,62 @@ const Resumes = () => {
 
     fetchResumes();
   }, []);
+
+  useEffect(() => {
+    const fetchApplications = async () => {
+      if (!user) return;
+
+      try {
+        console.log("Current user:", user);
+
+        if (user.role === "company") {
+          const allCompanies = await companiesApi.getAll();
+          const userCompany = allCompanies.find(
+            (company) => company.user === Number.parseInt(user.id)
+          );
+
+          console.log("User company:", userCompany);
+
+          if (userCompany) {
+            const allApplications = await resumeApplicationsService.getAll();
+            console.log("All applications:", allApplications);
+
+            const companyApplications = allApplications.filter(
+              (app) => app.company === userCompany.id
+            );
+            console.log("Company applications:", companyApplications);
+
+            const contactedResumeIds = companyApplications.map(
+              (app) => app.resume
+            );
+            console.log("Contacted resume IDs:", contactedResumeIds);
+
+            setUserResumeApplications(contactedResumeIds);
+          } else {
+            console.log("No company found for user:", user.id);
+            setUserResumeApplications([]);
+          }
+        } else if (user.role === "student") {
+          const userResumes = resumes.filter(
+            (resume) => resume.user === user.id
+          );
+          const allApplications = await resumeApplicationsService.getAll();
+          const studentApplications = allApplications.filter((app) =>
+            userResumes.some((resume) => resume.id === app.resume)
+          );
+          setUserResumeApplications(
+            studentApplications.map((app) => app.resume)
+          );
+        }
+      } catch (err) {
+        console.error("Error fetching applications:", err);
+      }
+    };
+
+    if (resumes.length > 0) {
+      fetchApplications();
+    }
+  }, [user, resumes]);
 
   const extractFilterOptions = (data: Resume[]) => {
     const options = {
@@ -425,6 +487,38 @@ const Resumes = () => {
   };
 
   const handleContactSuccess = (chatId: string) => {
+    if (selectedResume && user) {
+      setUserResumeApplications((prev) => {
+        const updated = [...prev, selectedResume.id];
+        console.log("Updated applications after contact:", updated);
+        return updated;
+      });
+    }
+
+    setTimeout(async () => {
+      if (user && user.role === "company") {
+        try {
+          const allCompanies = await companiesApi.getAll();
+          const userCompany = allCompanies.find(
+            (company) => company.user === Number.parseInt(user.id)
+          );
+
+          if (userCompany) {
+            const allApplications = await resumeApplicationsService.getAll();
+            const companyApplications = allApplications.filter(
+              (app) => app.company === userCompany.id
+            );
+            const contactedResumeIds = companyApplications.map(
+              (app) => app.resume
+            );
+            setUserResumeApplications(contactedResumeIds);
+          }
+        } catch (error) {
+          console.error("Error refreshing applications:", error);
+        }
+      }
+    }, 1000);
+
     navigate(`/chat/${chatId}`);
   };
 
@@ -466,6 +560,15 @@ const Resumes = () => {
       return userProfiles[userId].avatar;
     }
     return `/placeholder.svg?height=100&width=100`;
+  };
+
+  const hasContactedResume = (resumeId: number) => {
+    const result = userResumeApplications.includes(resumeId);
+    console.log(
+      `Checking resume ${resumeId}, contacted: ${result}`,
+      userResumeApplications
+    );
+    return result;
   };
 
   const getActiveFilters = () => {
@@ -556,6 +659,24 @@ const Resumes = () => {
           </div>
         </div>
       </div>
+
+      {/* Notification for resume responses - only show for students */}
+      {user && user.role === "student" && userResumeApplications.length > 0 && (
+        <div className="bg-emerald-600/20 border border-emerald-600/30 rounded-lg p-4 mx-4 mt-4">
+          <div className="flex items-center gap-2 text-emerald-400">
+            <CheckCircle className="w-5 h-5" />
+            <span className="font-medium">
+              На ваше резюме откликнулись: {userResumeApplications.length}{" "}
+              компани
+              {userResumeApplications.length === 1
+                ? "я"
+                : userResumeApplications.length < 5
+                ? "и"
+                : "й"}
+            </span>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto px-4 py-8 ">
         <div className="flex gap-8">
@@ -852,136 +973,160 @@ const Resumes = () => {
             {/* Resume Cards */}
             {!isLoading && !error && (
               <div className="space-y-6">
-                {getPaginatedResumes().map((resume) => (
-                  <div
-                    key={resume.id}
-                    className="bg-gray-800 rounded-lg p-6 hover:bg-gray-750 transition-colors"
-                  >
-                    <div className="flex gap-6">
-                      {/* Profile Photo */}
-                      <div className="flex-shrink-0">
-                        {getUserAvatar(resume.user) &&
-                        getUserAvatar(resume.user) !==
-                          "/placeholder.svg?height=100&width=100" ? (
-                          <img
-                            src={
-                              getUserAvatar(resume.user) || "/placeholder.svg"
-                            }
-                            alt={resume.profession || "Profile"}
-                            className="w-24 h-24 rounded-lg object-cover bg-gray-700"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.src = `/placeholder.svg?height=100&width=100`;
-                            }}
-                          />
-                        ) : (
-                          <div className="w-24 h-24 bg-gray-700 rounded-lg flex items-center justify-center">
-                            <UserIcon className="w-12 h-12 text-gray-500" />
-                          </div>
-                        )}
-                      </div>
+                {getPaginatedResumes().map((resume) => {
+                  const resumeContacted = hasContactedResume(resume.id);
 
-                      {/* Main Content */}
-                      <div className="flex-grow">
-                        <div className="flex justify-between items-start mb-4">
-                          <div>
-                            <h3 className="text-xl font-semibold text-white mb-2">
-                              {resume.profession || "Untitled Resume"}
-                            </h3>
-                            <div className="flex items-center gap-2 text-gray-400">
-                              <UserIcon className="w-4 h-4" />
-                              <span>{resume.gender || "Not specified"}</span>
+                  return (
+                    <div
+                      key={resume.id}
+                      className="bg-gray-800 rounded-lg p-6 hover:bg-gray-750 transition-colors"
+                    >
+                      <div className="flex gap-6">
+                        {/* Profile Photo */}
+                        <div
+                          className={`flex-shrink-0 ${
+                            resumeContacted ? "opacity-70" : ""
+                          }`}
+                        >
+                          {getUserAvatar(resume.user) &&
+                          getUserAvatar(resume.user) !==
+                            "/placeholder.svg?height=100&width=100" ? (
+                            <img
+                              src={
+                                getUserAvatar(resume.user) || "/placeholder.svg"
+                              }
+                              alt={resume.profession || "Profile"}
+                              className="w-24 h-24 rounded-lg object-cover bg-gray-700"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = `/placeholder.svg?height=100&width=100`;
+                              }}
+                            />
+                          ) : (
+                            <div className="w-24 h-24 bg-gray-700 rounded-lg flex items-center justify-center">
+                              <UserIcon className="w-12 h-12 text-gray-500" />
                             </div>
-                          </div>
-                          <div className="flex gap-2">
-                            {user && user.role === "company" && (
+                          )}
+                        </div>
+
+                        {/* Main Content */}
+                        <div
+                          className={`flex-grow ${
+                            resumeContacted ? "opacity-70" : ""
+                          }`}
+                        >
+                          <div className="flex justify-between items-start mb-4">
+                            <div>
+                              <h3 className="text-xl font-semibold text-white mb-2">
+                                {resume.profession || "Untitled Resume"}
+                              </h3>
+                              <div className="flex items-center gap-2 text-gray-400">
+                                <UserIcon className="w-4 h-4" />
+                                <span>{resume.gender || "Not specified"}</span>
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              {user && user.role === "company" && (
+                                <>
+                                  {resumeContacted ? (
+                                    <div className="flex items-center gap-2 text-emerald-400 px-4 py-2 bg-emerald-600/20 rounded-lg">
+                                      <CheckCircle className="w-5 h-5" />
+                                      <span>You've already applied</span>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      onClick={() => handleContact(resume)}
+                                      className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors flex items-center gap-2"
+                                    >
+                                      <MessageCircle className="w-4 h-4" />
+                                      Contact
+                                    </button>
+                                  )}
+                                </>
+                              )}
+                              {/* View Profile button - always normal styling */}
                               <button
-                                onClick={() => handleContact(resume)}
-                                className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors flex items-center gap-2"
+                                onClick={() => handleViewProfile(resume)}
+                                className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors flex items-center gap-2"
                               >
-                                <MessageCircle className="w-4 h-4" />
-                                Contact
+                                <UserIcon className="w-4 h-4" />
+                                View Profile
                               </button>
-                            )}
-                            <button
-                              onClick={() => handleViewProfile(resume)}
-                              className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors flex items-center gap-2"
-                            >
-                              <UserIcon className="w-4 h-4" />
-                              View Profile
-                            </button>
+                            </div>
                           </div>
-                        </div>
 
-                        {/* Skills */}
-                        <div className="mb-4">
-                          <div className="flex flex-wrap gap-2">
-                            {parseSkills(resume.skills).map((skill, index) => (
-                              <span
-                                key={index}
-                                className="px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-sm"
-                              >
-                                {skill}
+                          {/* Skills and other content with conditional opacity */}
+                          <div className="mb-4">
+                            <div className="flex flex-wrap gap-2">
+                              {parseSkills(resume.skills).map(
+                                (skill, index) => (
+                                  <span
+                                    key={index}
+                                    className="px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-sm"
+                                  >
+                                    {skill}
+                                  </span>
+                                )
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="mt-8 space-y-4">
+                            {/* Experience */}
+                            <div className="flex gap-2 ">
+                              <div className="w-6 flex justify-center pt-1">
+                                <Award className="w-5 h-5 text-emerald-400" />
+                              </div>
+                              <div>
+                                <div className="font-semibold">Experience:</div>
+                                <div>
+                                  {resume.experience ||
+                                    "No experience information provided"}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Education */}
+                            <div className="flex gap-2">
+                              <div className="w-6 flex justify-center pt-1">
+                                <GraduationCap className="w-5 h-5 text-emerald-400" />
+                              </div>
+                              <div>
+                                <div className="font-semibold">Education:</div>
+                                <div>{resume.education || "Not specified"}</div>
+                              </div>
+                            </div>
+
+                            {/* Specialization */}
+                            <div className="flex gap-2">
+                              <div className="w-6 flex justify-center pt-1">
+                                <Sparkles className="w-5 h-5 text-emerald-400" />
+                              </div>
+                              <div>
+                                <div className="font-semibold">
+                                  Specialization:
+                                </div>
+                                <div>
+                                  {resume.specialization || "Not specified"}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Date */}
+                          <div className="mt-4 flex justify-end items-center text-sm">
+                            <div className="flex items-center gap-2 text-gray-500">
+                              <Clock className="w-4 h-4" />
+                              <span>
+                                Created: {formatDate(resume.created_at)}
                               </span>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div className="mt-8 space-y-4">
-                          {/* Experience */}
-                          <div className="flex gap-2 ">
-                            <div className="w-6 flex justify-center pt-1">
-                              <Award className="w-5 h-5 text-emerald-400" />
                             </div>
-                            <div>
-                              <div className="font-semibold">Experience:</div>
-                              <div>
-                                {resume.experience ||
-                                  "No experience information provided"}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Education */}
-                          <div className="flex gap-2">
-                            <div className="w-6 flex justify-center pt-1">
-                              <GraduationCap className="w-5 h-5 text-emerald-400" />
-                            </div>
-                            <div>
-                              <div className="font-semibold">Education:</div>
-                              <div>{resume.education || "Not specified"}</div>
-                            </div>
-                          </div>
-
-                          {/* Specialization */}
-                          <div className="flex gap-2">
-                            <div className="w-6 flex justify-center pt-1">
-                              <Sparkles className="w-5 h-5 text-emerald-400" />
-                            </div>
-                            <div>
-                              <div className="font-semibold">
-                                Specialization:
-                              </div>
-                              <div>
-                                {resume.specialization || "Not specified"}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Date */}
-                        <div className="mt-4 flex justify-end items-center text-sm">
-                          <div className="flex items-center gap-2 text-gray-500">
-                            <Clock className="w-4 h-4" />
-                            <span>
-                              Created: {formatDate(resume.created_at)}
-                            </span>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 
