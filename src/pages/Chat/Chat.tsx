@@ -44,41 +44,6 @@ import ShareContactModal from "../../components/Modals/ShareContactModal";
 import { toast } from "../../utils/toast";
 import EmojiPicker from "emoji-picker-react";
 
-// Add this type declaration at the top of the file, after the imports
-declare global {
-  interface Window {
-    chatDataCache?: {
-      chats: any[];
-      timestamp: number;
-    };
-    chatRelatedDataCache?: {
-      applications: any[];
-      resumeApplications: any[];
-      jobs: any[];
-      users: any[];
-      companies: any[];
-      resumes: any[];
-      chatCount: number;
-      timestamp: number;
-    };
-    chatMessagesCache?: {
-      [chatId: string]: {
-        messages: any[];
-        timestamp: number;
-      };
-    };
-    messagesCache?: {
-      [key: string]: {
-        messages: any[];
-        status: "active" | "closed" | "blocked";
-        otherUser: any;
-        timestamp: number;
-      };
-    };
-    currentOpenChat?: string;
-  }
-}
-
 const ALLOWED_FILE_TYPES = {
   images: ["image/jpeg", "image/png", "image/gif", "image/webp"],
   documents: [
@@ -112,8 +77,7 @@ const Chat = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [otherUser, setOtherUser] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const chatUpdateIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const messagesUpdateIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const isPageActive = useRef<boolean>(true);
   const [shareableChats, setShareableChats] = useState<
     Array<{ id: string; userName: string; userAvatar: string }>
@@ -148,92 +112,46 @@ const Chat = () => {
     }
   }, [isAuthenticated, isLoading, navigate]);
 
-  useEffect(() => {
-    const fetchPinnedChats = async () => {
-      if (!user) return;
+  /*
+useEffect(() => {
+  const fetchPinnedChats = async () => {
+    if (!user) return
 
-      try {
-        console.log("Fetching pinned chats for user:", user.id);
-        const userPinnedChats = await pinnedChatsService.getByUserId(user.id);
-        console.log("Received pinned chats:", userPinnedChats);
-
-        const pinnedChatIds = userPinnedChats.map((pc) => pc.chat.toString());
-        setPinnedChats(pinnedChatIds);
-
-        localStorage.setItem("pinnedChats", JSON.stringify(pinnedChatIds));
-
-        setChats((prevChats) => {
-          if (!prevChats || prevChats.length === 0) return prevChats;
-
-          return prevChats.map((chat) => ({
-            ...chat,
-            isPinned: pinnedChatIds.includes(chat.id.toString()),
-          }));
-        });
-      } catch (error) {
-        console.error("Error fetching pinned chats:", error);
-        const savedPinnedChats = localStorage.getItem("pinnedChats");
-        if (savedPinnedChats) {
-          try {
-            const pinnedChatIds = JSON.parse(savedPinnedChats);
-            setPinnedChats(pinnedChatIds);
-
-            setChats((prevChats) => {
-              if (!prevChats || prevChats.length === 0) return prevChats;
-
-              return prevChats.map((chat) => ({
-                ...chat,
-                isPinned: pinnedChatIds.includes(chat.id.toString()),
-              }));
-            });
-          } catch (e) {
-            console.error("Error parsing pinned chats from localStorage:", e);
-          }
+    try {
+      const userPinnedChats = await pinnedChatsService.getByUserId(user.id)
+      const pinnedChatIds = userPinnedChats.map((pc) => pc.chat.toString())
+      setPinnedChats(pinnedChatIds)
+      localStorage.setItem("pinnedChats", JSON.stringify(pinnedChatIds))
+    } catch (error) {
+      console.error("Error fetching pinned chats:", error)
+      const savedPinnedChats = localStorage.getItem("pinnedChats")
+      if (savedPinnedChats) {
+        try {
+          const pinnedChatIds = JSON.parse(savedPinnedChats)
+          setPinnedChats(pinnedChatIds)
+        } catch (e) {
+          console.error("Error parsing pinned chats from localStorage:", e)
         }
       }
-    };
+    }
+  }
 
-    fetchPinnedChats();
-  }, [user]);
+  fetchPinnedChats()
+}, [user])
+*/
 
   useEffect(() => {
     const handleVisibilityChange = () => {
       isPageActive.current = document.visibilityState === "visible";
-
-      if (isPageActive.current && location.pathname.includes("/chat")) {
-        fetchChats(true);
-        if (selectedChat) {
-          fetchMessages(true);
-        }
-      }
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
-    const handleRouteChange = () => {
-      const isChatPage = location.pathname.includes("/chat");
-
-      if (isChatPage) {
-        startPolling();
-      } else {
-        stopPolling();
-      }
-    };
-
-    handleRouteChange();
-
-    window.addEventListener("popstate", handleRouteChange);
-
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("popstate", handleRouteChange);
       stopPolling();
-
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
     };
-  }, [location.pathname]);
+  }, []);
 
   const togglePinChat = async (chatId: string, event: React.MouseEvent) => {
     event.stopPropagation();
@@ -244,12 +162,6 @@ const Chat = () => {
       if (pinnedChats.includes(chatId)) {
         await pinnedChatsService.delete(user.id, chatId);
         setPinnedChats(pinnedChats.filter((id) => id !== chatId));
-
-        setChats((prevChats) =>
-          prevChats.map((chat) =>
-            chat.id === chatId ? { ...chat, isPinned: false } : chat
-          )
-        );
       } else {
         if (pinnedChats.length < 3) {
           await pinnedChatsService.create({
@@ -257,12 +169,6 @@ const Chat = () => {
             chat: Number.parseInt(chatId),
           });
           setPinnedChats([...pinnedChats, chatId]);
-
-          setChats((prevChats) =>
-            prevChats.map((chat) =>
-              chat.id === chatId ? { ...chat, isPinned: true } : chat
-            )
-          );
         } else {
           toast.error("You can only pin up to 3 chats. Unpin one first.");
         }
@@ -295,7 +201,6 @@ const Chat = () => {
       let preview = "";
       if (ALLOWED_FILE_TYPES.images.includes(file.type)) {
         preview = URL.createObjectURL(file);
-        console.log(`Created preview URL for image: ${preview}`);
       } else {
         preview = "/file-icon.png";
       }
@@ -307,9 +212,7 @@ const Chat = () => {
       };
     });
 
-    console.log(`Added ${newFiles.length} files to upload queue`);
     setUploadedFiles([...uploadedFiles, ...newFiles]);
-
     event.target.value = "";
   };
 
@@ -324,72 +227,41 @@ const Chat = () => {
     setUploadedFiles(newFiles);
   };
 
-  const fetchChats = async (forceRefresh = false) => {
+  const clearAllCaches = () => {
+    messagesService.clearCache();
+
+    if (typeof window !== "undefined") {
+      delete window.chatDataCache;
+      delete window.chatRelatedDataCache;
+      delete window.chatMessagesCache;
+      delete window.messagesCache;
+    }
+  };
+
+  const fetchChats = async () => {
     if (!user) return;
 
     try {
-      console.log(`Fetching chats (forceRefresh: ${forceRefresh})`);
+      console.log(
+        `[${new Date().toISOString()}] 🔄 Fetching fresh chats data...`
+      );
 
-      const now = Date.now();
-      const cacheExpiry = 30000;
+      clearAllCaches();
 
-      if (
-        !forceRefresh &&
-        window.chatDataCache &&
-        now - window.chatDataCache.timestamp < cacheExpiry
-      ) {
-        setChats(window.chatDataCache.chats);
-
-        const totalUnread = window.chatDataCache.chats.reduce(
-          (total, chat) => total + chat.unreadCount,
-          0
-        );
-        setTotalUnreadCount(totalUnread);
-
-        setIsLoading(false);
-        return;
-      }
-
+      // Получаем все данные заново
       const allChats = await chatsService.getAll();
-      console.log(`Fetched ${allChats.length} chats from API`);
+      const allApplications = await applicationsService.getAll();
+      const allResumeApplications = await resumeApplicationsService.getAll();
+      const allJobs = await jobsApi.getAll();
+      const allUsers = await usersApi.getAll();
+      const allCompanies = await companiesApi.getAll();
+      const allResumes = await resumesApi.getAll();
 
-      let allApplications,
-        allResumeApplications,
-        allJobs,
-        allUsers,
-        allCompanies,
-        allResumes;
-
-      if (
-        !window.chatRelatedDataCache ||
-        forceRefresh ||
-        allChats.length !== window.chatRelatedDataCache.chatCount
-      ) {
-        allApplications = await applicationsService.getAll();
-        allResumeApplications = await resumeApplicationsService.getAll();
-        allJobs = await jobsApi.getAll();
-        allUsers = await usersApi.getAll();
-        allCompanies = await companiesApi.getAll();
-        allResumes = await resumesApi.getAll();
-
-        window.chatRelatedDataCache = {
-          applications: allApplications,
-          resumeApplications: allResumeApplications,
-          jobs: allJobs,
-          users: allUsers,
-          companies: allCompanies,
-          resumes: allResumes,
-          chatCount: allChats.length,
-          timestamp: now,
-        };
-      } else {
-        allApplications = window.chatRelatedDataCache.applications;
-        allResumeApplications = window.chatRelatedDataCache.resumeApplications;
-        allJobs = window.chatRelatedDataCache.jobs;
-        allUsers = window.chatRelatedDataCache.users;
-        allCompanies = window.chatRelatedDataCache.companies;
-        allResumes = window.chatRelatedDataCache.resumes;
-      }
+      console.log(
+        `[${new Date().toISOString()}] 📊 Got ${
+          allChats.length
+        } chats from server`
+      );
 
       const processedChats = [];
       let totalUnreadMessages = 0;
@@ -428,33 +300,19 @@ const Chat = () => {
 
           if (!isRelevant) continue;
 
-          let chatMessages;
-          let lastMessage = null;
-          let unreadCount = 0;
-
-          chatMessages = await messagesService.getByChatId(chat.id.toString());
-          console.log(
-            `Fetched ${chatMessages.length} messages for job application chat ${chat.id}`
+          // Получаем сообщения для каждого чата заново
+          const chatMessages = await messagesService.getByChatId(
+            chat.id.toString()
           );
-
-          if (!window.chatMessagesCache) window.chatMessagesCache = {};
-          window.chatMessagesCache[chat.id] = {
-            messages: chatMessages,
-            timestamp: now,
-          };
-
-          lastMessage =
+          const lastMessage =
             chatMessages.length > 0
               ? chatMessages[chatMessages.length - 1]
               : null;
 
-          const isChatOpen =
-            selectedChat === chat.id.toString() ||
-            window.currentOpenChat === chat.id.toString();
+          const isChatOpen = selectedChat === chat.id.toString();
+          let unreadCount = 0;
 
-          if (isChatOpen) {
-            unreadCount = 0;
-          } else {
+          if (!isChatOpen) {
             unreadCount = chatMessages.filter(
               (msg) => !msg.read && msg.sender !== Number.parseInt(user.id)
             ).length;
@@ -515,80 +373,40 @@ const Chat = () => {
             const resumeApplication = allResumeApplications.find(
               (app) => app.id === chat.resume_application
             );
-            if (!resumeApplication) {
-              console.error(
-                `Resume application ${chat.resume_application} not found for chat ${chat.id}`
-              );
-              continue;
-            }
+            if (!resumeApplication) continue;
 
             const resume = allResumes.find(
               (r) => r.id === resumeApplication.resume
             );
-            if (!resume) {
-              console.error(
-                `Resume ${resumeApplication.resume} not found for resume application ${resumeApplication.id}`
-              );
-              continue;
-            }
+            if (!resume) continue;
 
             let isRelevant = false;
 
             if (user.role === "student") {
               isRelevant = resume.user === Number.parseInt(user.id);
-              console.log(
-                `Student check: resume.user=${resume.user}, user.id=${user.id}, isRelevant=${isRelevant}`
-              );
             } else if (user.role === "company") {
               const userCompany = allCompanies.find(
                 (company) => company.user === Number.parseInt(user.id)
               );
               if (userCompany) {
                 isRelevant = resumeApplication.company === userCompany.id;
-                console.log(
-                  `Company check: resumeApplication.company=${resumeApplication.company}, userCompany.id=${userCompany.id}, isRelevant=${isRelevant}`
-                );
               }
             }
 
-            console.log(
-              `Processing resume chat ${chat.id}: isRelevant=${isRelevant}, user.role=${user.role}`
-            );
+            if (!isRelevant) continue;
 
-            if (!isRelevant) {
-              console.log(`Chat ${chat.id} not relevant for current user`);
-              continue;
-            }
-
-            let chatMessages;
-            let lastMessage = null;
-            let unreadCount = 0;
-
-            chatMessages = await messagesService.getByChatId(
+            const chatMessages = await messagesService.getByChatId(
               chat.id.toString()
             );
-            console.log(
-              `Fetched ${chatMessages.length} messages for resume application chat ${chat.id}`
-            );
-
-            if (!window.chatMessagesCache) window.chatMessagesCache = {};
-            window.chatMessagesCache[chat.id] = {
-              messages: chatMessages,
-              timestamp: now,
-            };
-
-            lastMessage =
+            const lastMessage =
               chatMessages.length > 0
                 ? chatMessages[chatMessages.length - 1]
                 : null;
 
-            const isChatOpen =
-              selectedChat === chat.id.toString() ||
-              window.currentOpenChat === chat.id.toString();
+            const isChatOpen = selectedChat === chat.id.toString();
+            let unreadCount = 0;
 
-            if (isChatOpen) {
-              unreadCount = 0;
-            } else {
+            if (!isChatOpen) {
               unreadCount = chatMessages.filter(
                 (msg) => !msg.read && msg.sender !== Number.parseInt(user.id)
               ).length;
@@ -649,21 +467,78 @@ const Chat = () => {
       processedChats.sort((a, b) => {
         if (a.isPinned && !b.isPinned) return -1;
         if (!a.isPinned && b.isPinned) return 1;
-
         return (
           new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
         );
       });
 
-      window.chatDataCache = {
-        chats: processedChats,
-        timestamp: now,
-      };
-
       setChats(processedChats);
+
+      try {
+        const userPinnedChats = await pinnedChatsService.getByUserId(user.id);
+        const pinnedChatIds = userPinnedChats.map((pc) => pc.chat.toString());
+
+        // Обновляем состояние только если изменилось
+        if (JSON.stringify(pinnedChatIds) !== JSON.stringify(pinnedChats)) {
+          setPinnedChats(pinnedChatIds);
+          localStorage.setItem("pinnedChats", JSON.stringify(pinnedChatIds));
+          console.log(
+            `[${new Date().toISOString()}] 📌 Updated pinned chats:`,
+            pinnedChatIds
+          );
+        }
+
+        const updatedChatsWithPins = processedChats.map((chat) => ({
+          ...chat,
+          isPinned: pinnedChatIds.includes(chat.id.toString()),
+        }));
+
+        updatedChatsWithPins.sort((a, b) => {
+          if (a.isPinned && !b.isPinned) return -1;
+          if (!a.isPinned && b.isPinned) return 1;
+          return (
+            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+          );
+        });
+
+        setChats(updatedChatsWithPins);
+      } catch (error) {
+        console.error("Error updating pinned chats:", error);
+        // Используем локальные данные как fallback
+        const savedPinnedChats = localStorage.getItem("pinnedChats");
+        if (savedPinnedChats) {
+          try {
+            const pinnedChatIds = JSON.parse(savedPinnedChats);
+            const updatedChatsWithPins = processedChats.map((chat) => ({
+              ...chat,
+              isPinned: pinnedChatIds.includes(chat.id.toString()),
+            }));
+
+            updatedChatsWithPins.sort((a, b) => {
+              if (a.isPinned && !b.isPinned) return -1;
+              if (!a.isPinned && b.isPinned) return 1;
+              return (
+                new Date(b.timestamp).getTime() -
+                new Date(a.timestamp).getTime()
+              );
+            });
+
+            setChats(updatedChatsWithPins);
+          } catch (e) {
+            console.error("Error parsing saved pinned chats:", e);
+            setChats(processedChats);
+          }
+        } else {
+          setChats(processedChats);
+        }
+      }
+
       setTotalUnreadCount(totalUnreadMessages);
+
       console.log(
-        `Processed ${processedChats.length} relevant chats with ${totalUnreadMessages} unread messages`
+        `[${new Date().toISOString()}] ✅ Updated ${
+          processedChats.length
+        } chats, ${totalUnreadMessages} unread`
       );
 
       const event = new CustomEvent("unreadMessagesUpdated", {
@@ -671,96 +546,21 @@ const Chat = () => {
       });
       window.dispatchEvent(event);
     } catch (error) {
-      console.error("Error fetching chats:", error);
-      console.log(`Error fetching chats: ${error}`);
+      console.error("❌ Error fetching chats:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleMessagesScroll = () => {
-    if (!messagesContainerRef.current) return;
-
-    const { scrollTop, scrollHeight, clientHeight } =
-      messagesContainerRef.current;
-    const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
-
-    setShowScrollButton(!isNearBottom);
-
-    setIsUserScrolling(true);
-
-    if (scrollTimeoutRef.current) {
-      clearTimeout(scrollTimeoutRef.current);
-    }
-
-    scrollTimeoutRef.current = setTimeout(() => {
-      setIsUserScrolling(false);
-    }, 1000);
-  };
-
-  useEffect(() => {
-    if (user) {
-      fetchChats();
-
-      const handleFocus = () => {
-        if (location.pathname.includes("/chat")) {
-          fetchChats(true);
-          if (selectedChat) {
-            fetchMessages(true);
-          }
-        }
-      };
-
-      const handleChatCreated = (event: CustomEvent) => {
-        console.log("Chat created event received:", event.detail);
-        fetchChats(true);
-
-        if (event.detail?.chatId) {
-          setSelectedChat(event.detail.chatId);
-        }
-      };
-
-      window.addEventListener("focus", handleFocus);
-      window.addEventListener(
-        "chatCreated",
-        handleChatCreated as EventListener
-      );
-
-      return () => {
-        window.removeEventListener("focus", handleFocus);
-        window.removeEventListener(
-          "chatCreated",
-          handleChatCreated as EventListener
-        );
-      };
-    }
-  }, [user, location.pathname, selectedChat]);
-
-  const fetchMessages = async (forceRefresh = false) => {
+  const fetchMessages = async () => {
     if (!selectedChat || !user) return;
 
     try {
       console.log(
-        `Fetching messages for chat ${selectedChat} (forceRefresh: ${forceRefresh})`
+        `[${new Date().toISOString()}] 💬 Fetching fresh messages for chat ${selectedChat}`
       );
 
-      const now = Date.now();
-      const messagesCacheKey = `messages_${selectedChat}`;
-      const cacheExpiry = 10000;
-
-      if (
-        !forceRefresh &&
-        window.messagesCache &&
-        window.messagesCache[messagesCacheKey] &&
-        now - window.messagesCache[messagesCacheKey].timestamp < cacheExpiry
-      ) {
-        setMessages(window.messagesCache[messagesCacheKey].messages);
-        setChatStatus(window.messagesCache[messagesCacheKey].status);
-        setOtherUser(window.messagesCache[messagesCacheKey].otherUser);
-
-        markMessagesAsRead(selectedChat);
-        return;
-      }
+      messagesService.clearCache();
 
       const chat = await chatsService.getById(selectedChat);
       setChatStatus(chat.status as "active" | "closed" | "blocked");
@@ -771,7 +571,6 @@ const Chat = () => {
         const application = await applicationsService.getById(
           chat.application.toString()
         );
-
         const job = await jobsApi.getById(application.job.toString());
 
         const isCompany = user.role === "company";
@@ -785,7 +584,6 @@ const Chat = () => {
         const resumeApplication = await resumeApplicationsService.getById(
           chat.resume_application.toString()
         );
-
         const resume = await resumesApi.getById(
           resumeApplication.resume.toString()
         );
@@ -807,7 +605,9 @@ const Chat = () => {
 
       const chatMessages = await messagesService.getByChatId(selectedChat);
       console.log(
-        `Fetched ${chatMessages.length} messages for chat ${selectedChat}`
+        `[${new Date().toISOString()}] 📨 Got ${
+          chatMessages.length
+        } messages for chat ${selectedChat}`
       );
 
       const transformedMessages = chatMessages.map((msg) => ({
@@ -820,60 +620,48 @@ const Chat = () => {
         read: msg.read,
       }));
 
-      if (!window.messagesCache) window.messagesCache = {};
-      window.messagesCache[messagesCacheKey] = {
-        messages: transformedMessages,
-        status: chat.status as "active" | "closed" | "blocked",
-        otherUser: otherUserDetails,
-        timestamp: now,
-      };
+      if (transformedMessages.length !== messages.length) {
+        console.log(
+          `[${new Date().toISOString()}] 🆕 Messages count changed: ${
+            messages.length
+          } -> ${transformedMessages.length}`
+        );
+        setMessages(transformedMessages);
 
-      setMessages(transformedMessages);
+        setTimeout(() => {
+          if (!isUserScrolling) {
+            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+          }
+        }, 100);
+      } else {
+        const hasChanges = transformedMessages.some((newMsg, index) => {
+          const oldMsg = messages[index];
+          return (
+            !oldMsg ||
+            oldMsg.read !== newMsg.read ||
+            oldMsg.content !== newMsg.content
+          );
+        });
+
+        if (hasChanges) {
+          console.log(
+            `[${new Date().toISOString()}] 🔄 Messages content changed, updating...`
+          );
+          setMessages(transformedMessages);
+        }
+      }
 
       await markMessagesAsRead(selectedChat);
     } catch (error) {
-      console.error("Error fetching messages:", error);
-      console.log(`Error fetching messages: ${error}`);
+      console.error("❌ Error fetching messages:", error);
     }
   };
-
-  useEffect(() => {
-    if (selectedChat) {
-      window.currentOpenChat = selectedChat;
-
-      setIsLoading(true);
-      hasMarkedMessagesAsRead.current = false;
-      initialScrollDone.current = false;
-
-      fetchMessages(true).finally(() => {
-        setIsLoading(false);
-        if (user && !hasMarkedMessagesAsRead.current) {
-          markMessagesAsRead(selectedChat);
-
-          setTimeout(() => {
-            fetchChats(true);
-          }, 500);
-        }
-      });
-    }
-
-    return () => {
-      if (messagesUpdateIntervalRef.current) {
-        clearInterval(messagesUpdateIntervalRef.current);
-        messagesUpdateIntervalRef.current = null;
-      }
-
-      window.currentOpenChat = undefined;
-    };
-  }, [selectedChat, user]);
 
   const markMessagesAsRead = async (chatId: string) => {
     if (!user || markingInProgress.current) return;
 
     try {
       markingInProgress.current = true;
-      console.log(`Attempting to mark messages as read in chat ${chatId}`);
-
       await chatsService.markAllAsRead(chatId, user.id);
       hasMarkedMessagesAsRead.current = true;
 
@@ -903,98 +691,33 @@ const Chat = () => {
         return updatedChats;
       });
 
-      setHasNewMessages(false);
-      setNewMessageCount(0);
-
       const event = new CustomEvent("unreadMessagesUpdated");
       window.dispatchEvent(event);
-
-      console.log(`Successfully marked all messages as read in chat ${chatId}`);
     } catch (error) {
       console.error("Error marking messages as read:", error);
-      console.log(`Error marking messages as read: ${error}`);
     } finally {
       markingInProgress.current = false;
     }
   };
 
-  useEffect(() => {
-    if (selectedChat && location.pathname.includes(`/chat/${selectedChat}`)) {
-      const markAllMessagesAsRead = async () => {
-        if (!user) return;
+  const handleMessagesScroll = () => {
+    if (!messagesContainerRef.current) return;
 
-        try {
-          console.log(
-            `Marking all messages as read in chat ${selectedChat} via markAllAsReadInChat`
-          );
-          await messagesService.markAllAsReadInChat(selectedChat, user.id);
-          hasMarkedMessagesAsRead.current = true;
+    const { scrollTop, scrollHeight, clientHeight } =
+      messagesContainerRef.current;
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
 
-          setMessages((prev) =>
-            prev.map((msg) => ({
-              ...msg,
-              read: msg.senderId === user.id ? msg.read : true,
-            }))
-          );
+    setShowScrollButton(!isNearBottom);
 
-          setChats((prev) => {
-            const updatedChats = prev.map((chat) =>
-              chat.id === selectedChat ? { ...chat, unreadCount: 0 } : chat
-            );
+    setIsUserScrolling(true);
 
-            const newTotalUnread = updatedChats.reduce(
-              (total, chat) => total + chat.unreadCount,
-              0
-            );
-            setTotalUnreadCount(newTotalUnread);
-
-            return updatedChats;
-          });
-
-          fetchChats(true);
-
-          const event = new CustomEvent("unreadMessagesUpdated");
-          window.dispatchEvent(event);
-        } catch (error) {
-          console.error("Error marking all messages as read:", error);
-          console.log(`Error in markAllMessagesAsRead: ${error}`);
-        }
-      };
-
-      markAllMessagesAsRead();
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
     }
-  }, [selectedChat, location.pathname, user]);
 
-  const checkForNewChatMessages = async () => {
-    if (!selectedChat || !user) return;
-
-    try {
-      const chatMessages = await messagesService.getByChatId(selectedChat);
-
-      if (chatMessages.length > messages.length) {
-        const newCount = chatMessages.length - messages.length;
-
-        const isNearBottom = messagesContainerRef.current
-          ? messagesContainerRef.current.scrollHeight -
-              messagesContainerRef.current.scrollTop -
-              messagesContainerRef.current.clientHeight <
-            100
-          : false;
-
-        await fetchMessages(true);
-
-        if (isUserScrolling || !isNearBottom) {
-          setNewMessageCount((prev) => prev + newCount);
-          setHasNewMessages(true);
-          setShowScrollButton(true);
-        } else {
-          markMessagesAsRead(selectedChat);
-        }
-      }
-    } catch (error) {
-      console.error("Error checking for new chat messages:", error);
-      console.log(`Error checking for new chat messages: ${error}`);
-    }
+    scrollTimeoutRef.current = setTimeout(() => {
+      setIsUserScrolling(false);
+    }, 1000);
   };
 
   const scrollToBottom = () => {
@@ -1007,6 +730,61 @@ const Chat = () => {
       markMessagesAsRead(selectedChat);
     }
   };
+
+  const startPolling = () => {
+    console.log(`[${new Date().toISOString()}] 🚀 Starting fresh polling...`);
+    stopPolling();
+
+    if (location.pathname.includes("/chat")) {
+      fetchChats();
+      if (selectedChat) {
+        fetchMessages();
+      }
+
+      pollingIntervalRef.current = setInterval(() => {
+        if (isPageActive.current && document.hasFocus()) {
+          console.log(`[${new Date().toISOString()}] 🔄 Polling update...`);
+          fetchChats();
+          if (selectedChat) {
+            fetchMessages();
+          }
+        }
+      }, 2000);
+
+      console.log(`[${new Date().toISOString()}] ✅ Polling started`);
+    }
+  };
+
+  const stopPolling = () => {
+    console.log(`[${new Date().toISOString()}] ⏹️ Stopping polling...`);
+
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    if (user && location.pathname.includes("/chat")) {
+      startPolling();
+
+      return () => {
+        stopPolling();
+      };
+    }
+  }, [user, location.pathname, selectedChat]);
+
+  useEffect(() => {
+    if (selectedChat) {
+      setIsLoading(true);
+      hasMarkedMessagesAsRead.current = false;
+      initialScrollDone.current = false;
+
+      fetchMessages().finally(() => {
+        setIsLoading(false);
+      });
+    }
+  }, [selectedChat, user]);
 
   useEffect(() => {
     const isInitialLoad = !initialScrollDone.current && messages.length > 0;
@@ -1023,8 +801,6 @@ const Chat = () => {
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
       }, 100);
-    } else if (messages.length > 0 && !isUserScrolling && !isInitialLoad) {
-      setShowScrollButton(true);
     }
   }, [messages, user?.id]);
 
@@ -1042,175 +818,20 @@ const Chat = () => {
     }
   }, [chatId]);
 
-  useEffect(() => {
-    if (selectedChat && location.pathname.includes(`/chat/${selectedChat}`)) {
-      markMessagesAsRead(selectedChat);
-    }
-  }, [selectedChat, location.pathname]);
-
-  useEffect(() => {
-    if (
-      selectedChat &&
-      user &&
-      location.pathname.includes(`/chat/${selectedChat}`)
-    ) {
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              markMessagesAsRead(selectedChat);
-            }
-          });
-        },
-        { threshold: 0.1 }
-      );
-
-      const messagesContainer = document.querySelector(".messages-container");
-      if (messagesContainer) {
-        observer.observe(messagesContainer);
-      }
-
-      return () => {
-        if (messagesContainer) {
-          observer.unobserve(messagesContainer);
-        }
-      };
-    }
-  }, [selectedChat, user, location.pathname]);
-
-  const startPolling = () => {
-    stopPolling();
-
-    if (location.pathname.includes("/chat") && isPageActive.current) {
-      fetchChats();
-
-      chatUpdateIntervalRef.current = setInterval(() => {
-        if (isPageActive.current && document.hasFocus()) {
-          checkForNewMessages();
-        }
-      }, 2000);
-
-      if (selectedChat) {
-        messagesUpdateIntervalRef.current = setInterval(() => {
-          if (isPageActive.current && document.hasFocus()) {
-            checkForNewChatMessages();
-          }
-        }, 2000);
-      }
-    }
-  };
-
-  const stopPolling = () => {
-    if (chatUpdateIntervalRef.current) {
-      clearInterval(chatUpdateIntervalRef.current);
-      chatUpdateIntervalRef.current = null;
-    }
-
-    if (messagesUpdateIntervalRef.current) {
-      clearInterval(messagesUpdateIntervalRef.current);
-      messagesUpdateIntervalRef.current = null;
-    }
-  };
-
-  const checkForNewMessages = async () => {
-    if (!user) return;
-
-    try {
-      const allChats = await chatsService.getAll();
-
-      if (
-        !window.chatRelatedDataCache ||
-        allChats.length !== window.chatRelatedDataCache.chatCount
-      ) {
-        fetchChats(true);
-        return;
-      }
-
-      let hasNewMessages = false;
-      let updatedChats = [...chats];
-      let needsUpdate = false;
-      let newTotalUnread = 0;
-
-      for (const chat of chats) {
-        const chatMessages = await messagesService.getByChatId(chat.id);
-
-        const isChatOpen =
-          selectedChat === chat.id || window.currentOpenChat === chat.id;
-
-        let unreadCount = 0;
-        if (!isChatOpen) {
-          unreadCount = chatMessages.filter(
-            (msg) => !msg.read && msg.sender !== Number.parseInt(user.id)
-          ).length;
-          newTotalUnread += unreadCount;
-        }
-
-        if (unreadCount !== chat.unreadCount) {
-          hasNewMessages = true;
-          updatedChats = updatedChats.map((c) =>
-            c.id === chat.id ? { ...c, unreadCount } : c
-          );
-          needsUpdate = true;
-        }
-
-        if (
-          !window.chatMessagesCache ||
-          !window.chatMessagesCache[chat.id] ||
-          chatMessages.length >
-            window.chatMessagesCache[chat.id].messages.length
-        ) {
-          hasNewMessages = true;
-
-          if (!window.chatMessagesCache) window.chatMessagesCache = {};
-          window.chatMessagesCache[chat.id] = {
-            messages: chatMessages,
-            timestamp: Date.now(),
-          };
-
-          if (isChatOpen) {
-            fetchMessages(true);
-            markMessagesAsRead(chat.id);
-          }
-        }
-      }
-
-      if (needsUpdate) {
-        setChats(updatedChats);
-        setTotalUnreadCount(newTotalUnread);
-      }
-
-      if (hasNewMessages && !needsUpdate) {
-        fetchChats(true);
-      }
-
-      const event = new CustomEvent("unreadMessagesUpdated", {
-        detail: { unreadCount: newTotalUnread },
-      });
-      window.dispatchEvent(event);
-    } catch (error) {
-      console.error("Error checking for new messages:", error);
-      console.log(`Error checking for new messages: ${error}`);
-    }
-  };
-
   const handleEmojiSelect = (emojiData: any) => {
     setNewMessage((prev) => prev + emojiData.emoji);
     setShowEmojiPicker(false);
   };
 
   const uploadFile = async (file: File): Promise<string> => {
-    console.log(`Uploading file: ${file.name}, type: ${file.type}`);
-
     return new Promise((resolve) => {
       setTimeout(() => {
         if (file.type.startsWith("image/")) {
           const reader = new FileReader();
           reader.onloadend = () => {
-            console.log(`Created data URL for image: ${file.name}`);
             resolve(reader.result as string);
           };
           reader.onerror = () => {
-            console.error(`Failed to create data URL for: ${file.name}`);
             resolve(`https://example.com/uploads/${file.name}`);
           };
           reader.readAsDataURL(file);
@@ -1219,105 +840,6 @@ const Chat = () => {
         }
       }, 500);
     });
-  };
-
-  const generateCoverLetter = async (application: any, job: any) => {
-    if (!selectedChat || !user) return;
-
-    try {
-      const userResumes = await resumesApi.getByUserId(user.id);
-      const latestResume = userResumes[0];
-
-      const coverLetterContent = `Dear Hiring Manager,
-
-I am writing to express my strong interest in the ${job.title} position at ${
-        job.company?.name || "your company"
-      }. 
-
-${
-  latestResume
-    ? `With my background in ${
-        latestResume.profession || "the field"
-      } and experience in ${
-        latestResume.specialization || "relevant technologies"
-      }, I am confident that I would be a valuable addition to your team.`
-    : "I am excited about the opportunity to contribute to your team."
-}
-
-Key qualifications I bring:
-${
-  latestResume?.skills
-    ? Object.entries(latestResume.skills)
-        .map(([skill, level]) => `• ${skill}: ${level}`)
-        .join("\n")
-    : "• Strong technical skills\n• Problem-solving abilities\n• Team collaboration"
-}
-
-${
-  latestResume?.experience
-    ? `My experience includes: ${latestResume.experience}`
-    : "I am eager to apply my skills and learn new technologies in this role."
-}
-
-I would welcome the opportunity to discuss how my background and enthusiasm can contribute to your team's success.
-
-Thank you for your consideration.
-
-Best regards,
-${user.first_name} ${user.last_name}`;
-
-      const messageData = {
-        chat: Number.parseInt(selectedChat),
-        sender: Number.parseInt(user.id),
-        content: coverLetterContent,
-        message_type: "coverLetter",
-        metadata: {
-          applicationId: application.id,
-          jobId: job.id,
-          resumeId: latestResume?.id,
-        },
-        read: false,
-      };
-
-      const tempId = `temp-cover-${Date.now()}`;
-      const tempMessage = {
-        id: tempId,
-        senderId: user.id,
-        content: coverLetterContent,
-        type: "coverLetter",
-        metadata: messageData.metadata,
-        timestamp: new Date().toISOString(),
-        read: false,
-      };
-
-      setMessages((prev) => [...prev, tempMessage]);
-
-      const createdMessage = await messagesService.create(messageData);
-
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === tempId
-            ? {
-                ...msg,
-                id: createdMessage.id.toString(),
-                timestamp: createdMessage.created_at,
-              }
-            : msg
-        )
-      );
-
-      await applicationsService.update(application.id.toString(), {
-        cover_letter: coverLetterContent,
-      });
-
-      toast.success("Cover letter generated and sent!");
-    } catch (error) {
-      console.error("Error generating cover letter:", error);
-      toast.error("Failed to generate cover letter. Please try again.");
-      setMessages((prev) =>
-        prev.filter((msg) => !msg.id.startsWith("temp-cover-"))
-      );
-    }
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -1373,8 +895,9 @@ ${user.first_name} ${user.last_name}`;
         setMessages((prev) => [...prev, tempMessage]);
         setNewMessage("");
 
+        clearAllCaches();
+
         const createdMessage = await messagesService.create(messageData);
-        console.log(`Created new text message with ID ${createdMessage.id}`);
 
         setMessages((prev) =>
           prev.map((msg) =>
@@ -1413,13 +936,13 @@ ${user.first_name} ${user.last_name}`;
 
         setMessages((prev) => [...prev, ...tempFileMessages]);
 
-        const fileMessageResults = await Promise.all(
+        clearAllCaches();
+
+        await Promise.all(
           filePromises.map(async (fileData) => {
             return messagesService.create(await fileData);
           })
         );
-
-        console.log(`Created ${fileMessageResults.length} file messages`);
 
         setUploadedFiles([]);
       }
@@ -1428,18 +951,12 @@ ${user.first_name} ${user.last_name}`;
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
       }, 100);
 
-      if (
-        window.messagesCache &&
-        window.messagesCache[`messages_${selectedChat}`]
-      ) {
-        window.messagesCache[`messages_${selectedChat}`].messages = messages;
-        window.messagesCache[`messages_${selectedChat}`].timestamp = Date.now();
-      }
-
-      fetchChats(true);
+      setTimeout(() => {
+        clearAllCaches();
+        fetchChats();
+      }, 500);
     } catch (error) {
       console.error("Error sending message:", error);
-      console.log(`Error sending message: ${error}`);
       setMessages((prev) => prev.filter((msg) => !msg.id.startsWith("temp-")));
       toast.error("Failed to send message. Please try again.");
     }
@@ -1458,6 +975,7 @@ ${user.first_name} ${user.last_name}`;
             await chatsService.delete(selectedChat);
             toast.success("Chat deleted successfully");
             setSelectedChat(null);
+            clearAllCaches();
             fetchChats();
           }
           break;
@@ -1498,7 +1016,6 @@ ${user.first_name} ${user.last_name}`;
       setShowSettings(false);
     } catch (error) {
       console.error(`Error performing action ${action}:`, error);
-      console.log(`Error performing action ${action}: ${error}`);
       toast.error(`Failed to ${action} chat. Please try again.`);
     }
   };
@@ -1595,7 +1112,6 @@ Specialization: ${resume.specialization || "Not provided"}
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Error downloading resume:", error);
-      console.log(`Error downloading resume: ${error}`);
     }
   };
 
@@ -1660,7 +1176,6 @@ Specialization: ${resume.specialization || "Not provided"}
 
     if (message.type === "image" && message.metadata?.fileUrl) {
       const imageUrl = fixFileUrl(message.metadata.fileUrl);
-      console.log(`Rendering image with URL: ${imageUrl}`);
 
       return (
         <div className="mb-2">
@@ -1673,7 +1188,6 @@ Specialization: ${resume.specialization || "Not provided"}
                 window.open(imageUrl, "_blank");
               }}
               onError={(e) => {
-                console.error(`Failed to load image: ${imageUrl}`);
                 (e.target as HTMLImageElement).src = "/placeholder.svg";
               }}
             />
@@ -1696,7 +1210,6 @@ Specialization: ${resume.specialization || "Not provided"}
       const fileName = message.metadata.fileName || "Document";
       const fileType = message.metadata.fileType || "";
 
-      const FileIcon = File;
       let iconColor = "text-emerald-400";
 
       if (fileType.includes("pdf")) {
@@ -1809,21 +1322,6 @@ Specialization: ${resume.specialization || "Not provided"}
     return <p className="leading-relaxed break-words">{message.content}</p>;
   };
 
-  useEffect(() => {
-    const messagesContainer = messagesContainerRef.current;
-    if (!messagesContainer) return;
-
-    const handleScroll = () => {
-      setIsUserScrolling(true);
-    };
-
-    messagesContainer.addEventListener("scroll", handleScroll);
-
-    return () => {
-      messagesContainer.removeEventListener("scroll", handleScroll);
-    };
-  }, [messagesContainerRef.current]);
-
   const filteredChats = chats.filter(
     (chat) =>
       chat.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -1840,10 +1338,6 @@ Specialization: ${resume.specialization || "Not provided"}
     <div
       className="fixed inset-0 pt-20 bg-gray-900 flex"
       onClick={() => {
-        if (!chatUpdateIntervalRef.current) {
-          startPolling();
-        }
-
         if (showEmojiPicker) {
           setShowEmojiPicker(false);
         }
@@ -1981,9 +1475,6 @@ Specialization: ${resume.specialization || "Not provided"}
                     <img
                       src={
                         chats.find((c) => c.id === selectedChat)?.avatarUrl ||
-                        "/placeholder.svg" ||
-                        "/placeholder.svg" ||
-                        "/placeholder.svg" ||
                         "/placeholder.svg"
                       }
                       alt={
@@ -2304,30 +1795,11 @@ Specialization: ${resume.specialization || "Not provided"}
         onClose={() => setShowShareModal(false)}
         onShare={(chatId) => {
           if (selectedChat && otherUser) {
-            // Handle sharing contact to selected chat
             toast.success(`Contact shared to chat`);
           }
         }}
         chats={shareableChats}
       />
-
-      {/* Custom Scrollbar Styles */}
-      <style jsx global>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: #374151;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #4b5563;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #6b7280;
-        }
-      `}</style>
     </div>
   );
 };
