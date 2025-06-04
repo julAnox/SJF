@@ -1,7 +1,9 @@
-import { useState, useEffect, useContext } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+"use client";
+
+import { useState, useEffect, useContext } from "react";
+import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
   Timer,
   DollarSign,
@@ -15,11 +17,13 @@ import {
   Building2,
   GraduationCap,
   Rocket,
-  CheckCircle2
-} from 'lucide-react';
-import AuctionTutorialModal from '../../components/Modals/AuctionTutorialModal';
-import { ApplicationContext } from '../../App';
-import { useAuth } from '../../contexts/AuthContext';
+  CheckCircle2,
+  RefreshCw,
+} from "lucide-react";
+import AuctionTutorialModal from "../../components/Modals/AuctionTutorialModal";
+import { ApplicationContext } from "../../App";
+import { useAuth } from "../../contexts/AuthContext";
+import type { JSX } from "react";
 
 interface Bid {
   companyId: string;
@@ -44,78 +48,118 @@ interface AuctionStage {
 const stages: AuctionStage[] = [
   {
     id: 1,
-    name: 'salary',
-    description: 'Base salary bidding',
+    name: "salary",
+    description: "Base salary bidding",
     icon: <DollarSign className="w-6 h-6" />,
-    color: 'emerald'
+    color: "emerald",
   },
   {
     id: 2,
-    name: 'equity',
-    description: 'Company equity percentage',
+    name: "equity",
+    description: "Company equity percentage",
     icon: <Percent className="w-6 h-6" />,
-    color: 'emerald'
+    color: "emerald",
   },
   {
     id: 3,
-    name: 'benefits',
-    description: 'Social benefits package',
+    name: "benefits",
+    description: "Social benefits package",
     icon: <Package className="w-6 h-6" />,
-    color: 'emerald'
+    color: "emerald",
   },
   {
     id: 4,
-    name: 'position',
-    description: 'Job position and level',
+    name: "position",
+    description: "Job position and level",
     icon: <Award className="w-6 h-6" />,
-    color: 'emerald'
-  }
+    color: "emerald",
+  },
 ];
 
 const mockCompanies: Company[] = [
   {
-    id: '1',
-    name: 'TechCorp',
-    logo: 'https://images.unsplash.com/photo-1549421263-6064833b071b?w=100&h=100&fit=crop'
-  }
+    id: "1",
+    name: "TechCorp",
+    logo: "https://images.unsplash.com/photo-1549421263-6064833b071b?w=100&h=100&fit=crop",
+  },
+  {
+    id: "2",
+    name: "InnovateLab",
+    logo: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=100&h=100&fit=crop",
+  },
+  {
+    id: "3",
+    name: "DataFlow",
+    logo: "https://images.unsplash.com/photo-1573164713714-d95e436ab8d6?w=100&h=100&fit=crop",
+  },
 ];
 
 const positionLevels = [
-  { level: 'Middle', color: 'bg-gray-700' },
-  { level: 'Senior', color: 'bg-gray-700' },
-  { level: 'Lead', color: 'bg-gray-700' },
-  { level: 'Head', color: 'bg-gray-700' },
-  { level: 'Director', color: 'bg-gray-700' }
+  { level: "Middle", color: "bg-gray-700" },
+  { level: "Senior", color: "bg-gray-700" },
+  { level: "Lead", color: "bg-gray-700" },
+  { level: "Head", color: "bg-gray-700" },
+  { level: "Director", color: "bg-gray-700" },
 ];
 
 const Auction = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { applicationCount, setApplicationCount } = useContext(ApplicationContext);
+  const { applicationCount, refreshApplicationCount, resetApplications } =
+    useContext(ApplicationContext);
   const [countdown, setCountdown] = useState<number>(30);
   const [currentStage, setCurrentStage] = useState<number>(0);
-  const [stageTime, setStageTime] = useState<number>(60);
+  const [stageTime, setStageTime] = useState<number>(15);
   const [companyTurn, setCompanyTurn] = useState<number>(0);
-  const [bidInput, setBidInput] = useState<string>('');
-  const [benefitsInput, setBenefitsInput] = useState<string>('');
+  const [bidInput, setBidInput] = useState<string>("");
+  const [benefitsInput, setBenefitsInput] = useState<string>("");
   const [bids, setBids] = useState<{ [key: string]: Bid[] }>({
     salary: [],
     equity: [],
     benefits: [],
-    position: []
+    position: [],
   });
   const [showResults, setShowResults] = useState<boolean>(false);
   const [auctionStarted, setAuctionStarted] = useState<boolean>(false);
   const [showTutorial, setShowTutorial] = useState<boolean>(true);
   const [tutorialCompleted, setTutorialCompleted] = useState<boolean>(false);
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
-  const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
+  // Обновляем счетчик при загрузке компонента
   useEffect(() => {
-    if (applicationCount >= 3 && tutorialCompleted && countdown > 0 && !auctionStarted) {
+    console.log(
+      "Auction component loaded, current application count:",
+      applicationCount
+    );
+    // Автоматически обновляем данные из базы при загрузке
+    refreshApplicationCount();
+  }, []);
+
+  // Функция для ручного обновления данных
+  const handleRefreshCount = async () => {
+    setIsRefreshing(true);
+    try {
+      await refreshApplicationCount();
+      console.log("Application count refreshed manually");
+    } catch (err) {
+      console.error("Error refreshing application count:", err);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  // Таймер обратного отсчета до начала аукциона
+  useEffect(() => {
+    if (
+      applicationCount >= 3 &&
+      tutorialCompleted &&
+      countdown > 0 &&
+      !auctionStarted
+    ) {
       const timer = setInterval(() => {
-        setCountdown(prev => prev - 1);
+        setCountdown((prev) => prev - 1);
       }, 1000);
 
       return () => clearInterval(timer);
@@ -124,6 +168,7 @@ const Auction = () => {
     }
   }, [countdown, auctionStarted, applicationCount, tutorialCompleted]);
 
+  // Таймер этапов аукциона
   useEffect(() => {
     if (auctionStarted && currentStage < stages.length) {
       const timer = setInterval(() => {
@@ -131,10 +176,11 @@ const Auction = () => {
           if (prev <= 0) {
             clearInterval(timer);
             setCurrentStage((current) => current + 1);
-            setStageTime(60);
-            setBidInput('');
-            setBenefitsInput('');
-            return 60;
+            setStageTime(15);
+            setBidInput("");
+            setBenefitsInput("");
+            setCompanyTurn(0);
+            return 15;
           }
           return prev - 1;
         });
@@ -146,46 +192,57 @@ const Auction = () => {
     }
   }, [auctionStarted, currentStage]);
 
+  // Автоматическая смена компаний
+  useEffect(() => {
+    if (auctionStarted && currentStage < stages.length) {
+      const timer = setInterval(() => {
+        setCompanyTurn((prev) => (prev + 1) % mockCompanies.length);
+      }, 3000);
+
+      return () => clearInterval(timer);
+    }
+  }, [auctionStarted, currentStage]);
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
   const handleBid = (companyId: string, value: number | string) => {
     const newBid: Bid = {
       companyId,
       amount: value,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     switch (currentStage) {
       case 0:
-        setBids(prev => ({ ...prev, salary: [...prev.salary, newBid] }));
-        setBidInput('');
+        setBids((prev) => ({ ...prev, salary: [...prev.salary, newBid] }));
+        setBidInput("");
         break;
       case 1:
-        setBids(prev => ({ ...prev, equity: [...prev.equity, newBid] }));
-        setBidInput('');
+        setBids((prev) => ({ ...prev, equity: [...prev.equity, newBid] }));
+        setBidInput("");
         break;
       case 2:
-        setBids(prev => ({ ...prev, benefits: [...prev.benefits, newBid] }));
-        setBenefitsInput('');
+        setBids((prev) => ({ ...prev, benefits: [...prev.benefits, newBid] }));
+        setBenefitsInput("");
         break;
       case 3:
-        setBids(prev => ({ ...prev, position: [...prev.position, newBid] }));
-        setBidInput('');
+        setBids((prev) => ({ ...prev, position: [...prev.position, newBid] }));
+        setBidInput("");
         break;
     }
   };
 
   const handleCompanySelect = async (companyId: string) => {
     setSelectedCompany(companyId);
-    
-    const chats = JSON.parse(localStorage.getItem('chats') || '{}');
+
+    const chats = JSON.parse(localStorage.getItem("chats") || "{}");
     const chatId = `chat_${Date.now()}`;
-    const company = mockCompanies.find(c => c.id === companyId);
-    
+    const company = mockCompanies.find((c) => c.id === companyId);
+
     if (!company) return;
 
     const newChat = {
@@ -195,57 +252,121 @@ const Auction = () => {
       messages: [
         {
           id: Date.now().toString(),
-          senderId: 'system',
-          type: 'text',
-          content: 'Auction Results',
-          timestamp: new Date().toISOString()
+          senderId: "system",
+          type: "text",
+          content: "🎉 Congratulations! You've been selected!",
+          timestamp: new Date().toISOString(),
         },
         {
           id: (Date.now() + 1).toString(),
-          senderId: 'system',
-          type: 'text',
-          content: `Salary: ${bids.salary.find(b => b.companyId === companyId)?.amount || '-'}`,
-          timestamp: new Date().toISOString()
+          senderId: "system",
+          type: "text",
+          content: `💰 Final Salary: ${
+            bids.salary.find((b) => b.companyId === companyId)?.amount ||
+            "Not specified"
+          }`,
+          timestamp: new Date().toISOString(),
         },
         {
           id: (Date.now() + 2).toString(),
-          senderId: 'system',
-          type: 'text',
-          content: `Equity: ${bids.equity.find(b => b.companyId === companyId)?.amount || '-'}%`,
-          timestamp: new Date().toISOString()
+          senderId: "system",
+          type: "text",
+          content: `📈 Equity: ${
+            bids.equity.find((b) => b.companyId === companyId)?.amount || "0"
+          }%`,
+          timestamp: new Date().toISOString(),
         },
         {
           id: (Date.now() + 3).toString(),
-          senderId: 'system',
-          type: 'text',
-          content: `Benefits: ${bids.benefits.find(b => b.companyId === companyId)?.amount || '-'}`,
-          timestamp: new Date().toISOString()
+          senderId: "system",
+          type: "text",
+          content: `🎁 Benefits: ${
+            bids.benefits.find((b) => b.companyId === companyId)?.amount ||
+            "Standard package"
+          }`,
+          timestamp: new Date().toISOString(),
         },
         {
           id: (Date.now() + 4).toString(),
-          senderId: 'system',
-          type: 'text',
-          content: `Position: ${bids.position.find(b => b.companyId === companyId)?.amount || '-'}`,
-          timestamp: new Date().toISOString()
-        }
+          senderId: "system",
+          type: "text",
+          content: `🏆 Position: ${
+            bids.position.find((b) => b.companyId === companyId)?.amount ||
+            "As discussed"
+          }`,
+          timestamp: new Date().toISOString(),
+        },
+        {
+          id: (Date.now() + 5).toString(),
+          senderId: "system",
+          type: "text",
+          content:
+            "Let's discuss the next steps! When would you like to start?",
+          timestamp: new Date().toISOString(),
+        },
       ],
-      lastMessage: 'Auction completed',
+      lastMessage: "Auction completed successfully",
       timestamp: new Date().toISOString(),
-      status: 'active'
+      status: "active",
     };
 
     chats[chatId] = newChat;
-    localStorage.setItem('chats', JSON.stringify(chats));
+    localStorage.setItem("chats", JSON.stringify(chats));
 
-    localStorage.setItem('applications', '[]');
-    setApplicationCount(0);
+    // ВАЖНО: Сбрасываем счетчик заявок после завершения аукциона
+    console.log("Auction completed, resetting applications");
+    await resetApplications();
 
     navigate(`/chat/${chatId}`);
   };
 
   const getCurrentStageName = () => {
-    return stages[currentStage]?.name || 'salary';
+    return stages[currentStage]?.name || "salary";
   };
+
+  // Автоматические ставки от компаний
+  useEffect(() => {
+    if (auctionStarted && currentStage < stages.length && stageTime > 0) {
+      const timer = setTimeout(() => {
+        const currentCompany = mockCompanies[companyTurn];
+        if (!currentCompany) return;
+
+        let bidValue: string | number = "";
+
+        switch (currentStage) {
+          case 0: // Salary
+            bidValue =
+              Math.floor(Math.random() * 50000) + 100000 + companyTurn * 10000;
+            break;
+          case 1: // Equity
+            bidValue = Math.floor(Math.random() * 5) + 1 + companyTurn;
+            break;
+          case 2: // Benefits
+            const benefits = [
+              "Health insurance + Dental + Vision",
+              "Flexible working hours + Remote work",
+              "Professional development budget $5000/year",
+              "Stock options + Performance bonuses",
+              "Unlimited PTO + Wellness programs",
+            ];
+            bidValue = benefits[Math.floor(Math.random() * benefits.length)];
+            break;
+          case 3: // Position
+            bidValue =
+              positionLevels[
+                Math.min(companyTurn + 1, positionLevels.length - 1)
+              ].level;
+            break;
+        }
+
+        if (bidValue) {
+          handleBid(currentCompany.id, bidValue);
+        }
+      }, 2000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [auctionStarted, currentStage, companyTurn, stageTime]);
 
   if (applicationCount < 3) {
     return (
@@ -267,9 +388,39 @@ const Auction = () => {
               Not Enough Applications
             </h1>
             <p className="text-xl text-gray-400 mb-8">
-              You need to apply to at least 3 positions before participating in the auction.
+              You need to apply to at least 3 positions before participating in
+              the auction.
               <br />
-              Currently applied to: {applicationCount} positions.
+              Currently applied to:{" "}
+              <span className="text-emerald-400 font-bold">
+                {applicationCount}
+              </span>{" "}
+              positions.
+            </p>
+
+            <div className="flex items-center justify-center gap-4">
+              <button
+                onClick={() => navigate("/jobs")}
+                className="px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors font-medium"
+              >
+                Browse Jobs
+              </button>
+
+              <button
+                onClick={handleRefreshCount}
+                disabled={isRefreshing}
+                className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors font-medium disabled:opacity-50"
+              >
+                <RefreshCw
+                  className={`w-5 h-5 ${isRefreshing ? "animate-spin" : ""}`}
+                />
+                {isRefreshing ? "Refreshing..." : "Refresh Count"}
+              </button>
+            </div>
+
+            <p className="text-sm text-gray-500 mt-4">
+              Data is loaded from database. Click refresh if count seems
+              outdated.
             </p>
           </div>
         </div>
@@ -303,6 +454,10 @@ const Auction = () => {
             <p className="text-xl text-gray-400">
               Companies are competing for {user?.firstName} {user?.lastName}
             </p>
+            <p className="text-lg text-emerald-400 mt-2">
+              Applications submitted:{" "}
+              <span className="font-bold">{applicationCount}</span>
+            </p>
           </div>
 
           {tutorialCompleted && (
@@ -312,7 +467,8 @@ const Auction = () => {
                 <span>{countdown}</span>
               </div>
               <p className="text-gray-300 text-lg">
-                The auction will begin shortly. Get ready to receive competitive offers from top companies!
+                The auction will begin shortly. Get ready to receive competitive
+                offers from top companies!
               </p>
             </div>
           )}
@@ -329,7 +485,9 @@ const Auction = () => {
                 <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400">
                   {stage.icon}
                 </div>
-                <h3 className="text-lg font-semibold text-white mb-2">{stage.name}</h3>
+                <h3 className="text-lg font-semibold text-white mb-2">
+                  {stage.name}
+                </h3>
                 <p className="text-sm text-gray-400">{stage.description}</p>
               </motion.div>
             ))}
@@ -364,7 +522,7 @@ const Auction = () => {
             <div className="overflow-hidden rounded-lg border border-gray-700">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="border-b border-gray-700">
+                  <tr className="border-b border-gray-700 bg-gray-750">
                     <th className="py-4 px-6 text-gray-400">Company</th>
                     <th className="py-4 px-6 text-emerald-400">Salary</th>
                     <th className="py-4 px-6 text-emerald-400">Equity</th>
@@ -373,44 +531,62 @@ const Auction = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {mockCompanies.map(company => {
-                    const salaryBid = bids.salary.find(b => b.companyId === company.id);
-                    const equityBid = bids.equity.find(b => b.companyId === company.id);
-                    const benefitsBid = bids.benefits.find(b => b.companyId === company.id);
-                    const positionBid = bids.position.find(b => b.companyId === company.id);
+                  {mockCompanies.map((company) => {
+                    const salaryBid = bids.salary
+                      .filter((b) => b.companyId === company.id)
+                      .pop();
+                    const equityBid = bids.equity
+                      .filter((b) => b.companyId === company.id)
+                      .pop();
+                    const benefitsBid = bids.benefits
+                      .filter((b) => b.companyId === company.id)
+                      .pop();
+                    const positionBid = bids.position
+                      .filter((b) => b.companyId === company.id)
+                      .pop();
 
                     return (
                       <motion.tr
                         key={company.id}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        whileHover={{ backgroundColor: 'rgba(55, 65, 81, 0.5)' }}
-                        onClick={() => !selectedCompany && handleCompanySelect(company.id)}
+                        whileHover={{
+                          backgroundColor: "rgba(55, 65, 81, 0.5)",
+                        }}
+                        onClick={() =>
+                          !selectedCompany && handleCompanySelect(company.id)
+                        }
                         className={`border-b border-gray-700 cursor-pointer transition-colors ${
-                          selectedCompany === company.id ? 'bg-gray-700' : ''
+                          selectedCompany === company.id
+                            ? "bg-emerald-600/20"
+                            : ""
                         }`}
                       >
                         <td className="py-4 px-6">
                           <div className="flex items-center gap-3">
                             <img
-                              src={company.logo}
+                              src={company.logo || "/placeholder.svg"}
                               alt={company.name}
                               className="w-10 h-10 rounded-lg object-cover"
                             />
-                            <span className="text-white font-medium">{company.name}</span>
+                            <span className="text-white font-medium">
+                              {company.name}
+                            </span>
                           </div>
                         </td>
                         <td className="py-4 px-6 text-emerald-400 font-mono">
-                          {salaryBid ? `₽${salaryBid.amount}` : '—'}
+                          {salaryBid
+                            ? `₽${Number(salaryBid.amount).toLocaleString()}`
+                            : "—"}
                         </td>
                         <td className="py-4 px-6 text-emerald-400 font-mono">
-                          {equityBid ? `${equityBid.amount}%` : '—'}
+                          {equityBid ? `${equityBid.amount}%` : "—"}
+                        </td>
+                        <td className="py-4 px-6 text-emerald-400 max-w-xs truncate">
+                          {benefitsBid ? String(benefitsBid.amount) : "—"}
                         </td>
                         <td className="py-4 px-6 text-emerald-400">
-                          {benefitsBid ? benefitsBid.amount : '—'}
-                        </td>
-                        <td className="py-4 px-6 text-emerald-400">
-                          {positionBid ? positionBid.amount : '—'}
+                          {positionBid ? String(positionBid.amount) : "—"}
                         </td>
                       </motion.tr>
                     );
@@ -428,18 +604,13 @@ const Auction = () => {
                 >
                   <div className="flex items-center gap-2 text-emerald-400">
                     <CheckCircle2 className="w-5 h-5" />
-                    <span>Company selected!</span>
+                    <span>Company selected! Redirecting to chat...</span>
                   </div>
-                  <button
-                    onClick={() => handleCompanySelect(selectedCompany)}
-                    className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors"
-                  >
-                    Continue to Chat
-                  </button>
                 </motion.div>
               ) : (
                 <p className="text-gray-400">
-                  Click on a company row to select their offer and start a conversation
+                  Click on a company row to select their offer and start a
+                  conversation
                 </p>
               )}
             </div>
@@ -452,47 +623,48 @@ const Auction = () => {
   return (
     <div className="pt-20 min-h-screen bg-gray-900">
       <div className="max-w-6xl mx-auto px-4 py-12">
-        {auctionStarted && !showResults && (
-          <>
-            <div className="text-center mb-8">
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-400 via-blue-500 to-purple-500 bg-clip-text text-transparent pb-2">
-                Talent Auction in Progress
-              </h1>
-              <p className="text-gray-400">Companies are competing for your talent</p>
-            </div>
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-400 via-blue-500 to-purple-500 bg-clip-text text-transparent pb-2">
+            Talent Auction in Progress
+          </h1>
+          <p className="text-gray-400">
+            Companies are competing for your talent
+          </p>
+          <p className="text-emerald-400 mt-2">
+            Based on your <span className="font-bold">{applicationCount}</span>{" "}
+            applications from database
+          </p>
+        </div>
 
-            <div className="bg-gray-800 rounded-xl p-6 mb-8">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-6">
-                  <img
-                    src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.firstName}+${user?.lastName}&background=random`}
-                    alt={`${user?.firstName} ${user?.lastName}`}
-                    className="w-24 h-24 rounded-xl object-cover"
-                  />
-                  <div>
-                    <h2 className="text-2xl font-bold text-white mb-2">
-                      {user?.firstName} {user?.lastName}
-                    </h2>
-                    <p className="text-lg text-emerald-400 mb-4">
-                      {user?.title || "Software Developer"}
-                    </p>
-                    <div className="flex gap-4 text-gray-400">
-                      <span>{user?.experience || "2"} years experience</span>
-                      <span>•</span>
-                      <span>{user?.location || "Moscow"}</span>
-                    </div>
-                  </div>
+        <div className="bg-gray-800 rounded-xl p-6 mb-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-6">
+              <img
+                src={
+                  user?.avatar ||
+                  `https://ui-avatars.com/api/?name=${
+                    user?.firstName || "User"
+                  }+${user?.lastName || ""}&background=random`
+                }
+                alt={`${user?.firstName} ${user?.lastName}`}
+                className="w-24 h-24 rounded-xl object-cover"
+              />
+              <div>
+                <h2 className="text-2xl font-bold text-white mb-2">
+                  {user?.firstName} {user?.lastName}
+                </h2>
+                <p className="text-lg text-emerald-400 mb-4">
+                  {user?.title || "Software Developer"}
+                </p>
+                <div className="flex gap-4 text-gray-400">
+                  <span>{user?.experience || "2"} years experience</span>
+                  <span>•</span>
+                  <span>{user?.location || "Moscow"}</span>
                 </div>
-                <button
-                  onClick={() => setShowProfileModal(true)}
-                  className="px-6 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
-                >
-                  View Details
-                </button>
               </div>
             </div>
-          </>
-        )}
+          </div>
+        </div>
 
         <div className="mb-12">
           <div className="flex justify-between mb-4">
@@ -501,22 +673,20 @@ const Auction = () => {
                 key={stage.id}
                 initial={false}
                 animate={{ scale: currentStage === index ? 1.05 : 1 }}
-                className={`flex-1 ${index > 0 ? 'ml-2' : ''}`}
+                className={`flex-1 ${index > 0 ? "ml-2" : ""}`}
               >
                 <div
                   className={`rounded-lg p-4 transition-all duration-300 ${
                     currentStage === index
-                      ? 'bg-emerald-600 border-2 border-emerald-400'
+                      ? "bg-emerald-600 border-2 border-emerald-400"
                       : currentStage > index
-                      ? 'bg-gray-700 opacity-50'
-                      : 'bg-gray-800'
+                      ? "bg-gray-700 opacity-50"
+                      : "bg-gray-800"
                   }`}
                 >
                   <div className="flex items-center justify-center gap-2">
                     {stage.icon}
-                    <span className="font-medium text-white">
-                      {stage.name}
-                    </span>
+                    <span className="font-medium text-white">{stage.name}</span>
                   </div>
                   {currentStage === index && (
                     <div className="mt-2 text-sm text-emerald-200 text-center">
@@ -538,11 +708,11 @@ const Auction = () => {
                 </span>
               </div>
             </div>
-            
+
             <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
               <motion.div
                 initial={{ width: "100%" }}
-                animate={{ width: `${(stageTime / 60) * 100}%` }}
+                animate={{ width: `${(stageTime / 15) * 100}%` }}
                 className="h-full bg-emerald-500"
                 transition={{ duration: 0.3 }}
               />
@@ -559,13 +729,13 @@ const Auction = () => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
                 className={`bg-gray-800 rounded-lg p-6 ${
-                  companyTurn === index ? 'ring-2 ring-emerald-500' : ''
+                  companyTurn === index ? "ring-2 ring-emerald-500" : ""
                 }`}
               >
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-4">
                     <img
-                      src={company.logo}
+                      src={company.logo || "/placeholder.svg"}
                       alt={company.name}
                       className="w-12 h-12 rounded-full object-cover"
                     />
@@ -575,59 +745,45 @@ const Auction = () => {
                   </div>
                   {companyTurn === index && (
                     <span className="px-3 py-1 bg-emerald-600 text-white rounded-full text-sm">
-                      Current Turn
+                      Bidding Now
                     </span>
                   )}
                 </div>
 
-                {currentStage === 3 ? (
-                  <div className="grid grid-cols-3 gap-2">
-                    {positionLevels.map(({ level, color }) => (
-                      <button
-                        key={level}
-                        onClick={() => handleBid(company.id, level)}
-                        className={`${color} p-2 rounded text-white text-center transition-colors hover:bg-gray-600`}
-                      >
-                        {level}
-                      </button>
-                    ))}
-                  </div>
-                ) : currentStage === 2 ? (
-                  <div>
-                    <textarea
-                      value={benefitsInput}
-                      onChange={(e) => setBenefitsInput(e.target.value)}
-                      disabled={companyTurn !== index}
-                      placeholder="Describe benefits package..."
-                      className="w-full px-4 py-2 bg-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none h-32 mb-4"
-                    />
-                    <button
-                      onClick={() => companyTurn === index && handleBid(company.id, benefitsInput)}
-                      disabled={companyTurn !== index || !benefitsInput.trim()}
-                      className="w-full px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors disabled:opacity-50 disabled:hover:bg-emerald-600"
-                    >
-                      Submit Benefits
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-4">
-                    <input
-                      type="number"
-                      value={bidInput}
-                      onChange={(e) => setBidInput(e.target.value)}
-                      placeholder={currentStage === 0 ? "Enter salary" : "Enter equity percentage"}
-                      className="flex-grow px-4 py-2 bg-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      disabled={companyTurn !== index}
-                    />
-                    <button
-                      onClick={() => companyTurn === index && handleBid(company.id, parseInt(bidInput))}
-                      disabled={companyTurn !== index || !bidInput}
-                      className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors disabled:opacity-50 disabled:hover:bg-emerald-600"
-                    >
-                      Bid
-                    </button>
-                  </div>
-                )}
+                <div className="text-gray-300">
+                  <p className="text-sm">Latest bid: </p>
+                  <p className="text-lg font-semibold text-emerald-400">
+                    {currentStage === 0 &&
+                      bids.salary
+                        .filter((b) => b.companyId === company.id)
+                        .pop()?.amount &&
+                      `₽${Number(
+                        bids.salary
+                          .filter((b) => b.companyId === company.id)
+                          .pop()?.amount
+                      ).toLocaleString()}`}
+                    {currentStage === 1 &&
+                      bids.equity
+                        .filter((b) => b.companyId === company.id)
+                        .pop()?.amount &&
+                      `${
+                        bids.equity
+                          .filter((b) => b.companyId === company.id)
+                          .pop()?.amount
+                      }%`}
+                    {currentStage === 2 &&
+                      bids.benefits
+                        .filter((b) => b.companyId === company.id)
+                        .pop()?.amount}
+                    {currentStage === 3 &&
+                      bids.position
+                        .filter((b) => b.companyId === company.id)
+                        .pop()?.amount}
+                    {!bids[getCurrentStageName()].some(
+                      (b) => b.companyId === company.id
+                    ) && "Preparing bid..."}
+                  </p>
+                </div>
               </motion.div>
             ))}
           </div>
@@ -642,9 +798,11 @@ const Auction = () => {
                 .slice()
                 .reverse()
                 .map((bid, index) => {
-                  const company = mockCompanies.find(c => c.id === bid.companyId);
+                  const company = mockCompanies.find(
+                    (c) => c.id === bid.companyId
+                  );
                   if (!company) return null;
-                  
+
                   return (
                     <motion.div
                       key={index}
@@ -655,7 +813,7 @@ const Auction = () => {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <img
-                            src={company.logo}
+                            src={company.logo || "/placeholder.svg"}
                             alt={company.name}
                             className="w-8 h-8 rounded-full object-cover"
                           />
@@ -664,13 +822,13 @@ const Auction = () => {
                         <div className="flex items-center gap-2">
                           <TrendingUp className="w-4 h-4 text-emerald-400" />
                           <span className="text-emerald-400 font-mono font-bold">
-                            {currentStage === 0 
-                              ? `₽${bid.amount}`
+                            {currentStage === 0
+                              ? `₽${Number(bid.amount).toLocaleString()}`
                               : currentStage === 1
-                                ? `${bid.amount}%`
-                                : currentStage === 2
-                                  ? 'Benefits submitted'
-                                  : bid.amount}
+                              ? `${bid.amount}%`
+                              : currentStage === 2
+                              ? "Benefits"
+                              : bid.amount}
                           </span>
                         </div>
                       </div>

@@ -25,6 +25,7 @@ import {
 } from "../../services/api";
 import applicationsService from "../../services/applicationsService";
 import { useAuth } from "../../contexts/AuthContext";
+import { useApplicationContext } from "../../contexts/ApplicationContext";
 
 interface FilterState {
   city: string;
@@ -73,6 +74,7 @@ const Jobs = () => {
   const [imageError, setImageError] = useState<Record<number, boolean>>({});
   const [userApplications, setUserApplications] = useState<number[]>([]);
   const { user } = useAuth();
+  const { refreshApplicationCount } = useApplicationContext();
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -232,6 +234,13 @@ const Jobs = () => {
   // Check if user has already applied to a job
   const hasApplied = (jobId: number) => {
     return userApplications.includes(jobId);
+  };
+
+  // Callback для обновления заявок после успешной подачи
+  const handleApplicationSubmitted = async (jobId: number) => {
+    setUserApplications((prev) => [...prev, jobId]);
+    // Обновляем счетчик заявок в контексте
+    await refreshApplicationCount();
   };
 
   const filteredJobs = jobs
@@ -726,6 +735,7 @@ const Jobs = () => {
                             <img
                               src={
                                 (job.company as Company).logo ||
+                                "/placeholder.svg?height=80&width=80" ||
                                 "/placeholder.svg" ||
                                 "/placeholder.svg" ||
                                 "/placeholder.svg"
@@ -941,6 +951,9 @@ const Jobs = () => {
               ?.name || "Unknown Company"
           }
           companyId={selectedCompanyId || ""}
+          onApplicationSubmitted={() =>
+            handleApplicationSubmitted(selectedJobId)
+          }
         />
       )}
     </div>

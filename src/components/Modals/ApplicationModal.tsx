@@ -2,16 +2,16 @@
 
 import type React from "react";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Send, FileText, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import { ApplicationContext } from "../../App";
 import { resumesApi } from "../../services/api";
 import applicationsService from "../../services/applicationsService";
 import chatsService from "../../services/chatsService";
 import messagesService from "../../services/messagesService";
-import { toast } from "../../utils/toast";
 
 interface ApplicationModalProps {
   isOpen: boolean;
@@ -20,6 +20,7 @@ interface ApplicationModalProps {
   jobTitle: string;
   companyName: string;
   companyId: string;
+  onApplicationSubmitted?: () => void;
 }
 
 const ApplicationModal = ({
@@ -29,15 +30,16 @@ const ApplicationModal = ({
   jobTitle,
   companyName,
   companyId,
+  onApplicationSubmitted,
 }: ApplicationModalProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { refreshApplicationCount } = useContext(ApplicationContext);
   const [selectedResume, setSelectedResume] = useState("");
   const [coverLetter, setCoverLetter] = useState("");
   const [resumes, setResumes] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [submitAttempts, setSubmitAttempts] = useState(0);
 
   useEffect(() => {
     const fetchResumes = async () => {
@@ -70,12 +72,13 @@ const ApplicationModal = ({
     try {
       setIsLoading(true);
       setError(null);
-      setSubmitAttempts((prev) => prev + 1);
 
       if (!user) {
         setError("You must be logged in to apply");
         return;
       }
+
+      console.log("Submitting application...");
 
       const applicationData = {
         user: Number.parseInt(user.id),
@@ -85,12 +88,15 @@ const ApplicationModal = ({
         status: "pending",
       };
 
+      console.log("Creating application:", applicationData);
       const application = await applicationsService.create(applicationData);
+      console.log("Application created:", application);
 
       if (!application || !application.id) {
         throw new Error("Failed to create application");
       }
 
+      // Создаем чат
       const chatData = {
         application: application.id,
         status: "active",
@@ -102,6 +108,7 @@ const ApplicationModal = ({
         throw new Error("Failed to create chat");
       }
 
+      // Создаем сообщения
       const resumeMessage = {
         chat: chat.id,
         sender: Number.parseInt(user.id),
@@ -128,8 +135,18 @@ const ApplicationModal = ({
 
       await messagesService.create(coverLetterMessage);
 
-      toast.success("Application submitted successfully!");
+      // ВАЖНО: Обновляем счетчик заявок из базы данных
+      console.log(
+        "Application submitted successfully, refreshing count from database"
+      );
+      await refreshApplicationCount();
 
+      // Вызываем callback
+      if (onApplicationSubmitted) {
+        onApplicationSubmitted();
+      }
+
+      console.log("Application process completed!");
       navigate(`/chat/${chat.id}`);
       onClose();
     } catch (err) {
@@ -150,7 +167,6 @@ const ApplicationModal = ({
       setSelectedResume("");
       setCoverLetter("");
       setError(null);
-      setSubmitAttempts(0);
     }
   }, [isOpen]);
 
@@ -200,7 +216,6 @@ const ApplicationModal = ({
                   Choose Resume
                 </label>
 
-                {/* Profile Resumes */}
                 <div className="space-y-2">
                   <p className="text-sm text-gray-400">From Your Profile</p>
                   <div className="grid grid-cols-2 gap-4">

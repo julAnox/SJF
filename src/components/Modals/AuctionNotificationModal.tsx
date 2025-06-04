@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -14,23 +16,28 @@ import {
 interface AuctionNotificationModalProps {
   isOpen: boolean;
   onClose: () => void;
+  applicationCount: number; // Добавляем пропс для количества заявок
 }
 
 const AuctionNotificationModal = ({
   isOpen,
   onClose,
+  applicationCount,
 }: AuctionNotificationModalProps) => {
   const navigate = useNavigate();
   const [countdown, setCountdown] = useState(30);
 
+  // Показываем модальное окно только если заявок >= 3
+  const shouldShow = isOpen && applicationCount >= 3;
+
   useEffect(() => {
-    if (!isOpen) {
+    if (!shouldShow) {
       setCountdown(30);
       return;
     }
 
     let timer: NodeJS.Timeout;
-    if (isOpen && countdown > 0) {
+    if (shouldShow && countdown > 0) {
       timer = setInterval(() => {
         setCountdown((prev) => prev - 1);
       }, 1000);
@@ -42,11 +49,11 @@ const AuctionNotificationModal = ({
     return () => {
       if (timer) clearInterval(timer);
     };
-  }, [countdown, isOpen, navigate, onClose]);
+  }, [countdown, shouldShow, navigate, onClose]);
 
   return (
     <AnimatePresence>
-      {isOpen && (
+      {shouldShow && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -94,8 +101,8 @@ const AuctionNotificationModal = ({
                 transition={{ delay: 0.4 }}
                 className="text-gray-300 text-center mb-8"
               >
-                Congratulations! You've applied to 3 positions. Companies will
-                now compete for your talent in a live auction.
+                Congratulations! You've applied to {applicationCount} positions.
+                Companies will now compete for your talent in a live auction.
               </motion.p>
 
               <motion.div
