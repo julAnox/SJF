@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   SearchIcon,
   FilterIcon,
@@ -25,7 +27,6 @@ import {
 } from "../../services/api";
 import applicationsService from "../../services/applicationsService";
 import { useAuth } from "../../contexts/AuthContext";
-import { useApplicationContext } from "../../contexts/ApplicationContext";
 
 interface FilterState {
   city: string;
@@ -41,7 +42,40 @@ interface FilterState {
   perPage: number;
 }
 
+const getMonthsDifference = (dateString: string): number => {
+  const date = new Date(dateString);
+  const now = new Date();
+
+  const yearDiff = now.getFullYear() - date.getFullYear();
+  const monthDiff = now.getMonth() - date.getMonth();
+
+  return yearDiff * 12 + monthDiff;
+};
+
+const formatDate = (dateString: string, t: any) => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+  if (days === 0) return t("jobs.card.today");
+  if (days === 1) return t("jobs.card.yesterday");
+  if (days < 7) return t("jobs.card.daysAgo", { days: days });
+  if (days < 30) {
+    const weeks = Math.floor(days / 7);
+    return t("jobs.card.weeksAgo", { weeks: weeks });
+  }
+  if (days < 365) {
+    const months = getMonthsDifference(dateString);
+    return t("jobs.card.monthsAgo", { months: months });
+  }
+  const years = Math.floor(days / 365);
+  return t("jobs.card.yearsAgo", { years: years });
+};
+
 const Jobs = () => {
+  const location = useLocation();
+  const { t } = useTranslation();
   const [isFiltersOpen, setIsFiltersOpen] = useState(true);
   const [filters, setFilters] = useState<FilterState>({
     city: "",
@@ -74,7 +108,19 @@ const Jobs = () => {
   const [imageError, setImageError] = useState<Record<number, boolean>>({});
   const [userApplications, setUserApplications] = useState<number[]>([]);
   const { user } = useAuth();
-  const { refreshApplicationCount } = useApplicationContext();
+
+  useEffect(() => {
+    console.log("Jobs page loaded, checking URL params");
+    const urlParams = new URLSearchParams(location.search);
+    const searchParam = urlParams.get("search");
+    console.log("Search param from URL:", searchParam);
+
+    if (searchParam) {
+      const decodedSearch = decodeURIComponent(searchParam);
+      console.log("Setting search query to:", decodedSearch);
+      setSearchQuery(decodedSearch);
+    }
+  }, [location.search]);
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -100,23 +146,18 @@ const Jobs = () => {
           requirements: (() => {
             if (!job.requirements) return "";
 
-            // If it's already a string (new format), return as is
             if (typeof job.requirements === "string") {
               try {
-                // Try to parse as JSON (old format)
                 const parsed = JSON.parse(job.requirements);
                 if (typeof parsed === "object" && parsed !== null) {
-                  // Convert old JSON format to comma-separated string
                   return Object.values(parsed).join(", ");
                 }
-                return job.requirements; // It's a plain string
+                return job.requirements;
               } catch {
-                // If JSON.parse fails, it's already a plain string
                 return job.requirements;
               }
             }
 
-            // If it's an object (old format), convert to string
             if (typeof job.requirements === "object") {
               return Object.values(job.requirements).join(", ");
             }
@@ -153,14 +194,12 @@ const Jobs = () => {
     }));
   };
 
-  // Fetch user applications to check which jobs they've already applied to
   useEffect(() => {
     const fetchUserApplications = async () => {
       if (!user) return;
 
       try {
         const applications = await applicationsService.getByUserId(user.id);
-        // Extract job IDs from applications
         const appliedJobIds = applications.map((app) => app.job);
         setUserApplications(appliedJobIds);
       } catch (err) {
@@ -179,21 +218,25 @@ const Jobs = () => {
   };
 
   const sortOptions = [
-    { value: "relevance", label: "Most Relevant" },
-    { value: "date", label: "Newest" },
-    { value: "salary-desc", label: "Highest Salary" },
-    { value: "salary-asc", label: "Lowest Salary" },
+    { value: "relevance", label: t("jobs.card.mostRelevant") },
+    { value: "date", label: t("jobs.card.newest") },
+    { value: "salary-desc", label: t("jobs.card.highestSalary") },
+    { value: "salary-asc", label: t("jobs.card.lowestSalary") },
   ];
 
   const timeFrameOptions = [
-    { value: "all", label: "All Time" },
-    { value: "month", label: "Past Month" },
-    { value: "week", label: "Past Week" },
-    { value: "threeDays", label: "Past 3 Days" },
-    { value: "day", label: "Past 24 Hours" },
+    { value: "all", label: t("jobs.card.allTime") },
+    { value: "month", label: t("jobs.card.pastMonth") },
+    { value: "week", label: t("jobs.card.pastWeek") },
+    { value: "threeDays", label: t("jobs.card.past3Days") },
+    { value: "day", label: t("jobs.card.past24Hours") },
   ];
 
-  const perPageOptions = [3, 6, 9];
+  const perPageOptions = [
+    { value: 3, label: `3 ${t("jobs.perPage.vacancies")}` },
+    { value: 6, label: `6 ${t("jobs.perPage.vacancies")}` },
+    { value: 9, label: `9 ${t("jobs.perPage.vacancies")}` },
+  ];
 
   const handleFilterChange = (key: keyof FilterState, value: any) => {
     if (key === "currency") {
@@ -217,30 +260,12 @@ const Jobs = () => {
     return new Intl.NumberFormat("ru-RU").format(value);
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-
-    if (days === 0) return "Today";
-    if (days === 1) return "Yesterday";
-    if (days < 7) return `${days} days ago`;
-    if (days < 30) return `${Math.floor(days / 7)} weeks ago`;
-    if (days < 365) return `${Math.floor(days / 30)} months ago`;
-    return `${Math.floor(days / 365)} years ago`;
-  };
-
-  // Check if user has already applied to a job
   const hasApplied = (jobId: number) => {
     return userApplications.includes(jobId);
   };
 
-  // Callback для обновления заявок после успешной подачи
   const handleApplicationSubmitted = async (jobId: number) => {
     setUserApplications((prev) => [...prev, jobId]);
-    // Обновляем счетчик заявок в контексте
-    await refreshApplicationCount();
   };
 
   const filteredJobs = jobs
@@ -250,10 +275,13 @@ const Jobs = () => {
       if (job.status !== "active") return false;
 
       const matchesSearch =
-        (job.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (job.description || "")
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase());
+        searchQuery.trim() === "" ||
+        (job.title || "").toLowerCase().includes(searchQuery.toLowerCase());
+
+      console.log(
+        `Job "${job.title}" matches search "${searchQuery}":`,
+        matchesSearch
+      );
 
       const matchesCity =
         !filters.city ||
@@ -315,7 +343,7 @@ const Jobs = () => {
     if (filters.city) {
       active.push({
         type: "city",
-        label: `City: ${filters.city}`,
+        label: t("jobs.activeFilters.city", { city: filters.city }),
         icon: <MapPinIcon className="w-4 h-4" />,
       });
     }
@@ -323,7 +351,7 @@ const Jobs = () => {
     if (filters.metro) {
       active.push({
         type: "metro",
-        label: `Metro: ${filters.metro}`,
+        label: t("jobs.activeFilters.metro", { metro: filters.metro }),
         icon: <TrainIcon className="w-4 h-4" />,
       });
     }
@@ -331,7 +359,9 @@ const Jobs = () => {
     if (filters.experiense > 0 && filters.experiense < 10) {
       active.push({
         type: "experiense",
-        label: `Experience: ${filters.experiense} years`,
+        label: t("jobs.activeFilters.experience", {
+          years: filters.experiense,
+        }),
         icon: <BriefcaseIcon className="w-4 h-4" />,
       });
     }
@@ -339,9 +369,9 @@ const Jobs = () => {
     if (filters.salary_min > 0 || filters.salary_max < 1000000) {
       active.push({
         type: "salary",
-        label: `Salary: ${formatSalary(filters.salary_min)} - ${formatSalary(
-          filters.salary_max
-        )}`,
+        label: `${t("home.cta.filterssalary")}: ${formatSalary(
+          filters.salary_min
+        )} - ${formatSalary(filters.salary_max)}`,
         icon: <BanknoteIcon className="w-4 h-4" />,
       });
     }
@@ -349,7 +379,7 @@ const Jobs = () => {
     if (filters.currency) {
       active.push({
         type: "currency",
-        label: `Currency: ${filters.currency}`,
+        label: `${t("home.cta.filterscurrency")}: ${filters.currency}`,
         icon: <BanknoteIcon className="w-4 h-4" />,
       });
     }
@@ -368,7 +398,7 @@ const Jobs = () => {
             <SearchIcon className="w-6 h-6 text-gray-400 ml-2" />
             <input
               type="text"
-              placeholder="Search for jobs..."
+              placeholder={t("home.cta.searchforjobs")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="flex-1 bg-transparent border-none outline-none text-white placeholder-gray-400 text-lg"
@@ -378,7 +408,7 @@ const Jobs = () => {
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition-colors"
             >
               <FilterIcon className="w-5 h-5" />
-              Filters
+              {t("home.cta.searchforjobsfilters")}
             </button>
           </div>
         </div>
@@ -398,13 +428,13 @@ const Jobs = () => {
               {/* Location Filters */}
               <div>
                 <h3 className="text-lg font-semibold text-white mb-4">
-                  Location
+                  {t("home.cta.filterslocation")}
                 </h3>
                 <div className="space-y-4">
                   <div>
                     <div className="flex items-center gap-2 text-gray-400 mb-2">
                       <MapPinIcon className="w-4 h-4" />
-                      <span>City</span>
+                      <span>{t("home.cta.filterscity")}</span>
                     </div>
                     <input
                       type="text"
@@ -413,13 +443,13 @@ const Jobs = () => {
                         handleFilterChange("city", e.target.value)
                       }
                       className="w-full px-3 py-2 bg-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      placeholder="Enter city name"
+                      placeholder={t("home.cta.filterscityinput")}
                     />
                   </div>
                   <div>
                     <div className="flex items-center gap-2 text-gray-400 mb-2">
                       <TrainIcon className="w-4 h-4" />
-                      <span>Metro</span>
+                      <span>{t("home.cta.filtersmetro")}</span>
                     </div>
                     <input
                       type="text"
@@ -428,7 +458,7 @@ const Jobs = () => {
                         handleFilterChange("metro", e.target.value)
                       }
                       className="w-full px-3 py-2 bg-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      placeholder="Enter metro station"
+                      placeholder={t("home.cta.filtersmetroinput")}
                     />
                   </div>
                 </div>
@@ -437,7 +467,7 @@ const Jobs = () => {
               {/* Experience Range */}
               <div>
                 <h3 className="text-lg font-semibold text-white mb-4">
-                  Experience
+                  {t("home.cta.filtersexp")}
                 </h3>
                 <div className="space-y-4">
                   <input
@@ -455,8 +485,10 @@ const Jobs = () => {
                     className="w-full accent-emerald-500"
                   />
                   <div className="flex justify-between text-gray-400">
-                    <span>0 years</span>
-                    <span>{filters.experiense} years</span>
+                    <span>0 {t("home.cta.filtersyears")}</span>
+                    <span>
+                      {filters.experiense} {t("home.cta.filtersyears")}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -464,7 +496,7 @@ const Jobs = () => {
               {/* Currency */}
               <div>
                 <h3 className="text-lg font-semibold text-white mb-4">
-                  Currency
+                  {t("home.cta.filterscurrency")}
                 </h3>
                 <input
                   type="text"
@@ -473,7 +505,7 @@ const Jobs = () => {
                     handleFilterChange("currency", e.target.value)
                   }
                   className="w-full px-3 py-2 bg-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  placeholder="Enter currency (e.g. USD)"
+                  placeholder={t("home.cta.filterscurrencyinput")}
                   maxLength={3}
                 />
               </div>
@@ -481,7 +513,7 @@ const Jobs = () => {
               {/* Salary Range */}
               <div>
                 <h3 className="text-lg font-semibold text-white mb-4">
-                  Salary
+                  {t("home.cta.filterssalary")}
                 </h3>
                 <div className="space-y-4">
                   <div className="flex gap-4 items-center">
@@ -498,7 +530,7 @@ const Jobs = () => {
                       }
                       className="w-full px-3 py-2 bg-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     />
-                    <span className="text-gray-400">to</span>
+                    <span className="text-gray-400">{t("home.cta.do")}</span>
                     <input
                       type="number"
                       min={filters.salary_min}
@@ -535,13 +567,15 @@ const Jobs = () => {
 
               {/* Type */}
               <div>
-                <h3 className="text-lg font-semibold text-white mb-4">Type</h3>
+                <h3 className="text-lg font-semibold text-white mb-4">
+                  {t("jobs.card.type")}
+                </h3>
                 <select
                   value={filters.type}
                   onChange={(e) => handleFilterChange("type", e.target.value)}
                   className="w-full px-3 py-2 bg-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 >
-                  <option value="">All Types</option>
+                  <option value="">{t("jobs.card.allTypes")}</option>
                   {Array.from(new Set(jobs.map((job) => job.type))).map(
                     (type) => (
                       <option key={type} value={type}>
@@ -555,7 +589,7 @@ const Jobs = () => {
               {/* Schedule */}
               <div>
                 <h3 className="text-lg font-semibold text-white mb-4">
-                  Schedule
+                  {t("jobs.card.schedule")}
                 </h3>
                 <select
                   value={filters.schedule}
@@ -564,7 +598,7 @@ const Jobs = () => {
                   }
                   className="w-full px-3 py-2 bg-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 >
-                  <option value="">All Schedules</option>
+                  <option value="">{t("jobs.card.allSchedules")}</option>
                   {Array.from(new Set(jobs.map((job) => job.schedule))).map(
                     (schedule) => (
                       <option key={schedule} value={schedule}>
@@ -581,7 +615,10 @@ const Jobs = () => {
           <div className="flex-grow">
             {/* Sort and View Options */}
             <div className="bg-gray-800 rounded-lg p-4 mb-6">
-              <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center justify-between">
+                {" "}
+                {/* Главный контейнер с выравниванием по краям */}
+                {/* Левая группа - первые два фильтра */}
                 <div className="flex items-center gap-4">
                   {/* Sort Dropdown */}
                   <div className="relative">
@@ -619,8 +656,7 @@ const Jobs = () => {
                     <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none" />
                   </div>
                 </div>
-
-                {/* Per Page Dropdown */}
+                {/* Правый фильтр (Per Page) */}
                 <div className="relative">
                   <select
                     value={filters.perPage}
@@ -633,8 +669,8 @@ const Jobs = () => {
                     className="appearance-none bg-gray-700 text-white px-4 py-2 pr-8 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   >
                     {perPageOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {option} vacancies
+                      <option key={option.value} value={option.value}>
+                        {option.label}
                       </option>
                     ))}
                   </select>
@@ -648,7 +684,7 @@ const Jobs = () => {
               <div className="bg-gray-800 rounded-lg p-4 mb-6">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-lg font-semibold text-white">
-                    Active Filters
+                    {t("jobs.activeFilters.title")}
                   </h3>
                   <button
                     onClick={() => {
@@ -666,7 +702,7 @@ const Jobs = () => {
                     }}
                     className="text-sm text-emerald-400 hover:text-emerald-300"
                   >
-                    Clear All
+                    {t("jobs.card.clearAll")}
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -694,7 +730,9 @@ const Jobs = () => {
             {/* Loading State */}
             {isLoading && (
               <div className="text-center py-12 bg-gray-800 rounded-lg">
-                <p className="text-gray-400 text-lg">Loading jobs...</p>
+                <p className="text-gray-400 text-lg">
+                  {t("jobs.card.loading")}
+                </p>
               </div>
             )}
 
@@ -706,7 +744,7 @@ const Jobs = () => {
                   onClick={() => window.location.reload()}
                   className="mt-4 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors"
                 >
-                  Retry
+                  {t("jobs.card.retry")}
                 </button>
               </div>
             )}
@@ -736,8 +774,6 @@ const Jobs = () => {
                               src={
                                 (job.company as Company).logo ||
                                 "/placeholder.svg?height=80&width=80" ||
-                                "/placeholder.svg" ||
-                                "/placeholder.svg" ||
                                 "/placeholder.svg"
                               }
                               alt={(job.company as Company).name}
@@ -758,14 +794,15 @@ const Jobs = () => {
                               <div className="flex items-center gap-2">
                                 <MapPinIcon className="w-4 h-4" />
                                 <span>
-                                  {job.city || "No location"} •{" "}
-                                  {job.metro || "No metro"}
+                                  {job.city || t("jobs.card.noLocation")} •{" "}
+                                  {job.metro || t("jobs.card.noMetro")}
                                 </span>
                               </div>
                               <div className="flex items-center gap-2">
                                 <BriefcaseIcon className="w-4 h-4" />
                                 <span>
-                                  {job.experiense || 0} years experience
+                                  {job.experiense || 0}{" "}
+                                  {t("jobs.card.yearsExperience")}
                                 </span>
                               </div>
                             </div>
@@ -774,7 +811,7 @@ const Jobs = () => {
                         {jobApplied ? (
                           <div className="flex items-center gap-2 text-emerald-400 px-4 py-2 bg-emerald-600/20 rounded-lg">
                             <CheckCircle className="w-5 h-5" />
-                            <span>You've already applied</span>
+                            <span>{t("jobs.card.appliedAlready")}</span>
                           </div>
                         ) : (
                           <button
@@ -785,7 +822,7 @@ const Jobs = () => {
                             }}
                             className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors"
                           >
-                            Apply Now
+                            {t("home.cta.vacapply")}
                           </button>
                         )}
                       </div>
@@ -793,7 +830,7 @@ const Jobs = () => {
                       <div className="mt-4">
                         <p className="text-gray-300">
                           <h4 className="text-lg font-semibold text-white mb-2">
-                            Description
+                            {t("jobs.card.description")}
                           </h4>
                           {expandedDescriptions[job.id]
                             ? job.description
@@ -807,15 +844,15 @@ const Jobs = () => {
                             className="mt-2 text-emerald-400 hover:text-emerald-300 text-sm"
                           >
                             {expandedDescriptions[job.id]
-                              ? "Collapse"
-                              : "Expand"}
+                              ? t("jobs.card.collapse")
+                              : t("jobs.card.expand")}
                           </button>
                         )}
 
                         {job.requirements && job.requirements.length > 0 && (
                           <div className="mt-4">
                             <h4 className="text-lg font-semibold text-white mb-2">
-                              Requirements
+                              {t("jobs.card.requirements")}
                             </h4>
                             <div className="flex flex-wrap gap-2">
                               {job.requirements
@@ -851,9 +888,13 @@ const Jobs = () => {
                             </span>
                           </div>
                         </div>
+                        {/* Пример использования в карточке вакансии */}
                         <div className="flex items-center gap-2 text-gray-500">
                           <CalendarIcon className="w-4 h-4" />
-                          <span>Posted {formatDate(job.created_at)}</span>
+                          <span>
+                            {t("jobs.card.posted")}{" "}
+                            {formatDate(job.created_at, t)}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -873,7 +914,7 @@ const Jobs = () => {
                     disabled={currentPage === 1}
                     className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Previous
+                    {t("jobs.pagination.previous")}
                   </button>
                   {Array.from({ length: totalPages }, (_, i) => i + 1).map(
                     (page) => (
@@ -897,7 +938,7 @@ const Jobs = () => {
                     disabled={currentPage === totalPages}
                     className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Next
+                    {t("jobs.pagination.next")}
                   </button>
                 </nav>
               </div>
@@ -906,9 +947,9 @@ const Jobs = () => {
             {/* No Results */}
             {!isLoading && !error && paginatedJobs.length === 0 && (
               <div className="text-center py-12 bg-gray-800 rounded-lg">
-                <p className="text-gray-400 text-lg">No jobs found</p>
+                <p className="text-gray-400 text-lg">{t("jobs.card.noJobs")}</p>
                 <p className="text-gray-500 mt-2">
-                  Try adjusting your filters or search query
+                  {t("jobs.card.adjustFilters")}
                 </p>
                 <button
                   onClick={() => {
@@ -927,7 +968,7 @@ const Jobs = () => {
                   }}
                   className="mt-4 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors"
                 >
-                  Reset All Filters
+                  {t("jobs.card.resetFilters")}
                 </button>
               </div>
             )}

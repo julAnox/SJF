@@ -4,6 +4,7 @@ import type React from "react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { resumesApi } from "../../services/api";
 import { useAuth } from "../../contexts/AuthContext";
 import SkillSelect from "../../components/SkillSelect/SkillSelect";
@@ -52,21 +53,22 @@ const initialFormData: FormData = {
   region: "",
 };
 
-const educationOptions = [
-  "High School",
-  "Vocational",
-  "Incomplete Higher",
-  "Higher",
-  "Bachelor's",
-  "Master's",
-  "PhD",
-  "Doctor of Sciences",
-];
-
 const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
+  const { t } = useTranslation();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const { user } = useAuth();
+
+  const educationOptions = [
+    t("profile.wizard.education.levels.highSchool"),
+    t("profile.wizard.education.levels.vocational"),
+    t("profile.wizard.education.levels.incompleteHigher"),
+    t("profile.wizard.education.levels.higher"),
+    t("profile.wizard.education.levels.bachelor"),
+    t("profile.wizard.education.levels.master"),
+    t("profile.wizard.education.levels.phd"),
+    t("profile.wizard.education.levels.doctorOfSciences"),
+  ];
 
   useEffect(() => {
     if (user) {
@@ -143,7 +145,7 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
           <div className="space-y-2">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Name
+                {t("profile.wizard.personalInfo.name")}
               </label>
               <input
                 type="text"
@@ -155,7 +157,7 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Surname
+                {t("profile.wizard.personalInfo.surname")}
               </label>
               <input
                 type="text"
@@ -167,7 +169,7 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Email
+                {t("profile.wizard.personalInfo.email")}
               </label>
               <input
                 type="email"
@@ -179,7 +181,7 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Phone
+                {t("profile.wizard.personalInfo.phone")}
               </label>
               <input
                 type="tel"
@@ -191,7 +193,7 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Country
+                {t("profile.wizard.personalInfo.country")}
               </label>
               <input
                 type="text"
@@ -203,7 +205,7 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Region
+                {t("profile.personalInfo.region")}
               </label>
               <input
                 type="text"
@@ -214,11 +216,11 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
               />
             </div>
             <p className="text-sm text-gray-400 italic mt-2 mb-4">
-              These details were automatically loaded from your profile.
+              {t("resumeWizard.profileDataNote")}
             </p>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Gender
+                {t("profile.wizard.personalInfo.gender")}
               </label>
               <select
                 name="gender"
@@ -226,9 +228,13 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
                 onChange={handleChange}
                 className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
-                <option value="">Select your gender</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
+                <option value="">{t("resumeWizard.selectGender")}</option>
+                <option value="male">
+                  {t("profile.wizard.personalInfo.genderOptions.male")}
+                </option>
+                <option value="female">
+                  {t("profile.wizard.personalInfo.genderOptions.female")}
+                </option>
               </select>
             </div>
           </div>
@@ -238,7 +244,7 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Profession
+                {t("profile.wizard.experience.profession")}
               </label>
               <input
                 type="text"
@@ -246,13 +252,13 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
                 value={formData.profession}
                 onChange={handleChange}
                 className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                placeholder="Enter your profession"
+                placeholder={t("resumeWizard.placeholders.profession")}
                 maxLength={100}
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Experience
+                {t("profile.wizard.experience.experience")}
               </label>
               <textarea
                 name="experience"
@@ -260,7 +266,9 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
                 onChange={handleChange}
                 rows={4}
                 className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
-                placeholder="Describe your experience"
+                placeholder={t(
+                  "profile.wizard.experience.experiencePlaceholder"
+                )}
                 maxLength={1000}
               />
             </div>
@@ -271,7 +279,7 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Education
+                {t("profile.wizard.education.level")}
               </label>
               <div className="grid grid-cols-2 gap-4">
                 {educationOptions.map((option) => (
@@ -292,7 +300,7 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Institution Name
+                {t("profile.wizard.education.institution")}
               </label>
               <input
                 type="text"
@@ -300,13 +308,13 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
                 value={formData.institutionName}
                 onChange={handleChange}
                 className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                placeholder="Enter institution name"
+                placeholder={t("resumeWizard.placeholders.institution")}
                 maxLength={150}
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Graduation Year
+                {t("profile.wizard.education.graduationYear")}
               </label>
               <input
                 type="text"
@@ -314,13 +322,13 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
                 value={formData.graduationYear}
                 onChange={handleChange}
                 className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                placeholder="Enter graduation year"
+                placeholder={t("resumeWizard.placeholders.graduationYear")}
                 maxLength={4}
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Specialization
+                {t("profile.wizard.education.specialization")}
               </label>
               <input
                 type="text"
@@ -328,7 +336,7 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
                 value={formData.specialization}
                 onChange={handleChange}
                 className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                placeholder="Enter your specialization"
+                placeholder={t("resumeWizard.placeholders.specialization")}
                 maxLength={150}
               />
             </div>
@@ -339,7 +347,7 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Skills
+                {t("profile.wizard.skills.skills")}
               </label>
               <SkillSelect
                 selectedSkills={formData.skills || ""}
@@ -353,7 +361,7 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Contacts
+                {t("profile.wizard.skills.contacts")}
               </label>
               <textarea
                 name="contacts"
@@ -361,7 +369,7 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
                 onChange={handleChange}
                 rows={4}
                 className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
-                placeholder="Enter your contact details"
+                placeholder={t("profile.wizard.skills.contactsPlaceholder")}
                 maxLength={500}
               />
             </div>
@@ -395,9 +403,11 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
                 <X className="w-6 h-6" />
               </button>
               <h2 className="text-2xl font-bold text-white">
-                Create your resume
+                {t("profile.wizard.title")}
               </h2>
-              <p className="text-gray-400 mt-2">Step {step} of 4</p>
+              <p className="text-gray-400 mt-2">
+                {t("resumeWizard.stepProgress", { current: step, total: 4 })}
+              </p>
               <div className="mt-4 h-2 bg-gray-700 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-emerald-500 transition-all duration-300"
@@ -415,13 +425,15 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
                 className="px-6 py-2 flex items-center gap-2 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ChevronLeft className="w-5 h-5" />
-                Back
+                {t("profile.wizard.back")}
               </button>
               <button
                 onClick={handleNext}
                 className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors flex items-center gap-2"
               >
-                {step === 4 ? "Finish" : "Next"}
+                {step === 4
+                  ? t("profile.wizard.finish")
+                  : t("profile.wizard.next")}
                 {step < 4 && <ChevronRight className="w-5 h-5" />}
               </button>
             </div>

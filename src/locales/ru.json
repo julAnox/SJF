@@ -48,9 +48,105 @@
       "uploadResume": "Или загрузите новое резюме",
       "dropResume": "Перетащите файл DOC/DOCX или нажмите для выбора",
       "coverLetter": "Сопроводительное письмо",
-      "coverLetterPlaceholder": "Напишите сопроводительное письмо...",
+      "coverLetterPlaceholder": "Напишите краткое сопроводительное письмо, объясняющее, почему вы подходите для этой позиции...",
+      "coverLetterHint": "Расскажите работодателю, почему вас интересует эта роль",
       "submit": "Отправить заявку",
-      "cancel": "Отмена"
+      "submitting": "Отправка...",
+      "cancel": "Отмена",
+      "resumeLabel": "Резюме",
+      "myResume": "Мое резюме",
+      "resumeUploadedAsDocument": "Резюме загружено как документ",
+      "resumeDefaultTitle": "Резюме",
+      "yearsExperience": "{{years}} лет опыта",
+      "noResumesFound": "В вашем профиле не найдено резюме",
+      "createResumeInProfile": "Создать резюме в профиле",
+      "success": {
+        "title": "Заявка отправлена!",
+        "description": "Ваша заявка была отправлена в {{companyName}}. Вы будете перенаправлены в чат для общения с работодателем."
+      },
+      "errors": {
+        "failedToLoadResumes": "Не удалось загрузить резюме",
+        "selectResumeAndCoverLetter": "Пожалуйста, выберите резюме и напишите сопроводительное письмо",
+        "mustBeLoggedIn": "Вы должны войти в систему, чтобы подать заявку",
+        "failedToSubmit": "Не удалось отправить заявку. Пожалуйста, попробуйте снова."
+      }
+    }
+  },
+  "resumeContact": {
+    "title": "Связаться с {{firstName}} {{lastName}}",
+    "defaultStudent": "Студент",
+    "defaultResume": "Резюме",
+    "messageLabel": "Ваше сообщение",
+    "messagePlaceholder": "Напишите ваше сообщение студенту здесь...",
+    "messageHint": "Это сообщение начнет новый диалог со студентом.",
+    "cancel": "Отмена",
+    "sendMessage": "Отправить сообщение",
+    "sending": "Отправка...",
+    "success": {
+      "title": "Сообщение успешно отправлено!",
+      "description": "Ваше сообщение было отправлено {{firstName}}. Вы будете перенаправлены в чат в ближайшее время.",
+      "messageSent": "Сообщение успешно отправлено!"
+    },
+    "errors": {
+      "notAuthenticated": "Пользователь не авторизован. Пожалуйста, войдите в систему.",
+      "onlyCompanies": "Только компании могут связываться со студентами по поводу резюме.",
+      "noCompanyProfile": "Профиль компании не найден. Пожалуйста, сначала создайте профиль компании.",
+      "failedToSend": "Не удалось отправить сообщение. Пожалуйста, попробуйте снова."
+    },
+    "errorDetails": "Детали ошибки (для отладки)"
+  },
+  "profileModal": {
+    "title": "Детали профиля",
+    "contact": {
+      "email": "email@example.com",
+      "phone": "+1 234 567 890",
+      "website": "portfolio.com",
+      "linkedin": "linkedin.com/in/profile",
+      "github": "github.com/profile"
+    },
+    "skills": {
+      "title": "Навыки"
+    },
+    "languages": {
+      "title": "Языки"
+    },
+    "experience": {
+      "title": "Опыт работы",
+      "current": "Текущая должность",
+      "previous": "Предыдущая должность"
+    },
+    "education": {
+      "title": "Образование",
+      "graduated": "Окончил"
+    },
+    "additional": {
+      "title": "Дополнительная информация",
+      "experience": "{{years}} лет опыта",
+      "expectedSalary": "Ожидаемая"
+    }
+  },
+  "resumeViewModal": {
+    "defaultTitle": "Резюме",
+    "created": "Создано",
+    "notSpecified": "Не указано",
+    "close": "Закрыть",
+    "personalInfo": {
+      "title": "Личная информация"
+    },
+    "education": {
+      "title": "Образование"
+    },
+    "experience": {
+      "title": "Опыт работы",
+      "noExperience": "Опыт работы не указан"
+    },
+    "skills": {
+      "title": "Навыки",
+      "noSkills": "Навыки не указаны"
+    },
+    "contacts": {
+      "title": "Дополнительные контакты",
+      "noContacts": "Дополнительные контакты не указаны"
     }
   },
   "offers": {
@@ -154,7 +250,7 @@
           "answer": "Да! Student's Job полностью бесплатен для студентов. Мы верим в предоставление равного доступа к карьерным возможностям для всех студентов."
         },
         {
-          "question": "Как подать заявку на вакансию?",
+          "question": "Как подать заявку на ваканс��ю?",
           "answer": "После создания аккаунта и заполнения профиля вы можете просматривать доступные вакансии и подавать заявки прямо через нашу платформу всего в несколько кликов."
         },
         {
@@ -260,7 +356,37 @@
     "cta": {
       "title": "Готовы Начать Свой Карьерный Путь?",
       "description": "Присоединяйтесь к тысячам студентов, которые нашли идеальную работу",
-      "button": "Начать Сейчас"
+      "button": "Начать Сейчас",
+      "studre": "Отзывы студентов и компаний",
+      "sharestu": "Поделитесь вашим опытом",
+      "logintorewiew": "Войдите в аккаунт, чтобы написать отзыв",
+      "cancelreview": "Отмена",
+      "commentsperpage": "Отзывов на странице:",
+      "rate": "Рейтинг",
+      "youreview": "Ваш отзыв",
+      "submitreview": "Отправить отзыв",
+      "shareyourexp": "Поделитесь вашим опытом с Student's Job",
+      "log": "Выйти",
+      "track": "Отслеживайте наши последние улучшения и исправления ошибок",
+      "showless": "Показать меньше",
+      "emailauto": "Почта автоматически заполнена из вашего профиля",
+      "accounttype": "Тип аккаунта",
+      "accounttypest": "Студент",
+      "accounttypecp": "Компания",
+      "searchforjobs": "Поиск вакансий...",
+      "searchforjobsfilters": "Фильтры",
+      "filterslocation": "Местоположение",
+      "filterscity": "Город",
+      "filterscityinput": "Введите название города",
+      "filtersmetro": "Метро",
+      "filtersmetroinput": "Введите станцию метро",
+      "filtersexp": "Опыт работы",
+      "filtersyears": "Лет",
+      "vacapply": "Откликнуться сейчас",
+      "filterscurrency": "Валюта",
+      "filterscurrencyinput": "Введите валюту (пример USD)",
+      "filterssalary": "Заработная плата",
+      "do": "до"
     }
   },
   "footer": {
@@ -345,7 +471,7 @@
       "day": "За последний день"
     },
     "perPage": {
-      "vacancies": "вакансий"
+      "vacancies": "вакансии"
     },
     "activeFilters": {
       "title": "Активные фильтры",
@@ -362,7 +488,41 @@
     },
     "card": {
       "applyNow": "Откликнуться",
-      "posted": "Опубликовано"
+      "posted": "Опубликовано",
+      "description": "Описание",
+      "requirements": "Требования",
+      "expand": "Развернуть",
+      "collapse": "Свернуть",
+      "appliedAlready": "Вы уже откликнулись",
+      "loading": "Загрузка вакансий...",
+      "error": "Не удалось загрузить вакансии. Попробуйте снова.",
+      "retry": "Повторить",
+      "noJobs": "Вакансии не найдены",
+      "adjustFilters": "Попробуйте изменить фильтры или поисковый запрос",
+      "resetFilters": "Сбросить все фильтры",
+      "noLocation": "Местоположение не указано",
+      "noMetro": "Метро не указано",
+      "yearsExperience": "лет опыта",
+      "allTypes": "Все типы",
+      "allSchedules": "Все графики",
+      "mostRelevant": "Наиболее релевантные",
+      "newest": "Новейшие",
+      "highestSalary": "Самая высокая зарплата",
+      "lowestSalary": "Самая низкая зарплата",
+      "allTime": "Все время",
+      "pastMonth": "За прошлый месяц",
+      "pastWeek": "За прошлую неделю",
+      "past3Days": "За последние 3 дня",
+      "past24Hours": "За последние 24 часа",
+      "today": "Сегодня",
+      "yesterday": "Вчера",
+      "daysAgo": "{{days}} дней назад",
+      "weeksAgo": "{{weeks}} недель назад",
+      "monthsAgo": "{{months}} месяцев назад",
+      "yearsAgo": "{{years}} лет назад",
+      "type": "Тип",
+      "schedule": "График",
+      "clearAll": "Очистить все"
     }
   },
   "resumes": {
@@ -371,96 +531,66 @@
       "filters": "Фильтры"
     },
     "filters": {
-      "location": {
-        "title": "Местоположение",
-        "city": "Город",
-        "cityPlaceholder": "Введите город...",
-        "metro": "Станция метро",
-        "metroPlaceholder": "Введите станцию метро..."
+      "gender": {
+        "title": "Гендер",
+        "all": "Все гендеры"
+      },
+      "profession": {
+        "title": "Профессия",
+        "all": "Все профессии"
       },
       "experience": {
-        "title": "Опыт работы (лет)",
-        "min": "Мин",
-        "max": "Макс"
-      },
-      "salary": {
-        "title": "Ожидаемая зарплата (₽)",
-        "min": "Мин",
-        "max": "Макс"
-      },
-      "availability": {
-        "title": "Занятость",
-        "fulltime": "Полная занятость",
-        "parttime": "Частичная занятость",
-        "internship": "Стажировка"
-      },
-      "skills": {
-        "title": "Навыки",
-        "react": "React",
-        "typescript": "TypeScript",
-        "tailwind": "Tailwind CSS",
-        "nodejs": "Node.js",
-        "figma": "Figma",
-        "adobexd": "Adobe XD",
-        "prototyping": "Прототипирование",
-        "userresearch": "Пользовательские исследования",
-        "python": "Python",
-        "django": "Django",
-        "postgresql": "PostgreSQL",
-        "docker": "Docker",
-        "sql": "SQL",
-        "tableau": "Tableau",
-        "excel": "Excel",
-        "aws": "AWS",
-        "kubernetes": "Kubernetes",
-        "jenkins": "Jenkins",
-        "terraform": "Terraform"
-      },
-      "languages": {
-        "title": "Языки",
-        "english_b2": "Английский (B2)",
-        "russian_native": "Русский (Родной)",
-        "english_c1": "Английский (C1)",
-        "french_a2": "Французский (A2)",
-        "german_a1": "Немецкий (A1)",
-        "english_c2": "Английский (C2)"
+        "title": "Опыт работы",
+        "placeholder": "Введите опыт работы"
       },
       "education": {
         "title": "Образование",
-        "bsc_cs": "Бакалавр компьютерных наук",
-        "bsc_design": "Бакалавр дизайна",
-        "msc_cs": "Магистр компьютерных наук",
-        "bsc_stats": "Бакалавр статистики",
-        "msc_it": "Магистр информационных технологий"
+        "all": "Все уровни образования"
+      },
+      "institution": {
+        "title": "Учебное заведение",
+        "placeholder": "Введите название учебного заведения"
+      },
+      "graduationYear": {
+        "title": "Год окончания",
+        "placeholder": "Введите год окончания"
+      },
+      "specialization": {
+        "title": "Специализация",
+        "placeholder": "Введите специализацию"
+      },
+      "skills": {
+        "title": "Навыки",
+        "placeholder": "Поиск навыков..."
       }
     },
     "sort": {
-      "title": "Сортировка",
-      "relevance": "По релевантности",
-      "lastActive": "По последней активности",
-      "experienceDesc": "По опыту (по убыванию)",
-      "experienceAsc": "По опыту (по возрастанию)",
-      "salaryDesc": "По зарплате (по убыванию)",
-      "salaryAsc": "По зарплате (по возрастанию)"
+      "relevance": "Наиболее релевантные",
+      "newest": "Новейшие",
+      "oldest": "Старейшие",
+      "experienceDesc": "Больше опыта",
+      "experienceAsc": "Меньше опыта"
     },
     "timeFrame": {
-      "title": "Период",
       "all": "Все время",
-      "today": "Активны сегодня",
-      "week": "Активны на этой неделе",
-      "month": "Активны в этом месяце"
+      "today": "Сегодня",
+      "week": "На этой неделе",
+      "month": "В этом месяце"
     },
     "perPage": {
-      "resumes": "резюме"
+      "resumes": "{{count}} резюме"
     },
     "activeFilters": {
       "title": "Активные фильтры",
-      "clearAll": "Очистить все фильтры",
-      "noResults": "Не найдено резюме по вашим критериям",
-      "city": "Город: {city}",
-      "metro": "Метро: {metro}",
-      "experience": "Опыт: {years} лет",
-      "salary": "Зарплата: до ₽{salary}"
+      "clearAll": "Очистить все",
+      "gender": "Пол: {{gender}}",
+      "profession": "Профессия: {{profession}}",
+      "education": "Образование: {{education}}",
+      "experience": "Опыт: {{experience}}",
+      "institution": "Учебное заведение: {{institution}}",
+      "graduationYear": "Год окончания: {{year}}",
+      "specialization": "Специализация: {{specialization}}",
+      "skill": "Навык: {{skill}}"
     },
     "pagination": {
       "previous": "Назад",
@@ -470,15 +600,28 @@
       "contact": "Связаться",
       "viewProfile": "Просмотреть профиль"
     },
-    "details": {
-      "experience": "{years} лет опыта",
-      "expectedSalary": "Ожидаемая: ₽{salary}",
-      "lastActive": "Последняя активность: {date}"
+    "card": {
+      "profileAlt": "Профиль",
+      "untitledResume": "Резюме без названия",
+      "notSpecified": "Не указано",
+      "alreadyContacted": "Вы уже связались",
+      "experience": "Опыт работы",
+      "education": "Образование",
+      "specialization": "Специализация",
+      "noExperience": "Информация об опыте работы не предоставлена",
+      "created": "Создано"
     },
-    "date": {
-      "today": "Сегодня",
-      "yesterday": "Вчера",
-      "daysAgo": "{days} дней назад"
+    "notifications": {
+      "resumeResponses": "На ваше резюме откликнулись: {{count}} компани{{count, plural, one {я} few {и} many {й} other {й}}}"
+    },
+    "noResults": {
+      "message": "Не найдено резюме, соответствующих вашим фильтрам.",
+      "clearFilters": "Очистить все фильтры"
+    },
+    "errors": {
+      "failedToLoad": "Не удалось загрузить резюме. Пожалуйста, попробуйте снова.",
+      "onlyCompaniesCanContact": "Только компании могут связываться со студентами по поводу резюме.",
+      "tryAgain": "Попробовать снова"
     }
   },
   "auction": {
@@ -558,6 +701,10 @@
       "head": "Руководитель направления"
     }
   },
+  "skillSelect": {
+    "placeholder": "Введите навыки и нажмите пробел или Enter для добавления",
+    "hint": "Введите навык и нажмите пробел или Enter для добавления"
+  },
   "profile": {
     "personalInfo": {
       "title": "Личная информация",
@@ -569,70 +716,141 @@
       "phone": "Телефон",
       "country": "Страна",
       "region": "Регион",
+      "district": "Район",
+      "publishPhone": "Публиковать номер телефона",
+      "publicProfile": "Публичный профиль"
+    },
+    "placeholders": {
+      "firstName": "Введите ваше имя",
+      "lastName": "Введите вашу фамилию",
+      "email": "Введите ваш email",
+      "selectCountry": "Выберите страну",
+      "selectRegion": "Выберите регион",
+      "selectDistrict": "Выберите район"
+    },
+    "buttons": {
       "saveChanges": "Сохранить изменения",
-      "uploadPhoto": "Загрузить фото"
+      "view": "Просмотр",
+      "edit": "Редактировать",
+      "delete": "Удалить",
+      "editCompany": "Редактировать компанию",
+      "deleteCompany": "Удалить компанию",
+      "createCompany": "Создать компанию",
+      "viewEditDetails": "Просмотр и редактирование",
+      "addNewJob": "Добавить вакансию",
+      "editJob": "Редактировать вакансию",
+      "hideJob": "Скрыть вакансию",
+      "showJob": "Показать вакансию",
+      "deleteJob": "Удалить вакансию"
     },
     "resume": {
       "title": "Ваши резюме",
-      "create": "Создать резюме",
-      "noResumes": "Нет резюме. Создайте ваше первое резюме!",
-      "view": "Просмотреть",
-      "delete": "Удалить",
-      "wizard": {
-        "title": "Создание резюме",
-        "step1": "Шаг 1 из 4",
-        "step2": "Шаг 2 из 4",
-        "step3": "Шаг 3 из 4",
-        "step4": "Шаг 4 из 4",
-        "next": "Далее",
-        "back": "Назад",
-        "finish": "Завершить",
-        "personalInfo": {
-          "title": "Личная информация",
-          "name": "Имя",
-          "surname": "Фамилия",
-          "email": "Email",
-          "dateOfBirth": "Дата рождения",
-          "country": "Страна",
-          "city": "Город",
-          "gender": "Пол",
-          "phone": "Телефон",
-          "genderOptions": {
-            "male": "Мужской",
-            "female": "Женский",
-            "other": "Другой"
-          }
-        },
-        "experience": {
-          "title": "Опыт работы",
-          "profession": "Профессия",
-          "experience": "Опыт работы",
-          "experiencePlaceholder": "Опишите ваш опыт работы"
-        },
-        "education": {
-          "title": "Образование",
-          "level": "Уровень образования",
-          "institution": "Учебное заведение",
-          "graduationYear": "Год окончания",
-          "specialization": "Специализация",
-          "levels": {
-            "highSchool": "Среднее",
-            "vocational": "Среднее специальное",
-            "incompleteHigher": "Неоконченное высшее",
-            "higher": "Высшее",
-            "bachelor": "Бакалавриат",
-            "master": "Магистратура",
-            "phd": "Кандидат наук",
-            "doctorOfSciences": "Доктор наук"
-          }
-        },
-        "skills": {
-          "title": "Навыки и контакты",
-          "skills": "Навыки",
-          "skillsPlaceholder": "Выберите ваши навыки",
-          "contacts": "Контакты",
-          "contactsPlaceholder": "Укажите ваши контактные данные"
+      "noResumes": "Вы еще не создали ни одного резюме."
+    },
+    "company": {
+      "title": "Данные компании",
+      "founded": "Основана",
+      "size": "Размер",
+      "website": "Веб-сайт",
+      "noCompany": "Вы еще не создали компанию."
+    },
+    "jobs": {
+      "title": "Вакансии",
+      "noJobs": "Нет вакансий. Создайте свою первую вакансию!",
+      "statusActive": "Активна",
+      "statusHidden": "Скрыта"
+    },
+    "notifications": {
+      "profileUpdated": "Профиль успешно обновлен!",
+      "failedToUpdateProfile": "Не удалось обновить профиль. Пожалуйста, попробуйте снова.",
+      "companyUpdated": "Данные компании успешно обновлены!",
+      "companyCreated": "Компания успешно создана!",
+      "failedToSaveCompany": "Не удалось сохранить данные компании. Пожалуйста, попробуйте снова.",
+      "jobUpdated": "Вакансия успешно обновлена!",
+      "jobCreated": "Вакансия успешно создана!",
+      "resumeCreated": "Резюме успешно создано!",
+      "companyDeleted": "Компания успешно удалена!",
+      "jobDeleted": "Вакансия успешно удалена!",
+      "resumeDeleted": "Резюме успешно удалено!",
+      "jobActivated": "Вакансия успешно активирована!",
+      "jobHidden": "Вакансия успешно скрыта!",
+      "failedToUpdateJobStatus": "Не удалось обновить статус вакансии. Пожалуйста, попробуйте снова.",
+      "resumeUpdated": "Резюме успешно обновлено",
+      "failedToLoadCompany": "Не удалось загрузить данные компании",
+      "failedToLoadJobs": "Не удалось загрузить вакансии",
+      "failedToLoadResumes": "Не удалось загрузить резюме"
+    },
+    "deleteModals": {
+      "company": {
+        "title": "Удалить компанию",
+        "message": "Вы уверены, что хотите удалить \"{{name}}\"? Это также удалит все связанные вакансии."
+      },
+      "job": {
+        "title": "Удалить вакансию",
+        "message": "Вы уверены, что хотите удалить вакансию \"{{title}}\"?"
+      },
+      "resume": {
+        "title": "Удалить резюме",
+        "message": "Вы уверены, что хотите удалить резюме для \"{{title}}\"?"
+      }
+    },
+    "errors": {
+      "incorrectPassword": "Неверный пароль"
+    },
+    "wizard": {
+      "title": "Создание резюме",
+      "step1": "Шаг 1 из 4",
+      "step2": "Шаг 2 из 4",
+      "step3": "Шаг 3 из 4",
+      "step4": "Шаг 4 из 4",
+      "next": "Далее",
+      "back": "Назад",
+      "finish": "Завершить",
+      "personalInfo": {
+        "title": "Личная информация",
+        "name": "Имя",
+        "surname": "Фамилия",
+        "email": "Email",
+        "dateOfBirth": "Дата рождения",
+        "country": "Страна",
+        "city": "Город",
+        "gender": "Пол",
+        "phone": "Телефон",
+        "genderOptions": {
+          "male": "Мужской",
+          "female": "Женский",
+          "other": "Другой"
         }
+      },
+      "experience": {
+        "title": "Опыт работы",
+        "profession": "Профессия",
+        "experience": "Опыт работы",
+        "experiencePlaceholder": "Опишите ваш опыт работы"
+      },
+      "education": {
+        "title": "Образование",
+        "level": "Уровень образования",
+        "institution": "Учебное заведение",
+        "graduationYear": "Год окончания",
+        "specialization": "Специализация",
+        "levels": {
+          "highSchool": "Среднее",
+          "vocational": "Среднее специальное",
+          "incompleteHigher": "Неоконченное высшее",
+          "higher": "Высшее",
+          "bachelor": "Бакалавриат",
+          "master": "Магистратура",
+          "phd": "Кандидат наук",
+          "doctorOfSciences": "Доктор наук"
+        }
+      },
+      "skills": {
+        "title": "Навыки и контакты",
+        "skills": "Навыки",
+        "skillsPlaceholder": "Выберите ваши навыки",
+        "contacts": "Контакты",
+        "contactsPlaceholder": "Укажите ваши контактные данные"
       }
     }
   },
@@ -687,17 +905,175 @@
       },
       "bidding": {
         "history": "История ставок",
-        "noBids": "Пока нет ставок",
+        "noBids": "Ставок пока нет",
         "enterBid": "Введите ставку",
         "submit": "Сделать ставку"
       },
       "results": {
         "title": "Результаты аукциона",
-        "summary": "Итоговые предложения",
+        "summary": "Финальные предложения",
         "noBid": "Нет ставки",
         "chooseOffer": "Выбрать предложение",
         "decline": "Отклонить все"
       }
+    }
+  },
+  "deleteModal": {
+    "warning": "Это действие нельзя отменить. Пожалуйста, введите ваш пароль для подтверждения.",
+    "passwordLabel": "Ваш пароль",
+    "passwordPlaceholder": "Введите ваш пароль",
+    "buttons": {
+      "cancel": "Отмена",
+      "delete": "Удалить {{itemType}}",
+      "verifying": "Проверка..."
+    },
+    "errors": {
+      "passwordRequired": "Пароль обязателен",
+      "failedToDelete": "Не удалось удалить. Проверьте пароль и попробуйте снова."
+    },
+    "itemTypes": {
+      "resume": "резюме",
+      "job": "вакансию",
+      "company": "компанию"
+    }
+  },
+  "companyModal": {
+    "title": "Данные компании",
+    "logoPreview": "Предпросмотр логотипа компании",
+    "fields": {
+      "name": "Название компании",
+      "logo": "Логотип компании",
+      "description": "Описание",
+      "website": "Веб-сайт",
+      "industry": "Отрасль",
+      "size": "Размер компании",
+      "foundedYear": "Год основания"
+    },
+    "placeholders": {
+      "name": "Введите название компании",
+      "description": "Введите описание компании",
+      "website": "https://example.com",
+      "industry": "например, Технологии, Здравоохранение",
+      "size": "например, 1-10, 11-50, 51-200"
+    },
+    "buttons": {
+      "cancel": "Отмена",
+      "saveChanges": "Сохранить изменения",
+      "saving": "Сохранение..."
+    },
+    "errors": {
+      "failedToUpdate": "Не удалось обновить компанию. Пожалуйста, попробуйте снова."
+    }
+  },
+  "createCompanyModal": {
+    "title": "Создать новую компанию",
+    "logoPreview": "Предпросмотр логотипа компании",
+    "fields": {
+      "name": "Название компании",
+      "logo": "Логотип компании",
+      "description": "Описание",
+      "website": "Веб-сайт",
+      "industry": "Отрасль",
+      "size": "Размер компании",
+      "foundedYear": "Год основания"
+    },
+    "placeholders": {
+      "name": "Введите название компании",
+      "description": "Введите описание компании",
+      "website": "https://example.com",
+      "industry": "например, Технологии, Здравоохранение",
+      "size": "например, 1-10, 11-50, 51-200"
+    },
+    "buttons": {
+      "cancel": "Отмена",
+      "createCompany": "Создать компанию",
+      "creating": "Создание..."
+    },
+    "errors": {
+      "mustBeLoggedIn": "Вы должны войти в систему, чтобы создать компанию",
+      "failedToCreate": "Не удалось создать компанию. Пожалуйста, попробуйте снова."
+    }
+  },
+  "jobModal": {
+    "titleCreate": "Создать новую вакансию",
+    "titleEdit": "Редактировать вакансию",
+    "fields": {
+      "title": "Название вакансии",
+      "description": "Описание",
+      "requirements": "Требования (разделяйте пробелами)",
+      "salaryMin": "Минимальная зарплата",
+      "salaryMax": "Максимальная зарплата",
+      "currency": "Валюта (макс. 3 символа)",
+      "city": "Город",
+      "metro": "Станция метро",
+      "employmentType": "Тип занятости",
+      "schedule": "График",
+      "experience": "Требуемый опыт (лет)"
+    },
+    "placeholders": {
+      "title": "Введите название вакансии",
+      "description": "Введите описание вакансии",
+      "requirements": "react nodejs mongodb docker git",
+      "salaryMin": "Введите минимальную зарплату",
+      "salaryMax": "Введите максимальную зарплату",
+      "currency": "USD, EUR, RUB...",
+      "city": "Введите город",
+      "metro": "Введите станцию метро",
+      "experience": "Введите требуемый опыт в годах"
+    },
+    "hints": {
+      "requirements": "Введите требования, разделенные пробелами (например, \"react nodejs mongodb docker\")"
+    },
+    "options": {
+      "selectType": "Выберите тип",
+      "fullTime": "Полная занятость",
+      "partTime": "Частичная занятость",
+      "contract": "Контракт",
+      "temporary": "Временная",
+      "internship": "Стажировка",
+      "selectSchedule": "Выберите график",
+      "standard": "Стандартный (9-17)",
+      "flexible": "Гибкий график",
+      "shift": "Сменный график",
+      "remote": "Удаленная работа",
+      "hybrid": "Гибридный"
+    },
+    "buttons": {
+      "cancel": "Отмена",
+      "createJob": "Создать вакансию",
+      "updateJob": "Обновить вакансию",
+      "saving": "Сохранение..."
+    }
+  },
+  "resumeEditModal": {
+    "title": "Редактировать резюме",
+    "stepProgress": "Шаг {{current}} из {{total}}",
+    "profileDataNote": "Эти данные были автоматически загружены из вашего профиля.",
+    "selectGender": "Выберите ваш пол",
+    "additionalContacts": "Дополнительные контакты",
+    "save": "Сохранить",
+    "close": "Закрыть",
+    "placeholders": {
+      "profession": "Введите вашу профессию",
+      "institution": "Введите название учебного заведения",
+      "graduationYear": "Введите год окончания",
+      "specialization": "Введите вашу специализацию",
+      "contacts": "Введите дополнительную контактную информацию"
+    },
+    "errors": {
+      "failedToLoad": "Не удалось загрузить данные резюме",
+      "failedToUpdate": "Не удалось обновить резюме"
+    }
+  },
+  "resumeWizard": {
+    "stepProgress": "Шаг {{current}} из {{total}}",
+    "profileDataNote": "Эти данные были автоматически загружены из вашего профиля.",
+    "selectGender": "Выберите ваш пол",
+    "placeholders": {
+      "profession": "Введите вашу профессию",
+      "institution": "Введите название учебного заведения",
+      "graduationYear": "Введите год окончания",
+      "specialization": "Введите вашу специализацию"
     }
   }
 }

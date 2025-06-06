@@ -1,7 +1,6 @@
 "use client";
 
 import type React from "react";
-
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -14,6 +13,7 @@ import {
   Users,
   Save,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface CompanyViewModalProps {
   isOpen: boolean;
@@ -28,6 +28,7 @@ const CompanyViewModal = ({
   onComplete,
   initialData,
 }: CompanyViewModalProps) => {
+  const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -93,7 +94,7 @@ const CompanyViewModal = ({
       onClose();
     } catch (error) {
       console.error("Error updating company:", error);
-      setError("Failed to update company. Please try again.");
+      setError(t("companyModal.errors.failedToUpdate"));
     } finally {
       setIsLoading(false);
     }
@@ -111,7 +112,9 @@ const CompanyViewModal = ({
           >
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-700">
-              <h2 className="text-xl font-bold text-white">Company Details</h2>
+              <h2 className="text-xl font-bold text-white">
+                {t("companyModal.title")}
+              </h2>
               <button
                 onClick={onClose}
                 className="p-1 rounded-full hover:bg-gray-700 transition-colors"
@@ -131,7 +134,7 @@ const CompanyViewModal = ({
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Company Name*
+                    {t("companyModal.fields.name")}*
                   </label>
                   <div className="relative">
                     <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -141,7 +144,7 @@ const CompanyViewModal = ({
                       value={formData.name}
                       onChange={handleChange}
                       className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      placeholder="Enter company name"
+                      placeholder={t("companyModal.placeholders.name")}
                       required
                     />
                   </div>
@@ -149,13 +152,13 @@ const CompanyViewModal = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Company Logo
+                    {t("companyModal.fields.logo")}
                   </label>
                   {formData.logo && (
                     <div className="mb-4">
                       <img
                         src={formData.logo || "/placeholder.svg"}
-                        alt="Company Logo Preview"
+                        alt={t("companyModal.logoPreview")}
                         className="w-32 h-32 object-contain rounded-lg bg-gray-700 p-2"
                       />
                     </div>
@@ -170,7 +173,7 @@ const CompanyViewModal = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Description*
+                    {t("companyModal.fields.description")}*
                   </label>
                   <div className="relative">
                     <FileText className="absolute left-3 top-3 text-gray-400 w-5 h-5" />
@@ -180,7 +183,7 @@ const CompanyViewModal = ({
                       onChange={handleChange}
                       rows={4}
                       className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
-                      placeholder="Enter company description"
+                      placeholder={t("companyModal.placeholders.description")}
                       required
                     />
                   </div>
@@ -188,7 +191,7 @@ const CompanyViewModal = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Website*
+                    {t("companyModal.fields.website")}*
                   </label>
                   <div className="relative">
                     <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -198,7 +201,7 @@ const CompanyViewModal = ({
                       value={formData.website}
                       onChange={handleChange}
                       className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      placeholder="https://example.com"
+                      placeholder={t("companyModal.placeholders.website")}
                       required
                     />
                   </div>
@@ -207,7 +210,7 @@ const CompanyViewModal = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Industry*
+                      {t("companyModal.fields.industry")}*
                     </label>
                     <div className="relative">
                       <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -217,7 +220,7 @@ const CompanyViewModal = ({
                         value={formData.industry}
                         onChange={handleChange}
                         className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                        placeholder="e.g. Technology, Healthcare"
+                        placeholder={t("companyModal.placeholders.industry")}
                         required
                       />
                     </div>
@@ -225,7 +228,7 @@ const CompanyViewModal = ({
 
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Company Size*
+                      {t("companyModal.fields.size")}*
                     </label>
                     <div className="relative">
                       <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -235,7 +238,7 @@ const CompanyViewModal = ({
                         value={formData.size}
                         onChange={handleChange}
                         className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                        placeholder="e.g. 1-10, 11-50, 51-200"
+                        placeholder={t("companyModal.placeholders.size")}
                         required
                       />
                     </div>
@@ -244,7 +247,7 @@ const CompanyViewModal = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Founded Year*
+                    {t("companyModal.fields.foundedYear")}*
                   </label>
                   <div className="relative">
                     <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -268,7 +271,7 @@ const CompanyViewModal = ({
                     className="px-6 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
                     disabled={isLoading}
                   >
-                    Cancel
+                    {t("companyModal.buttons.cancel")}
                   </button>
                   <button
                     type="submit"
@@ -278,12 +281,12 @@ const CompanyViewModal = ({
                     {isLoading ? (
                       <>
                         <Loader2 className="w-5 h-5 animate-spin" />
-                        <span>Saving...</span>
+                        <span>{t("companyModal.buttons.saving")}</span>
                       </>
                     ) : (
                       <>
                         <Save className="w-5 h-5" />
-                        <span>Save Changes</span>
+                        <span>{t("companyModal.buttons.saveChanges")}</span>
                       </>
                     )}
                   </button>

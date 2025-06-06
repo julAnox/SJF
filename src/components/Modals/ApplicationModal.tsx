@@ -2,12 +2,12 @@
 
 import type React from "react";
 
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, FileText, AlertCircle } from "lucide-react";
+import { X, Send, FileText, AlertCircle, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../../contexts/AuthContext";
-import { ApplicationContext } from "../../App";
 import { resumesApi } from "../../services/api";
 import applicationsService from "../../services/applicationsService";
 import chatsService from "../../services/chatsService";
@@ -34,11 +34,12 @@ const ApplicationModal = ({
 }: ApplicationModalProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { refreshApplicationCount } = useContext(ApplicationContext);
+  const { t } = useTranslation();
   const [selectedResume, setSelectedResume] = useState("");
   const [coverLetter, setCoverLetter] = useState("");
   const [resumes, setResumes] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -53,19 +54,19 @@ const ApplicationModal = ({
         setResumes(userResumes);
       } catch (err) {
         console.error("Error fetching resumes:", err);
-        setError("Failed to load resumes");
+        setError(t("applications.modal.errors.failedToLoadResumes"));
       }
     };
 
     if (isOpen) {
       fetchResumes();
     }
-  }, [isOpen, user]);
+  }, [isOpen, user, t]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!(selectedResume && coverLetter)) {
-      setError("Please select a resume and provide a cover letter");
+    if (!(selectedResume && coverLetter.trim())) {
+      setError(t("applications.modal.errors.selectResumeAndCoverLetter"));
       return;
     }
 
@@ -74,7 +75,7 @@ const ApplicationModal = ({
       setError(null);
 
       if (!user) {
-        setError("You must be logged in to apply");
+        setError(t("applications.modal.errors.mustBeLoggedIn"));
         return;
       }
 
@@ -84,7 +85,7 @@ const ApplicationModal = ({
         user: Number.parseInt(user.id),
         job: Number.parseInt(jobId),
         resume: selectedResume ? Number.parseInt(selectedResume) : null,
-        cover_letter: coverLetter,
+        cover_letter: coverLetter.trim(),
         status: "pending",
       };
 
@@ -96,7 +97,6 @@ const ApplicationModal = ({
         throw new Error("Failed to create application");
       }
 
-      // Создаем чат
       const chatData = {
         application: application.id,
         status: "active",
@@ -108,16 +108,15 @@ const ApplicationModal = ({
         throw new Error("Failed to create chat");
       }
 
-      // Создаем сообщения
       const resumeMessage = {
         chat: chat.id,
         sender: Number.parseInt(user.id),
         content: selectedResume
-          ? `Resume: ${
+          ? `${t("applications.modal.resumeLabel")}: ${
               resumes.find((r) => r.id === Number.parseInt(selectedResume))
-                ?.profession || "My Resume"
+                ?.profession || t("applications.modal.myResume")
             }`
-          : "Resume uploaded as document",
+          : t("applications.modal.resumeUploadedAsDocument"),
         message_type: "resume",
         metadata: selectedResume ? { resumeId: selectedResume } : null,
         read: false,
@@ -128,30 +127,28 @@ const ApplicationModal = ({
       const coverLetterMessage = {
         chat: chat.id,
         sender: Number.parseInt(user.id),
-        content: coverLetter,
+        content: coverLetter.trim(),
         message_type: "coverLetter",
         read: false,
       };
 
       await messagesService.create(coverLetterMessage);
 
-      // ВАЖНО: Обновляем счетчик заявок из базы данных
-      console.log(
-        "Application submitted successfully, refreshing count from database"
-      );
-      await refreshApplicationCount();
+      setIsSubmitted(true);
 
-      // Вызываем callback
       if (onApplicationSubmitted) {
         onApplicationSubmitted();
       }
 
-      console.log("Application process completed!");
-      navigate(`/chat/${chat.id}`);
-      onClose();
+      console.log("Application submitted successfully!");
+
+      setTimeout(() => {
+        navigate(`/chat/${chat.id}`);
+        onClose();
+      }, 1500);
     } catch (err) {
       console.error("Error submitting application:", err);
-      setError("Failed to submit application. Please try again.");
+      setError(t("applications.modal.errors.failedToSubmit"));
     } finally {
       setIsLoading(false);
     }
@@ -162,18 +159,25 @@ const ApplicationModal = ({
     onClose();
   };
 
+  const handleClose = () => {
+    if (!isLoading) {
+      onClose();
+    }
+  };
+
   useEffect(() => {
     if (isOpen) {
       setSelectedResume("");
       setCoverLetter("");
       setError(null);
+      setIsSubmitted(false);
     }
   }, [isOpen]);
 
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -182,122 +186,171 @@ const ApplicationModal = ({
           >
             <div className="flex items-center justify-between p-6 border-b border-gray-700">
               <h2 className="text-xl font-semibold text-white">
-                Apply for Position
+                {t("applications.modal.title")}
               </h2>
               <button
-                onClick={onClose}
-                className="text-gray-400 hover:text-white transition-colors"
+                onClick={handleClose}
+                disabled={isLoading}
+                className="text-gray-400 hover:text-white transition-colors disabled:opacity-50"
               >
                 <X className="w-6 h-6" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-6">
-              {error && (
-                <div className="p-3 bg-red-500/20 border border-red-500 rounded-lg text-red-300 flex items-center gap-2">
-                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                  <span>{error}</span>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-emerald-300">
-                  <div className="flex-1">
-                    <p className="font-medium">Applying for: {jobTitle}</p>
-                    <p className="text-sm text-emerald-300/80">
-                      Company: {companyName}
-                    </p>
-                  </div>
-                </div>
+            {isSubmitted ? (
+              <div className="p-8 text-center">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4"
+                >
+                  <CheckCircle className="w-8 h-8 text-white" />
+                </motion.div>
+                <h3 className="text-xl font-semibold text-white mb-2">
+                  {t("applications.modal.success.title")}
+                </h3>
+                <p className="text-gray-400 mb-4">
+                  {t("applications.modal.success.description", { companyName })}
+                </p>
+                <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
               </div>
-
-              <div className="space-y-4">
-                <label className="block text-sm font-medium text-gray-300">
-                  Choose Resume
-                </label>
+            ) : (
+              <form onSubmit={handleSubmit} className="p-6 space-y-6">
+                {error && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-3 bg-red-500/20 border border-red-500 rounded-lg text-red-300 flex items-center gap-2"
+                  >
+                    <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                    <span>{error}</span>
+                  </motion.div>
+                )}
 
                 <div className="space-y-2">
-                  <p className="text-sm text-gray-400">From Your Profile</p>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center gap-2 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-emerald-300">
+                    <div className="flex-1">
+                      <p className="font-medium text-lg">{jobTitle}</p>
+                      <p className="text-sm text-emerald-300/80">
+                        {companyName}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <label className="block text-sm font-medium text-gray-300">
+                    {t("applications.modal.selectResume")} *
+                  </label>
+
+                  <div className="space-y-3">
                     {resumes.length > 0 ? (
-                      resumes.map((resume) => (
-                        <button
-                          key={resume.id}
-                          type="button"
-                          onClick={() => {
-                            setSelectedResume(resume.id.toString());
-                          }}
-                          className={`flex items-center gap-2 p-4 rounded-lg border ${
-                            selectedResume === resume.id.toString()
-                              ? "border-emerald-500 bg-emerald-500/10"
-                              : "border-gray-600 hover:border-gray-500"
-                          } transition-colors text-left`}
-                        >
-                          <FileText className="w-5 h-5 text-emerald-400" />
-                          <span className="text-white">
-                            {resume.profession || "Resume"}
-                          </span>
-                        </button>
-                      ))
+                      <div className="grid grid-cols-1 gap-3">
+                        {resumes.map((resume) => (
+                          <button
+                            key={resume.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedResume(resume.id.toString());
+                            }}
+                            className={`flex items-center gap-3 p-4 rounded-lg border transition-all ${
+                              selectedResume === resume.id.toString()
+                                ? "border-emerald-500 bg-emerald-500/10 shadow-lg"
+                                : "border-gray-600 hover:border-gray-500 hover:bg-gray-700/50"
+                            } text-left`}
+                          >
+                            <FileText className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                            <div className="flex-1">
+                              <p className="text-white font-medium">
+                                {resume.profession ||
+                                  t("applications.modal.resumeDefaultTitle")}
+                              </p>
+                              {resume.experience && (
+                                <p className="text-gray-400 text-sm">
+                                  {t("applications.modal.yearsExperience", {
+                                    years: resume.experience,
+                                  })}
+                                </p>
+                              )}
+                            </div>
+                            {selectedResume === resume.id.toString() && (
+                              <CheckCircle className="w-5 h-5 text-emerald-400" />
+                            )}
+                          </button>
+                        ))}
+                      </div>
                     ) : (
-                      <div className="col-span-2 p-4 border border-gray-600 border-dashed rounded-lg">
-                        <p className="text-gray-400 text-sm text-center mb-3">
-                          No resumes found in your profile
+                      <div className="p-6 border border-gray-600 border-dashed rounded-lg text-center">
+                        <FileText className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                        <p className="text-gray-400 mb-4">
+                          {t("applications.modal.noResumesFound")}
                         </p>
                         <button
                           type="button"
                           onClick={handleNavigateToProfile}
-                          className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-colors"
+                          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-colors"
                         >
-                          Create Resume in Profile
+                          {t("applications.modal.createResumeInProfile")}
                         </button>
                       </div>
                     )}
                   </div>
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Cover Letter
-                </label>
-                <textarea
-                  value={coverLetter}
-                  onChange={(e) => setCoverLetter(e.target.value)}
-                  required
-                  rows={6}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
-                  placeholder="Write a brief cover letter explaining why you're a good fit for this position..."
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    {t("applications.modal.coverLetter")} *
+                  </label>
+                  <textarea
+                    value={coverLetter}
+                    onChange={(e) => setCoverLetter(e.target.value)}
+                    required
+                    rows={6}
+                    maxLength={1000}
+                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
+                    placeholder={t("applications.modal.coverLetterPlaceholder")}
+                  />
+                  <div className="flex justify-between mt-2">
+                    <p className="text-gray-500 text-sm">
+                      {t("applications.modal.coverLetterHint")}
+                    </p>
+                    <p className="text-gray-500 text-sm">
+                      {coverLetter.length}/1000
+                    </p>
+                  </div>
+                </div>
 
-              <div className="flex justify-end gap-4">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="px-4 py-2 text-gray-300 hover:text-white transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={!(selectedResume && coverLetter) || isLoading}
-                  className="flex items-center gap-2 px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isLoading ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Submitting...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4" />
-                      Submit Application
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
+                <div className="flex justify-end gap-4 pt-4 border-t border-gray-700">
+                  <button
+                    type="button"
+                    onClick={handleClose}
+                    disabled={isLoading}
+                    className="px-6 py-2 text-gray-300 hover:text-white transition-colors disabled:opacity-50"
+                  >
+                    {t("applications.modal.cancel")}
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={
+                      !(selectedResume && coverLetter.trim()) || isLoading
+                    }
+                    className="flex items-center gap-2 px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        {t("applications.modal.submitting")}
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" />
+                        {t("applications.modal.submit")}
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
           </motion.div>
         </div>
       )}

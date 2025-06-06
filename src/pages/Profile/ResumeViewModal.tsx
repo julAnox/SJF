@@ -15,6 +15,7 @@ import {
   Figma,
   PenTool,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../../contexts/AuthContext";
 import { usersApi } from "../../services/api";
 import { useState, useEffect } from "react";
@@ -26,6 +27,7 @@ interface ResumeViewModalProps {
 }
 
 const ResumeViewModal = ({ isOpen, onClose, resume }: ResumeViewModalProps) => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [resumeUser, setResumeUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -93,7 +95,7 @@ const ResumeViewModal = ({ isOpen, onClose, resume }: ResumeViewModalProps) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -109,10 +111,11 @@ const ResumeViewModal = ({ isOpen, onClose, resume }: ResumeViewModalProps) => {
                 <X className="w-6 h-6" />
               </button>
               <h2 className="text-2xl font-bold text-white">
-                {resume.profession || "Resume"}
+                {resume.profession || t("resumeViewModal.defaultTitle")}
               </h2>
               <p className="text-gray-400 mt-2">
-                Created: {new Date(resume.created_at).toLocaleDateString()}
+                {t("resumeViewModal.created")}:{" "}
+                {new Date(resume.created_at).toLocaleDateString()}
               </p>
             </div>
 
@@ -121,7 +124,7 @@ const ResumeViewModal = ({ isOpen, onClose, resume }: ResumeViewModalProps) => {
                 {/* Personal Information */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold text-white border-b border-gray-700 pb-2">
-                    Personal Information
+                    {t("resumeViewModal.personalInfo.title")}
                   </h3>
 
                   <div className="flex items-center gap-3">
@@ -139,49 +142,66 @@ const ResumeViewModal = ({ isOpen, onClose, resume }: ResumeViewModalProps) => {
 
                   <div className="flex items-center gap-3">
                     <Mail className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                    <p className="text-white">{resumeUser?.email || ""}</p>
+                    <p className="text-white">
+                      {resumeUser?.email || t("resumeViewModal.notSpecified")}
+                    </p>
                   </div>
 
                   <div className="flex items-center gap-3">
                     <Phone className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                    <p className="text-white">{resumeUser?.phone || ""}</p>
+                    <p className="text-white">
+                      {resumeUser?.phone || t("resumeViewModal.notSpecified")}
+                    </p>
                   </div>
 
                   <div className="flex items-center gap-3">
                     <Globe className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                    <p className="text-white">{resumeUser?.country || ""}</p>
+                    <p className="text-white">
+                      {resumeUser?.country || t("resumeViewModal.notSpecified")}
+                    </p>
                   </div>
 
                   <div className="flex items-center gap-3">
                     <MapPin className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                    <p className="text-white">{resumeUser?.region || ""}</p>
+                    <p className="text-white">
+                      {resumeUser?.region || t("resumeViewModal.notSpecified")}
+                    </p>
                   </div>
                 </div>
 
                 {/* Education */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold text-white border-b border-gray-700 pb-2">
-                    Education
+                    {t("resumeViewModal.education.title")}
                   </h3>
 
                   <div className="flex items-center gap-3">
                     <GraduationCap className="w-5 h-5 text-emerald-400 flex-shrink-0" />
                     <div>
-                      <p className="text-white">{resume.education || ""}</p>
+                      <p className="text-white">
+                        {resume.education || t("resumeViewModal.notSpecified")}
+                      </p>
                       <p className="text-sm text-gray-400">
-                        {resume.specialization || ""}
+                        {resume.specialization ||
+                          t("resumeViewModal.notSpecified")}
                       </p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-3">
                     <Briefcase className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                    <p className="text-white">{resume.institutionName || ""}</p>
+                    <p className="text-white">
+                      {resume.institutionName ||
+                        t("resumeViewModal.notSpecified")}
+                    </p>
                   </div>
 
                   <div className="flex items-center gap-3">
                     <Calendar className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                    <p className="text-white">{resume.graduationYear || ""}</p>
+                    <p className="text-white">
+                      {resume.graduationYear ||
+                        t("resumeViewModal.notSpecified")}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -189,17 +209,18 @@ const ResumeViewModal = ({ isOpen, onClose, resume }: ResumeViewModalProps) => {
               {/* Experience */}
               <div className="mt-6">
                 <h3 className="text-lg font-semibold text-white border-b border-gray-700 pb-2 mb-4">
-                  Work Experience
+                  {t("resumeViewModal.experience.title")}
                 </h3>
                 <p className="text-white whitespace-pre-line">
-                  {resume.experience || ""}
+                  {resume.experience ||
+                    t("resumeViewModal.experience.noExperience")}
                 </p>
               </div>
 
               {/* Skills */}
               <div className="mt-6">
                 <h3 className="text-lg font-semibold text-white border-b border-gray-700 pb-2 mb-4">
-                  Skills
+                  {t("resumeViewModal.skills.title")}
                 </h3>
                 {renderSkills().length > 0 ? (
                   <div className="flex flex-wrap gap-2">
@@ -214,17 +235,19 @@ const ResumeViewModal = ({ isOpen, onClose, resume }: ResumeViewModalProps) => {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-gray-400">No skills specified</p>
+                  <p className="text-gray-400">
+                    {t("resumeViewModal.skills.noSkills")}
+                  </p>
                 )}
               </div>
 
               {/* Contacts */}
               <div className="mt-6">
                 <h3 className="text-lg font-semibold text-white border-b border-gray-700 pb-2 mb-4">
-                  Additional Contacts
+                  {t("resumeViewModal.contacts.title")}
                 </h3>
                 <p className="text-white whitespace-pre-line">
-                  {resume.contacts || ""}
+                  {resume.contacts || t("resumeViewModal.contacts.noContacts")}
                 </p>
               </div>
             </div>
@@ -234,7 +257,7 @@ const ResumeViewModal = ({ isOpen, onClose, resume }: ResumeViewModalProps) => {
                 onClick={onClose}
                 className="px-6 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
               >
-                Close
+                {t("resumeViewModal.close")}
               </button>
             </div>
           </motion.div>

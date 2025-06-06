@@ -356,7 +356,7 @@ const Header = () => {
                     className="flex items-center gap-2 px-4 py-2 rounded-lg text-gray-400 hover:text-emerald-400 hover:bg-gray-800 transition-all duration-300 ease-in-out text-sm"
                   >
                     <LogInIcon className="w-5 h-5" />
-                    Logout
+                    {t("home.cta.log")}
                   </button>
                 </div>
               ) : (

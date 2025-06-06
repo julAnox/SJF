@@ -1,7 +1,6 @@
 "use client";
 
 import type React from "react";
-
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -13,6 +12,7 @@ import {
   Calendar,
   Users,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { companiesApi } from "../../services/api";
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -27,6 +27,7 @@ const CreateCompanyModal = ({
   onClose,
   onComplete,
 }: CreateCompanyModalProps) => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -70,7 +71,7 @@ const CreateCompanyModal = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
-      setError("You must be logged in to create a company");
+      setError(t("createCompanyModal.errors.mustBeLoggedIn"));
       return;
     }
 
@@ -87,7 +88,7 @@ const CreateCompanyModal = ({
       onClose();
     } catch (error) {
       console.error("Error creating company:", error);
-      setError("Failed to create company. Please try again.");
+      setError(t("createCompanyModal.errors.failedToCreate"));
     } finally {
       setIsLoading(false);
     }
@@ -105,7 +106,7 @@ const CreateCompanyModal = ({
           >
             <div className="flex items-center justify-between p-6 border-b border-gray-700">
               <h2 className="text-xl font-bold text-white">
-                Create New Company
+                {t("createCompanyModal.title")}
               </h2>
               <button
                 onClick={onClose}
@@ -126,7 +127,7 @@ const CreateCompanyModal = ({
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Company Name*
+                    {t("createCompanyModal.fields.name")}*
                   </label>
                   <div className="relative">
                     <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -136,7 +137,7 @@ const CreateCompanyModal = ({
                       value={formData.name}
                       onChange={handleChange}
                       className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      placeholder="Enter company name"
+                      placeholder={t("createCompanyModal.placeholders.name")}
                       required
                     />
                   </div>
@@ -144,13 +145,13 @@ const CreateCompanyModal = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Company Logo
+                    {t("createCompanyModal.fields.logo")}
                   </label>
                   {formData.logo && (
                     <div className="mb-4">
                       <img
                         src={formData.logo || "/placeholder.svg"}
-                        alt="Company Logo Preview"
+                        alt={t("createCompanyModal.logoPreview")}
                         className="w-32 h-32 object-contain rounded-lg bg-gray-700 p-2"
                       />
                     </div>
@@ -165,7 +166,7 @@ const CreateCompanyModal = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Description*
+                    {t("createCompanyModal.fields.description")}*
                   </label>
                   <div className="relative">
                     <FileText className="absolute left-3 top-3 text-gray-400 w-5 h-5" />
@@ -175,7 +176,9 @@ const CreateCompanyModal = ({
                       onChange={handleChange}
                       rows={4}
                       className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
-                      placeholder="Enter company description"
+                      placeholder={t(
+                        "createCompanyModal.placeholders.description"
+                      )}
                       required
                     />
                   </div>
@@ -183,7 +186,7 @@ const CreateCompanyModal = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Website*
+                    {t("createCompanyModal.fields.website")}*
                   </label>
                   <div className="relative">
                     <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -193,7 +196,7 @@ const CreateCompanyModal = ({
                       value={formData.website}
                       onChange={handleChange}
                       className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      placeholder="https://example.com"
+                      placeholder={t("createCompanyModal.placeholders.website")}
                       required
                     />
                   </div>
@@ -202,7 +205,7 @@ const CreateCompanyModal = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Industry*
+                      {t("createCompanyModal.fields.industry")}*
                     </label>
                     <div className="relative">
                       <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -212,7 +215,9 @@ const CreateCompanyModal = ({
                         value={formData.industry}
                         onChange={handleChange}
                         className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                        placeholder="e.g. Technology, Healthcare"
+                        placeholder={t(
+                          "createCompanyModal.placeholders.industry"
+                        )}
                         required
                       />
                     </div>
@@ -220,7 +225,7 @@ const CreateCompanyModal = ({
 
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Company Size*
+                      {t("createCompanyModal.fields.size")}*
                     </label>
                     <div className="relative">
                       <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -230,7 +235,7 @@ const CreateCompanyModal = ({
                         value={formData.size}
                         onChange={handleChange}
                         className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                        placeholder="e.g. 1-10, 11-50, 51-200"
+                        placeholder={t("createCompanyModal.placeholders.size")}
                         required
                       />
                     </div>
@@ -239,7 +244,7 @@ const CreateCompanyModal = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Founded Year*
+                    {t("createCompanyModal.fields.foundedYear")}*
                   </label>
                   <div className="relative">
                     <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -263,7 +268,7 @@ const CreateCompanyModal = ({
                     className="px-6 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
                     disabled={isLoading}
                   >
-                    Cancel
+                    {t("createCompanyModal.buttons.cancel")}
                   </button>
                   <button
                     type="submit"
@@ -273,10 +278,12 @@ const CreateCompanyModal = ({
                     {isLoading ? (
                       <>
                         <Loader2 className="w-5 h-5 animate-spin" />
-                        <span>Creating...</span>
+                        <span>{t("createCompanyModal.buttons.creating")}</span>
                       </>
                     ) : (
-                      <span>Create Company</span>
+                      <span>
+                        {t("createCompanyModal.buttons.createCompany")}
+                      </span>
                     )}
                   </button>
                 </div>

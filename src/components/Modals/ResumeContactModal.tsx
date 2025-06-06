@@ -3,7 +3,8 @@
 import type React from "react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, AlertCircle, Briefcase } from "lucide-react";
+import { X, Send, AlertCircle, Briefcase, CheckCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../../contexts/AuthContext";
 import { resumeApplicationsService } from "../../services/resumeApplicationsService";
 import { companiesApi } from "../../services/api";
@@ -26,8 +27,10 @@ const ResumeContactModal = ({
   resume,
   resumeUser,
 }: ResumeContactModalProps) => {
+  const { t } = useTranslation();
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const { user } = useAuth();
 
@@ -45,11 +48,11 @@ const ResumeContactModal = ({
       console.log("Resume user:", resumeUser);
 
       if (!user) {
-        throw new Error("User is not authenticated. Please log in.");
+        throw new Error(t("resumeContact.errors.notAuthenticated"));
       }
 
       if (user.role !== "company") {
-        throw new Error("Only companies can contact students about resumes.");
+        throw new Error(t("resumeContact.errors.onlyCompanies"));
       }
 
       const companies = await companiesApi.getAll();
@@ -58,9 +61,7 @@ const ResumeContactModal = ({
       );
 
       if (!userCompany) {
-        throw new Error(
-          "No company profile found. Please create a company profile first."
-        );
+        throw new Error(t("resumeContact.errors.noCompanyProfile"));
       }
 
       console.log("Found company:", userCompany);
@@ -140,22 +141,25 @@ const ResumeContactModal = ({
 
       console.log("Created actual message:", actualMessage);
 
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      setIsSubmitted(true);
 
-      toast.success("Message sent successfully!");
+      toast.success(t("resumeContact.success.messageSent"));
 
       const event = new CustomEvent("chatCreated", {
         detail: { chatId: chatId.toString() },
       });
       window.dispatchEvent(event);
 
-      onSuccess(chatId.toString());
-      onClose();
-      setMessage("");
+      setTimeout(() => {
+        onSuccess(chatId.toString());
+        onClose();
+        setMessage("");
+        setIsSubmitted(false);
+      }, 1500);
     } catch (error) {
       console.error("Error creating resume contact:", error);
 
-      let errorMessage = "Failed to send message. Please try again.";
+      let errorMessage = t("resumeContact.errors.failedToSend");
       let details = "";
 
       if (error instanceof Error) {
@@ -172,10 +176,21 @@ const ResumeContactModal = ({
     }
   };
 
+  const handleClose = () => {
+    if (!isSubmitting) {
+      onClose();
+      setTimeout(() => {
+        setMessage("");
+        setIsSubmitted(false);
+        setErrorDetails(null);
+      }, 300);
+    }
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -205,79 +220,119 @@ const ResumeContactModal = ({
                 </div>
                 <div>
                   <h2 className="text-xl font-semibold text-white">
-                    Contact {resumeUser?.first_name || "Student"}{" "}
-                    {resumeUser?.last_name || ""}
+                    {t("resumeContact.title", {
+                      firstName:
+                        resumeUser?.first_name ||
+                        t("resumeContact.defaultStudent"),
+                      lastName: resumeUser?.last_name || "",
+                    })}
                   </h2>
                   <p className="text-sm text-gray-400 flex items-center gap-1">
                     <Briefcase className="w-4 h-4" />
-                    {resume?.profession || "Resume"}
+                    {resume?.profession || t("resumeContact.defaultResume")}
                   </p>
                 </div>
               </div>
               <button
-                onClick={onClose}
-                className="text-gray-400 hover:text-white transition-colors"
+                onClick={handleClose}
+                disabled={isSubmitting}
+                className="text-gray-400 hover:text-white transition-colors disabled:opacity-50"
               >
                 <X className="w-6 h-6" />
               </button>
             </div>
 
-            {errorDetails && (
-              <div className="p-4 bg-red-900/30 border border-red-700 m-6 rounded-lg">
-                <div className="flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <h3 className="font-medium text-red-400">
-                      Error Details (for debugging)
-                    </h3>
-                    <pre className="mt-2 text-xs text-red-300 overflow-auto max-h-40 p-2 bg-black/20 rounded">
-                      {errorDetails}
-                    </pre>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="p-6">
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Your Message
-                </label>
-                <textarea
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  required
-                  rows={8}
-                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
-                  placeholder="Write your message to the student here..."
-                />
-                <p className="text-xs text-gray-400 mt-1">
-                  This message will start a new conversation with the student.
+            {isSubmitted ? (
+              <div className="p-8 text-center">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4"
+                >
+                  <CheckCircle className="w-8 h-8 text-white" />
+                </motion.div>
+                <h3 className="text-xl font-semibold text-white mb-2">
+                  {t("resumeContact.success.title")}
+                </h3>
+                <p className="text-gray-400 mb-4">
+                  {t("resumeContact.success.description", {
+                    firstName:
+                      resumeUser?.first_name ||
+                      t("resumeContact.defaultStudent"),
+                  })}
                 </p>
+                <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
               </div>
+            ) : (
+              <>
+                {errorDetails && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-4 bg-red-900/30 border border-red-700 m-6 rounded-lg"
+                  >
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <h3 className="font-medium text-red-400">
+                          {t("resumeContact.errorDetails")}
+                        </h3>
+                        <pre className="mt-2 text-xs text-red-300 overflow-auto max-h-40 p-2 bg-black/20 rounded">
+                          {errorDetails}
+                        </pre>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
 
-              <div className="flex justify-end gap-4">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="px-4 py-2 text-gray-300 hover:text-white transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={!message.trim() || isSubmitting}
-                  className="flex items-center gap-2 px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isSubmitting ? (
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  ) : (
-                    <Send className="w-4 h-4" />
-                  )}
-                  Send Message
-                </button>
-              </div>
-            </form>
+                <form onSubmit={handleSubmit} className="p-6">
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      {t("resumeContact.messageLabel")}
+                    </label>
+                    <textarea
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      required
+                      rows={8}
+                      className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
+                      placeholder={t("resumeContact.messagePlaceholder")}
+                    />
+                    <p className="text-xs text-gray-400 mt-1">
+                      {t("resumeContact.messageHint")}
+                    </p>
+                  </div>
+
+                  <div className="flex justify-end gap-4 pt-4 border-t border-gray-700">
+                    <button
+                      type="button"
+                      onClick={handleClose}
+                      disabled={isSubmitting}
+                      className="px-6 py-2 text-gray-300 hover:text-white transition-colors disabled:opacity-50"
+                    >
+                      {t("resumeContact.cancel")}
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={!message.trim() || isSubmitting}
+                      className="flex items-center gap-2 px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          {t("resumeContact.sending")}
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4" />
+                          {t("resumeContact.sendMessage")}
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </>
+            )}
           </motion.div>
         </div>
       )}

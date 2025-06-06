@@ -1,10 +1,10 @@
 "use client";
 
 import type React from "react";
-
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, AlertTriangle, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface DeleteConfirmationModalProps {
   isOpen: boolean;
@@ -23,6 +23,7 @@ const DeleteConfirmationModal = ({
   message,
   itemType,
 }: DeleteConfirmationModalProps) => {
+  const { t } = useTranslation();
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -31,7 +32,7 @@ const DeleteConfirmationModal = ({
     e.preventDefault();
 
     if (!password.trim()) {
-      setError("Password is required");
+      setError(t("deleteModal.errors.passwordRequired"));
       return;
     }
 
@@ -42,10 +43,7 @@ const DeleteConfirmationModal = ({
       await onConfirm(password);
       onClose();
     } catch (err: any) {
-      setError(
-        err.message ||
-          "Failed to delete. Please check your password and try again."
-      );
+      setError(err.message || t("deleteModal.errors.failedToDelete"));
     } finally {
       setIsLoading(false);
     }
@@ -81,8 +79,7 @@ const DeleteConfirmationModal = ({
             <div className="mb-6">
               <p className="text-gray-300">{message}</p>
               <p className="mt-2 text-red-400 text-sm">
-                This action cannot be undone. Please enter your password to
-                confirm.
+                {t("deleteModal.warning")}
               </p>
             </div>
 
@@ -91,7 +88,7 @@ const DeleteConfirmationModal = ({
                 htmlFor="password"
                 className="block text-sm font-medium text-gray-400 mb-2"
               >
-                Your Password
+                {t("deleteModal.passwordLabel")}
               </label>
               <input
                 type="password"
@@ -99,7 +96,7 @@ const DeleteConfirmationModal = ({
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500"
-                placeholder="Enter your password"
+                placeholder={t("deleteModal.passwordPlaceholder")}
                 autoComplete="current-password"
               />
               {error && <p className="mt-2 text-red-500 text-sm">{error}</p>}
@@ -111,7 +108,7 @@ const DeleteConfirmationModal = ({
                 onClick={onClose}
                 className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
               >
-                Cancel
+                {t("deleteModal.buttons.cancel")}
               </button>
               <button
                 type="submit"
@@ -121,10 +118,14 @@ const DeleteConfirmationModal = ({
                 {isLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Verifying...
+                    {t("deleteModal.buttons.verifying")}
                   </>
                 ) : (
-                  <>Delete {itemType}</>
+                  <>
+                    {t("deleteModal.buttons.delete", {
+                      itemType: t(`deleteModal.itemTypes.${itemType}`),
+                    })}
+                  </>
                 )}
               </button>
             </div>

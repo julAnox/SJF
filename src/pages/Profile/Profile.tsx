@@ -4,6 +4,7 @@ import type React from "react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import {
   User,
   Mail,
@@ -100,6 +101,7 @@ interface LocationData {
 }
 
 const Profile = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const {
     user,
@@ -135,20 +137,17 @@ const Profile = () => {
   const [userResumes, setUserResumes] = useState([]);
   const [editingJob, setEditingJob] = useState<Job | null>(null);
 
-  // Location data state
   const [countries, setCountries] = useState<any[]>([]);
   const [regions, setRegions] = useState<any[]>([]);
   const [cities, setCities] = useState<any[]>([]);
   const [countryObj, setCountryObj] = useState<any>(null);
   const [regionObj, setRegionObj] = useState<any>(null);
 
-  // Add state variables for the modals
   const [selectedResumeId, setSelectedResumeId] = useState<string | null>(null);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showCompanyViewModal, setShowCompanyViewModal] = useState(false);
 
-  // Delete confirmation modal state
   const [deleteModal, setDeleteModal] = useState<DeleteModalState>({
     isOpen: false,
     type: "resume",
@@ -157,14 +156,12 @@ const Profile = () => {
     message: "",
   });
 
-  // Redirect to login if not authenticated
   useEffect(() => {
     if (!isAuthenticated && !authLoading) {
       navigate("/login");
     }
   }, [isAuthenticated, authLoading, navigate]);
 
-  // Initialize form data with user data
   useEffect(() => {
     if (user) {
       setFormData({
@@ -182,25 +179,21 @@ const Profile = () => {
         avatar: user.avatar || "",
       });
 
-      // Fetch company data if user is a company
       if (user.role === "company") {
         fetchCompanyData();
       }
 
-      // Fetch resumes if user is a student
       if (user.role === "student") {
         fetchUserResumes();
       }
     }
   }, [user]);
 
-  // Load countries on component mount
   useEffect(() => {
     try {
       const allCountries = Country.getAllCountries();
       setCountries(allCountries);
 
-      // If we have an initial country value, find the country object
       if (formData.country) {
         const foundCountry = allCountries.find(
           (country) =>
@@ -215,14 +208,12 @@ const Profile = () => {
     }
   }, [formData.country]);
 
-  // When country changes, load regions
   useEffect(() => {
     if (countryObj) {
       try {
         const countryRegions = State.getStatesOfCountry(countryObj.isoCode);
         setRegions(countryRegions);
 
-        // If we have an initial region value, find the region object
         if (formData.region) {
           const foundRegion = countryRegions.find(
             (region) =>
@@ -231,7 +222,6 @@ const Profile = () => {
           if (foundRegion) {
             setRegionObj(foundRegion);
           } else {
-            // Reset region if it doesn't exist in the new country
             setFormData((prev) => ({ ...prev, region: "", district: "" }));
           }
         }
@@ -245,7 +235,6 @@ const Profile = () => {
     }
   }, [countryObj, formData.region]);
 
-  // When region changes, load cities/districts
   useEffect(() => {
     if (countryObj && regionObj) {
       try {
@@ -255,14 +244,12 @@ const Profile = () => {
         );
         setCities(regionCities);
 
-        // If we have an initial district value, check if it exists
         if (formData.district) {
           const foundCity = regionCities.find(
             (city) =>
               city.name.toLowerCase() === formData.district.toLowerCase()
           );
           if (!foundCity) {
-            // Reset district if it doesn't exist in the new region
             setFormData((prev) => ({ ...prev, district: "" }));
           }
         }
@@ -275,7 +262,6 @@ const Profile = () => {
     }
   }, [regionObj, countryObj, formData.district]);
 
-  // Fetch company data
   const fetchCompanyData = async () => {
     try {
       setIsLoading(true);
@@ -284,21 +270,19 @@ const Profile = () => {
 
       if (userCompany) {
         setCompany(userCompany);
-        // Fetch jobs for this company
         fetchCompanyJobs(userCompany.id);
       }
     } catch (error) {
       console.error("Error fetching company data:", error);
       setNotification({
         type: "error",
-        message: "Failed to load company data",
+        message: t("profile.notifications.failedToLoadCompany"),
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Fetch jobs for the company
   const fetchCompanyJobs = async (companyId: number) => {
     try {
       setIsLoading(true);
@@ -311,14 +295,13 @@ const Profile = () => {
       console.error("Error fetching jobs:", error);
       setNotification({
         type: "error",
-        message: "Failed to load job listings",
+        message: t("profile.notifications.failedToLoadJobs"),
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Fetch user resumes
   const fetchUserResumes = async () => {
     try {
       setIsLoading(true);
@@ -331,14 +314,13 @@ const Profile = () => {
       console.error("Error fetching user resumes:", error);
       setNotification({
         type: "error",
-        message: "Failed to load resumes",
+        message: t("profile.notifications.failedToLoadResumes"),
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Handle form input changes
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
@@ -353,11 +335,10 @@ const Profile = () => {
       setFormData((prev) => ({
         ...prev,
         [name]: value,
-        region: "", // Reset region when country changes
-        district: "", // Reset district when country changes
+        region: "",
+        district: "",
       }));
 
-      // Reset region and district objects
       setRegionObj(null);
     } else if (name === "region") {
       const selectedRegionObj = regions.find((region) => region.name === value);
@@ -366,7 +347,7 @@ const Profile = () => {
       setFormData((prev) => ({
         ...prev,
         [name]: value,
-        district: "", // Reset district when region changes
+        district: "",
       }));
     } else {
       setFormData((prev) => ({
@@ -377,7 +358,6 @@ const Profile = () => {
     }
   };
 
-  // Handle location data changes from CountryRegionSelector
   const handleLocationChange = (locationData: LocationData) => {
     setFormData((prev) => ({
       ...prev,
@@ -387,7 +367,6 @@ const Profile = () => {
     }));
   };
 
-  // Handle phone number changes from PhoneInputWithFlag
   const handlePhoneChange = (phoneNumber: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -395,7 +374,6 @@ const Profile = () => {
     }));
   };
 
-  // Handle profile form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -403,36 +381,33 @@ const Profile = () => {
       await updateProfile(formData);
       setNotification({
         type: "success",
-        message: "Profile updated successfully!",
+        message: t("profile.notifications.profileUpdated"),
       });
       setTimeout(() => setNotification(null), 3000);
     } catch (error) {
       console.error("Error updating profile:", error);
       setNotification({
         type: "error",
-        message: "Failed to update profile. Please try again.",
+        message: t("profile.notifications.failedToUpdateProfile"),
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Handle company form submission
   const handleCompanySubmit = async (companyData: any) => {
     try {
       setIsLoading(true);
       if (company) {
-        // Update existing company
         await companiesApi.update(company.id.toString(), {
           ...companyData,
           user: Number(user?.id),
         });
         setNotification({
           type: "success",
-          message: "Company details updated successfully!",
+          message: t("profile.notifications.companyUpdated"),
         });
       } else {
-        // Create new company
         const newCompany = await companiesApi.create({
           ...companyData,
           user: Number(user?.id),
@@ -440,59 +415,55 @@ const Profile = () => {
         setCompany(newCompany);
         setNotification({
           type: "success",
-          message: "Company created successfully!",
+          message: t("profile.notifications.companyCreated"),
         });
       }
-      fetchCompanyData(); // Refresh data
+      fetchCompanyData();
       setTimeout(() => setNotification(null), 3000);
     } catch (error) {
       console.error("Error saving company data:", error);
       setNotification({
         type: "error",
-        message: "Failed to save company details. Please try again.",
+        message: t("profile.notifications.failedToSaveCompany"),
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Handle company creation from modal
   const handleCompanyCreated = (newCompany: Company) => {
     setCompany(newCompany);
     setNotification({
       type: "success",
-      message: "Company created successfully!",
+      message: t("profile.notifications.companyCreated"),
     });
     setTimeout(() => setNotification(null), 3000);
-    fetchCompanyData(); // Refresh data
+    fetchCompanyData();
   };
 
-  // Handle job creation/update from modal
   const handleJobCreated = (job: Job) => {
     setNotification({
       type: "success",
       message: editingJob
-        ? "Job updated successfully!"
-        : "Job created successfully!",
+        ? t("profile.notifications.jobUpdated")
+        : t("profile.notifications.jobCreated"),
     });
     setTimeout(() => setNotification(null), 3000);
     setEditingJob(null);
     if (company) {
-      fetchCompanyJobs(company.id); // Refresh jobs
+      fetchCompanyJobs(company.id);
     }
   };
 
-  // Handle resume creation from modal
   const handleResumeCreated = (resume: any) => {
     setNotification({
       type: "success",
-      message: "Resume created successfully!",
+      message: t("profile.notifications.resumeCreated"),
     });
     setTimeout(() => setNotification(null), 3000);
-    fetchUserResumes(); // Refresh resumes
+    fetchUserResumes();
   };
 
-  // Open delete confirmation modal for company
   const openDeleteCompanyModal = () => {
     if (!company) return;
 
@@ -500,48 +471,45 @@ const Profile = () => {
       isOpen: true,
       type: "company",
       id: company.id.toString(),
-      title: "Delete Company",
-      message: `Are you sure you want to delete "${company.name}"? This will also delete all associated job listings.`,
+      title: t("profile.deleteModals.company.title"),
+      message: t("profile.deleteModals.company.message", {
+        name: company.name,
+      }),
     });
   };
 
-  // Open delete confirmation modal for job
   const openDeleteJobModal = (jobId: string, jobTitle: string) => {
     setDeleteModal({
       isOpen: true,
       type: "job",
       id: jobId,
-      title: "Delete Job Listing",
-      message: `Are you sure you want to delete the job listing "${jobTitle}"?`,
+      title: t("profile.deleteModals.job.title"),
+      message: t("profile.deleteModals.job.message", { title: jobTitle }),
     });
   };
 
-  // Open delete confirmation modal for resume
   const openDeleteResumeModal = (resumeId: string, resumeTitle: string) => {
     setDeleteModal({
       isOpen: true,
       type: "resume",
       id: resumeId,
-      title: "Delete Resume",
-      message: `Are you sure you want to delete the resume for "${resumeTitle}"?`,
+      title: t("profile.deleteModals.resume.title"),
+      message: t("profile.deleteModals.resume.message", { title: resumeTitle }),
     });
   };
 
-  // Handle delete confirmation
   const handleDeleteConfirm = async (password: string) => {
     if (!deleteModal.id) return;
 
     try {
-      // First verify the password
       const isPasswordValid = await verifyPassword(password);
 
       if (!isPasswordValid) {
-        throw new Error("Incorrect password");
+        throw new Error(t("profile.errors.incorrectPassword"));
       }
 
       setIsLoading(true);
 
-      // Perform the deletion based on type
       switch (deleteModal.type) {
         case "company":
           await companiesApi.delete(deleteModal.id);
@@ -549,27 +517,27 @@ const Profile = () => {
           setJobs([]);
           setNotification({
             type: "success",
-            message: "Company deleted successfully!",
+            message: t("profile.notifications.companyDeleted"),
           });
           break;
 
         case "job":
           await jobsApi.delete(deleteModal.id);
           if (company) {
-            fetchCompanyJobs(company.id); // Refresh jobs
+            fetchCompanyJobs(company.id);
           }
           setNotification({
             type: "success",
-            message: "Job deleted successfully!",
+            message: t("profile.notifications.jobDeleted"),
           });
           break;
 
         case "resume":
           await resumesApi.delete(deleteModal.id);
-          fetchUserResumes(); // Refresh resumes
+          fetchUserResumes();
           setNotification({
             type: "success",
-            message: "Resume deleted successfully!",
+            message: t("profile.notifications.resumeDeleted"),
           });
           break;
       }
@@ -583,7 +551,6 @@ const Profile = () => {
     }
   };
 
-  // Handle job status toggle (active/hidden)
   const handleToggleJobStatus = async (
     jobId: string,
     currentStatus: string
@@ -594,32 +561,31 @@ const Profile = () => {
       await jobsApi.update(jobId, { status: newStatus });
       setNotification({
         type: "success",
-        message: `Job ${
-          newStatus === "active" ? "activated" : "hidden"
-        } successfully!`,
+        message:
+          newStatus === "active"
+            ? t("profile.notifications.jobActivated")
+            : t("profile.notifications.jobHidden"),
       });
       if (company) {
-        fetchCompanyJobs(company.id); // Refresh jobs
+        fetchCompanyJobs(company.id);
       }
       setTimeout(() => setNotification(null), 3000);
     } catch (error) {
       console.error("Error updating job status:", error);
       setNotification({
         type: "error",
-        message: "Failed to update job status. Please try again.",
+        message: t("profile.notifications.failedToUpdateJobStatus"),
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Handle editing a job
   const handleEditJob = (job: Job) => {
     setEditingJob(job);
     setShowCreateJobModal(true);
   };
 
-  // Handle avatar change
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -636,24 +602,21 @@ const Profile = () => {
     }
   };
 
-  // Handle viewing a resume
   const handleViewResume = (resumeId: string) => {
     setSelectedResumeId(resumeId);
     setShowViewModal(true);
   };
 
-  // Handle editing a resume
   const handleEditResume = (resumeId: string) => {
     setSelectedResumeId(resumeId);
     setShowEditModal(true);
   };
 
-  // Handle resume edit completion
   const handleResumeEditComplete = (resumeData: any) => {
     fetchUserResumes();
     setNotification({
       type: "success",
-      message: "Resume updated successfully",
+      message: t("profile.notifications.resumeUpdated"),
     });
     setTimeout(() => setNotification(null), 3000);
   };
@@ -732,7 +695,7 @@ const Profile = () => {
                   {/* First Name */}
                   <div>
                     <label className="block text-sm font-medium text-gray-400 mb-2">
-                      First Name
+                      {t("profile.personalInfo.firstName")}
                     </label>
                     <div className="relative">
                       <input
@@ -741,7 +704,7 @@ const Profile = () => {
                         value={formData.first_name}
                         onChange={handleChange}
                         className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                        placeholder="Enter your first name"
+                        placeholder={t("profile.placeholders.firstName")}
                       />
                       <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                     </div>
@@ -750,7 +713,7 @@ const Profile = () => {
                   {/* Last Name */}
                   <div>
                     <label className="block text-sm font-medium text-gray-400 mb-2">
-                      Last Name
+                      {t("profile.personalInfo.lastName")}
                     </label>
                     <div className="relative">
                       <input
@@ -759,7 +722,7 @@ const Profile = () => {
                         value={formData.last_name}
                         onChange={handleChange}
                         className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                        placeholder="Enter your last name"
+                        placeholder={t("profile.placeholders.lastName")}
                       />
                       <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                     </div>
@@ -768,7 +731,7 @@ const Profile = () => {
                   {/* Email */}
                   <div>
                     <label className="block text-sm font-medium text-gray-400 mb-2">
-                      Email
+                      {t("profile.personalInfo.email")}
                     </label>
                     <div className="relative">
                       <input
@@ -777,7 +740,7 @@ const Profile = () => {
                         value={formData.email}
                         onChange={handleChange}
                         className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
-                        placeholder="Enter your email"
+                        placeholder={t("profile.placeholders.email")}
                         disabled
                       />
                       <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -787,7 +750,7 @@ const Profile = () => {
                   {/* Date of Birth */}
                   <div>
                     <label className="block text-sm font-medium text-gray-400 mb-2">
-                      Date of Birth
+                      {t("profile.personalInfo.dateOfBirth")}
                     </label>
                     <div className="relative">
                       <input
@@ -823,7 +786,7 @@ const Profile = () => {
                       {/* Phone Number - Half Width */}
                       <div>
                         <label className="block text-sm font-medium text-gray-400 mb-2">
-                          Phone Number
+                          {t("profile.personalInfo.phone")}
                         </label>
                         <PhoneInputWithFlag
                           value={formData.phone}
@@ -834,7 +797,7 @@ const Profile = () => {
                       {/* Country Selector - Half Width */}
                       <div>
                         <label className="block text-sm font-medium text-gray-400 mb-2">
-                          Country
+                          {t("profile.personalInfo.country")}
                         </label>
                         <div className="relative">
                           <select
@@ -843,7 +806,9 @@ const Profile = () => {
                             onChange={handleChange}
                             className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none h-10"
                           >
-                            <option value="">Select a country</option>
+                            <option value="">
+                              {t("profile.placeholders.selectCountry")}
+                            </option>
                             {countries.map((country) => (
                               <option
                                 key={country.isoCode}
@@ -874,7 +839,7 @@ const Profile = () => {
                       {/* Region Selector */}
                       <div>
                         <label className="block text-sm font-medium text-gray-400 mb-2">
-                          Region
+                          {t("profile.personalInfo.region")}
                         </label>
                         <div className="relative">
                           <select
@@ -884,7 +849,9 @@ const Profile = () => {
                             disabled={!countryObj}
                             className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none disabled:opacity-50 disabled:cursor-not-allowed h-10"
                           >
-                            <option value="">Select a region</option>
+                            <option value="">
+                              {t("profile.placeholders.selectRegion")}
+                            </option>
                             {regions.map((region) => (
                               <option key={region.isoCode} value={region.name}>
                                 {region.name}
@@ -907,7 +874,7 @@ const Profile = () => {
                       {/* District/City Selector */}
                       <div>
                         <label className="block text-sm font-medium text-gray-400 mb-2">
-                          District
+                          {t("profile.personalInfo.district")}
                         </label>
                         <div className="relative">
                           <select
@@ -917,7 +884,9 @@ const Profile = () => {
                             disabled={!regionObj}
                             className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none disabled:opacity-50 disabled:cursor-not-allowed h-10"
                           >
-                            <option value="">Select a district</option>
+                            <option value="">
+                              {t("profile.placeholders.selectDistrict")}
+                            </option>
                             {cities.map((city) => (
                               <option
                                 key={city.id || city.name}
@@ -941,38 +910,6 @@ const Profile = () => {
                       </div>
                     </div>
                   </div>
-
-                  {/* Publish Phone */}
-                  <div>
-                    <label className="flex items-center space-x-3">
-                      <input
-                        type="checkbox"
-                        name="publish_phone"
-                        checked={formData.publish_phone}
-                        onChange={handleChange}
-                        className="w-5 h-5 bg-gray-700 border border-gray-600 rounded text-emerald-500 focus:ring-emerald-500"
-                      />
-                      <span className="text-sm font-medium text-gray-400">
-                        Publish Phone Number
-                      </span>
-                    </label>
-                  </div>
-
-                  {/* Public Status */}
-                  <div>
-                    <label className="flex items-center space-x-3">
-                      <input
-                        type="checkbox"
-                        name="publish_status"
-                        checked={formData.publish_status}
-                        onChange={handleChange}
-                        className="w-5 h-5 bg-gray-700 border border-gray-600 rounded text-emerald-500 focus:ring-emerald-500"
-                      />
-                      <span className="text-sm font-medium text-gray-400">
-                        Public Profile
-                      </span>
-                    </label>
-                  </div>
                 </div>
 
                 {/* Submit Button */}
@@ -987,7 +924,7 @@ const Profile = () => {
                     ) : (
                       <Save className="w-5 h-5" />
                     )}
-                    Save Changes
+                    {t("profile.buttons.saveChanges")}
                   </button>
                 </div>
               </form>
@@ -1007,7 +944,7 @@ const Profile = () => {
                     <div className="flex items-center gap-2">
                       <FileText className="w-6 h-6 text-emerald-400" />
                       <h2 className="text-xl font-bold text-white">
-                        Your Resumes
+                        {t("profile.resume.title")}
                       </h2>
                     </div>
                     <button
@@ -1051,13 +988,13 @@ const Profile = () => {
                                 onClick={() => handleViewResume(resume.id)}
                                 className="px-3 py-1 bg-gray-600 text-white text-sm rounded hover:bg-gray-500 transition-colors"
                               >
-                                View
+                                {t("profile.buttons.view")}
                               </button>
                               <button
                                 onClick={() => handleEditResume(resume.id)}
                                 className="px-3 py-1 bg-emerald-600 text-white text-sm rounded hover:bg-emerald-500 transition-colors"
                               >
-                                Edit
+                                {t("profile.buttons.edit")}
                               </button>
                               <button
                                 onClick={() =>
@@ -1068,7 +1005,7 @@ const Profile = () => {
                                 }
                                 className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-500 transition-colors"
                               >
-                                Delete
+                                {t("profile.buttons.delete")}
                               </button>
                             </div>
                           </div>
@@ -1076,7 +1013,7 @@ const Profile = () => {
                       </div>
                     ) : (
                       <p className="text-gray-400 text-center py-4">
-                        You haven't created any resumes yet.
+                        {t("profile.resume.noResumes")}
                       </p>
                     )}
                   </div>
@@ -1091,7 +1028,7 @@ const Profile = () => {
                       <div className="flex items-center gap-2">
                         <Building2 className="w-6 h-6 text-emerald-400" />
                         <h2 className="text-xl font-bold text-white">
-                          Company Details
+                          {t("profile.company.title")}
                         </h2>
                       </div>
                       {company ? (
@@ -1099,14 +1036,14 @@ const Profile = () => {
                           <button
                             onClick={() => setShowCompanyViewModal(true)}
                             className="p-2 text-gray-400 hover:text-emerald-500 transition-colors"
-                            title="Edit Company"
+                            title={t("profile.buttons.editCompany")}
                           >
                             <Edit className="w-5 h-5" />
                           </button>
                           <button
                             onClick={openDeleteCompanyModal}
                             className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-                            title="Delete Company"
+                            title={t("profile.buttons.deleteCompany")}
                           >
                             <Trash2 className="w-5 h-5" />
                           </button>
@@ -1115,7 +1052,7 @@ const Profile = () => {
                         <button
                           onClick={() => setShowCreateCompanyModal(true)}
                           className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center hover:bg-emerald-500 transition-colors"
-                          title="Create Company"
+                          title={t("profile.buttons.createCompany")}
                         >
                           <Plus className="w-5 h-5 text-white" />
                         </button>
@@ -1148,15 +1085,21 @@ const Profile = () => {
 
                         <div className="grid grid-cols-2 gap-3 text-sm">
                           <div>
-                            <p className="text-gray-400">Founded</p>
+                            <p className="text-gray-400">
+                              {t("profile.company.founded")}
+                            </p>
                             <p className="text-white">{company.founded_year}</p>
                           </div>
                           <div>
-                            <p className="text-gray-400">Size</p>
+                            <p className="text-gray-400">
+                              {t("profile.company.size")}
+                            </p>
                             <p className="text-white">{company.size}</p>
                           </div>
                           <div className="col-span-2">
-                            <p className="text-gray-400">Website</p>
+                            <p className="text-gray-400">
+                              {t("profile.company.website")}
+                            </p>
                             <a
                               href={company.website}
                               target="_blank"
@@ -1172,19 +1115,19 @@ const Profile = () => {
                           onClick={() => setShowCompanyViewModal(true)}
                           className="w-full mt-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm"
                         >
-                          View & Edit Details
+                          {t("profile.buttons.viewEditDetails")}
                         </button>
                       </div>
                     ) : (
                       <div className="text-center py-8">
                         <p className="text-gray-400 mb-4">
-                          You haven't created a company yet.
+                          {t("profile.company.noCompany")}
                         </p>
                         <button
                           onClick={() => setShowCreateCompanyModal(true)}
                           className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors"
                         >
-                          Create Company
+                          {t("profile.buttons.createCompany")}
                         </button>
                       </div>
                     )}
@@ -1200,7 +1143,7 @@ const Profile = () => {
                       <div className="flex items-center gap-2">
                         <Briefcase className="w-6 h-6 text-emerald-400" />
                         <h2 className="text-xl font-bold text-white">
-                          Job Listings
+                          {t("profile.jobs.title")}
                         </h2>
                       </div>
                       <button
@@ -1209,7 +1152,7 @@ const Profile = () => {
                           setShowCreateJobModal(true);
                         }}
                         className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center hover:bg-emerald-500 transition-colors"
-                        title="Add New Job"
+                        title={t("profile.buttons.addNewJob")}
                       >
                         <Plus className="w-5 h-5 text-white" />
                       </button>
@@ -1222,9 +1165,7 @@ const Profile = () => {
                       </div>
                     ) : jobs.length === 0 ? (
                       <div className="text-center py-8 text-gray-400">
-                        <p>
-                          No job listings yet. Create your first job posting!
-                        </p>
+                        <p>{t("profile.jobs.noJobs")}</p>
                       </div>
                     ) : (
                       <div className="space-y-4">
@@ -1249,8 +1190,8 @@ const Profile = () => {
                                       }`}
                                     >
                                       {job.status === "active"
-                                        ? "Active"
-                                        : "Hidden"}
+                                        ? t("profile.jobs.statusActive")
+                                        : t("profile.jobs.statusHidden")}
                                     </span>
                                   </div>
                                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-400 mt-2">
@@ -1272,7 +1213,7 @@ const Profile = () => {
                                   <button
                                     onClick={() => handleEditJob(job)}
                                     className="p-1 text-gray-400 hover:text-white transition-colors"
-                                    title="Edit Job"
+                                    title={t("profile.buttons.editJob")}
                                   >
                                     <Edit className="w-5 h-5" />
                                   </button>
@@ -1286,8 +1227,8 @@ const Profile = () => {
                                     className="p-1 text-gray-400 hover:text-white transition-colors"
                                     title={
                                       job.status === "active"
-                                        ? "Hide Job"
-                                        : "Show Job"
+                                        ? t("profile.buttons.hideJob")
+                                        : t("profile.buttons.showJob")
                                     }
                                   >
                                     {job.status === "active" ? (
@@ -1304,7 +1245,7 @@ const Profile = () => {
                                       )
                                     }
                                     className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-                                    title="Delete Job"
+                                    title={t("profile.buttons.deleteJob")}
                                   >
                                     <Trash2 className="w-5 h-5" />
                                   </button>

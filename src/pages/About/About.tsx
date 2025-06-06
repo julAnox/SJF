@@ -101,7 +101,7 @@ const About = () => {
         setStats((prevStats) => ({ ...prevStats, dailyVisits: 0 }));
         setInterval(() => {
           setStats((prevStats) => ({ ...prevStats, dailyVisits: 0 }));
-        }, 24 * 60 * 60 * 1000); // Reset every 24 hours
+        }, 24 * 60 * 60 * 1000);
       }, timeUntilMidnight);
     };
 
@@ -478,7 +478,7 @@ const About = () => {
               />
               {isAuthenticated && (
                 <p className="text-xs text-gray-500 mt-1">
-                  Email is automatically filled from your account
+                  {t("home.cta.emailauto")}
                 </p>
               )}
             </div>
@@ -559,9 +559,7 @@ const About = () => {
             <h2 className="text-4xl font-bold text-white mb-4">
               {t("about.recentQuestions.title")}
             </h2>
-            <p className="text-gray-300">
-              Track our latest improvements and bug fixes
-            </p>
+            <p className="text-gray-300">{t("home.cta.track")}</p>
           </motion.div>
 
           {loadingIssues ? (
@@ -699,7 +697,7 @@ const About = () => {
                   >
                     {showMoreIssues ? (
                       <>
-                        Show Less
+                        {t("home.cta.showless")}
                         <ChevronUp className="w-4 h-4" />
                       </>
                     ) : (

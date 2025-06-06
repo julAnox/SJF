@@ -1,7 +1,6 @@
 "use client";
 
 import type React from "react";
-
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -15,6 +14,7 @@ import {
   X,
   Loader2,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { jobsApi } from "../../services/api";
 
 interface CreateJobModalProps {
@@ -32,6 +32,7 @@ const CreateJobModal = ({
   companyId,
   initialData,
 }: CreateJobModalProps) => {
+  const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
@@ -145,7 +146,9 @@ const CreateJobModal = ({
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-700">
               <h2 className="text-xl font-bold text-white">
-                {initialData ? "Edit Job" : "Create New Job"}
+                {initialData
+                  ? t("jobModal.titleEdit")
+                  : t("jobModal.titleCreate")}
               </h2>
               <button
                 onClick={onClose}
@@ -161,7 +164,7 @@ const CreateJobModal = ({
                 {/* Title */}
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Job Title*
+                    {t("jobModal.fields.title")}*
                   </label>
                   <div className="relative">
                     <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -171,7 +174,7 @@ const CreateJobModal = ({
                       value={formData.title}
                       onChange={handleChange}
                       className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      placeholder="Enter job title"
+                      placeholder={t("jobModal.placeholders.title")}
                       required
                     />
                   </div>
@@ -180,7 +183,7 @@ const CreateJobModal = ({
                 {/* Description */}
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Description*
+                    {t("jobModal.fields.description")}*
                   </label>
                   <textarea
                     name="description"
@@ -188,7 +191,7 @@ const CreateJobModal = ({
                     onChange={handleChange}
                     rows={4}
                     className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
-                    placeholder="Enter job description"
+                    placeholder={t("jobModal.placeholders.description")}
                     required
                   />
                 </div>
@@ -196,7 +199,7 @@ const CreateJobModal = ({
                 {/* Requirements */}
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Requirements* (separate with spaces)
+                    {t("jobModal.fields.requirements")}*
                   </label>
                   <div className="relative">
                     <Briefcase className="absolute left-3 top-3 text-gray-400 w-5 h-5" />
@@ -206,13 +209,12 @@ const CreateJobModal = ({
                       value={formData.requirements}
                       onChange={handleChange}
                       className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      placeholder="react nodejs mongodb docker git"
+                      placeholder={t("jobModal.placeholders.requirements")}
                       required
                     />
                   </div>
                   <p className="text-xs text-gray-400 mt-1">
-                    Enter requirements separated by spaces (e.g., "react nodejs
-                    mongodb docker")
+                    {t("jobModal.hints.requirements")}
                   </p>
                 </div>
 
@@ -220,7 +222,7 @@ const CreateJobModal = ({
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Minimum Salary*
+                      {t("jobModal.fields.salaryMin")}*
                     </label>
                     <div className="relative">
                       <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -230,14 +232,14 @@ const CreateJobModal = ({
                         value={formData.salary_min}
                         onChange={handleChange}
                         className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                        placeholder="Enter minimum salary"
+                        placeholder={t("jobModal.placeholders.salaryMin")}
                         required
                       />
                     </div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Maximum Salary*
+                      {t("jobModal.fields.salaryMax")}*
                     </label>
                     <div className="relative">
                       <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -247,7 +249,7 @@ const CreateJobModal = ({
                         value={formData.salary_max}
                         onChange={handleChange}
                         className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                        placeholder="Enter maximum salary"
+                        placeholder={t("jobModal.placeholders.salaryMax")}
                         required
                       />
                     </div>
@@ -257,7 +259,7 @@ const CreateJobModal = ({
                 {/* Currency */}
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Currency* (3 chars max)
+                    {t("jobModal.fields.currency")}*
                   </label>
                   <div className="relative">
                     <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -268,7 +270,7 @@ const CreateJobModal = ({
                       onChange={handleChange}
                       maxLength={3}
                       className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      placeholder="USD, EUR, RUB..."
+                      placeholder={t("jobModal.placeholders.currency")}
                       required
                     />
                   </div>
@@ -278,7 +280,7 @@ const CreateJobModal = ({
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
-                      City*
+                      {t("jobModal.fields.city")}*
                     </label>
                     <div className="relative">
                       <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -288,14 +290,14 @@ const CreateJobModal = ({
                         value={formData.city}
                         onChange={handleChange}
                         className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                        placeholder="Enter city"
+                        placeholder={t("jobModal.placeholders.city")}
                         required
                       />
                     </div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Metro Station
+                      {t("jobModal.fields.metro")}
                     </label>
                     <div className="relative">
                       <Train className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -305,7 +307,7 @@ const CreateJobModal = ({
                         value={formData.metro}
                         onChange={handleChange}
                         className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                        placeholder="Enter metro station"
+                        placeholder={t("jobModal.placeholders.metro")}
                       />
                     </div>
                   </div>
@@ -315,7 +317,7 @@ const CreateJobModal = ({
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Employment Type*
+                      {t("jobModal.fields.employmentType")}*
                     </label>
                     <div className="relative">
                       <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -326,18 +328,30 @@ const CreateJobModal = ({
                         className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                         required
                       >
-                        <option value="">Select type</option>
-                        <option value="Full-time">Full-time</option>
-                        <option value="Part-time">Part-time</option>
-                        <option value="Contract">Contract</option>
-                        <option value="Temporary">Temporary</option>
-                        <option value="Internship">Internship</option>
+                        <option value="">
+                          {t("jobModal.options.selectType")}
+                        </option>
+                        <option value="Full-time">
+                          {t("jobModal.options.fullTime")}
+                        </option>
+                        <option value="Part-time">
+                          {t("jobModal.options.partTime")}
+                        </option>
+                        <option value="Contract">
+                          {t("jobModal.options.contract")}
+                        </option>
+                        <option value="Temporary">
+                          {t("jobModal.options.temporary")}
+                        </option>
+                        <option value="Internship">
+                          {t("jobModal.options.internship")}
+                        </option>
                       </select>
                     </div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Schedule*
+                      {t("jobModal.fields.schedule")}*
                     </label>
                     <div className="relative">
                       <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -348,12 +362,24 @@ const CreateJobModal = ({
                         className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                         required
                       >
-                        <option value="">Select schedule</option>
-                        <option value="Standard">Standard (9-5)</option>
-                        <option value="Flexible">Flexible hours</option>
-                        <option value="Shift">Shift work</option>
-                        <option value="Remote">Remote</option>
-                        <option value="Hybrid">Hybrid</option>
+                        <option value="">
+                          {t("jobModal.options.selectSchedule")}
+                        </option>
+                        <option value="Standard">
+                          {t("jobModal.options.standard")}
+                        </option>
+                        <option value="Flexible">
+                          {t("jobModal.options.flexible")}
+                        </option>
+                        <option value="Shift">
+                          {t("jobModal.options.shift")}
+                        </option>
+                        <option value="Remote">
+                          {t("jobModal.options.remote")}
+                        </option>
+                        <option value="Hybrid">
+                          {t("jobModal.options.hybrid")}
+                        </option>
                       </select>
                     </div>
                   </div>
@@ -362,7 +388,7 @@ const CreateJobModal = ({
                 {/* Experience */}
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Required Experience (years)*
+                    {t("jobModal.fields.experience")}*
                   </label>
                   <div className="relative">
                     <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -372,7 +398,7 @@ const CreateJobModal = ({
                       value={formData.experiense}
                       onChange={handleChange}
                       className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      placeholder="Enter required experience in years"
+                      placeholder={t("jobModal.placeholders.experience")}
                       required
                     />
                   </div>
@@ -386,7 +412,7 @@ const CreateJobModal = ({
                     className="px-6 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
                     disabled={isLoading}
                   >
-                    Cancel
+                    {t("jobModal.buttons.cancel")}
                   </button>
                   <button
                     type="submit"
@@ -396,12 +422,16 @@ const CreateJobModal = ({
                     {isLoading ? (
                       <>
                         <Loader2 className="w-5 h-5 animate-spin" />
-                        <span>Saving...</span>
+                        <span>{t("jobModal.buttons.saving")}</span>
                       </>
                     ) : (
                       <>
                         <Save className="w-5 h-5" />
-                        <span>{initialData ? "Update Job" : "Create Job"}</span>
+                        <span>
+                          {initialData
+                            ? t("jobModal.buttons.updateJob")
+                            : t("jobModal.buttons.createJob")}
+                        </span>
                       </>
                     )}
                   </button>

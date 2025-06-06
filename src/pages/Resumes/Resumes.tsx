@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -33,6 +33,38 @@ import { useAuth } from "../../contexts/AuthContext";
 import resumeApplicationsService from "../../services/resumeApplicationsService";
 import { companiesApi } from "../../services/api";
 
+const formatDateByLanguage = (dateString: string, language: string) => {
+  const date = new Date(dateString);
+
+  if (language === "ru") {
+    const months = [
+      "янв",
+      "фев",
+      "мар",
+      "апр",
+      "май",
+      "июн",
+      "июл",
+      "авг",
+      "сен",
+      "окт",
+      "ноя",
+      "дек",
+    ];
+    const day = date.getDate();
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
+    return `${day} ${month}, ${year}`;
+  } else {
+    // English formatting
+    return new Intl.DateTimeFormat("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    }).format(date);
+  }
+};
+
 interface FilterState {
   gender: string;
   profession: string;
@@ -49,7 +81,7 @@ interface FilterState {
 }
 
 const Resumes = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -99,24 +131,24 @@ const Resumes = () => {
   });
 
   const sortOptions = [
-    { value: "relevance", label: "Most Relevant" },
-    { value: "newest", label: "Newest" },
-    { value: "oldest", label: "Oldest" },
-    { value: "experience-desc", label: "Most Experience" },
-    { value: "experience-asc", label: "Least Experience" },
+    { value: "relevance", label: t("resumes.sort.relevance") },
+    { value: "newest", label: t("resumes.sort.newest") },
+    { value: "oldest", label: t("resumes.sort.oldest") },
+    { value: "experience-desc", label: t("resumes.sort.experienceDesc") },
+    { value: "experience-asc", label: t("resumes.sort.experienceAsc") },
   ];
 
   const timeFrameOptions = [
-    { value: "all", label: "All Time" },
-    { value: "today", label: "Today" },
-    { value: "week", label: "This Week" },
-    { value: "month", label: "This Month" },
+    { value: "all", label: t("resumes.timeFrame.all") },
+    { value: "today", label: t("resumes.timeFrame.today") },
+    { value: "week", label: t("resumes.timeFrame.week") },
+    { value: "month", label: t("resumes.timeFrame.month") },
   ];
 
   const perPageOptions = [
-    { value: 5, label: "5 Resumes" },
-    { value: 10, label: "10 Resumes" },
-    { value: 15, label: "15 Resumes" },
+    { value: 5, label: t("resumes.perPage.resumes", { count: 5 }) },
+    { value: 10, label: t("resumes.perPage.resumes", { count: 10 }) },
+    { value: 15, label: t("resumes.perPage.resumes", { count: 15 }) },
   ];
 
   useEffect(() => {
@@ -145,14 +177,14 @@ const Resumes = () => {
         setError(null);
       } catch (err) {
         console.error("Error fetching resumes:", err);
-        setError("Failed to load resumes. Please try again later.");
+        setError(t("resumes.errors.failedToLoad"));
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchResumes();
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     const fetchApplications = async () => {
@@ -478,7 +510,7 @@ const Resumes = () => {
     }
 
     if (user.role !== "company") {
-      alert("Only companies can contact students about resumes.");
+      alert(t("resumes.errors.onlyCompaniesCanContact"));
       return;
     }
 
@@ -522,14 +554,12 @@ const Resumes = () => {
     navigate(`/chat/${chatId}`);
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    }).format(date);
-  };
+  const formatDate = useCallback(
+    (dateString: string) => {
+      return formatDateByLanguage(dateString, i18n.language);
+    },
+    [i18n.language]
+  );
 
   const getPaginatedResumes = () => {
     const startIndex = (currentPage - 1) * filters.perPage;
@@ -576,56 +606,68 @@ const Resumes = () => {
 
     if (filters.gender) {
       activeFilters.push({
-        label: `Gender: ${filters.gender}`,
+        label: t("resumes.activeFilters.gender", { gender: filters.gender }),
         clear: () => updateFilter("gender", ""),
       });
     }
 
     if (filters.profession) {
       activeFilters.push({
-        label: `Profession: ${filters.profession}`,
+        label: t("resumes.activeFilters.profession", {
+          profession: filters.profession,
+        }),
         clear: () => updateFilter("profession", ""),
       });
     }
 
     if (filters.education) {
       activeFilters.push({
-        label: `Education: ${filters.education}`,
+        label: t("resumes.activeFilters.education", {
+          education: filters.education,
+        }),
         clear: () => updateFilter("education", ""),
       });
     }
 
     if (filters.experience) {
       activeFilters.push({
-        label: `Experience: ${filters.experience}`,
+        label: t("resumes.activeFilters.experience", {
+          experience: filters.experience,
+        }),
         clear: () => updateFilter("experience", ""),
       });
     }
 
     if (filters.institutionName) {
       activeFilters.push({
-        label: `Institution: ${filters.institutionName}`,
+        label: t("resumes.activeFilters.institution", {
+          institution: filters.institutionName,
+        }),
         clear: () => updateFilter("institutionName", ""),
       });
     }
 
     if (filters.graduationYear) {
       activeFilters.push({
-        label: `Graduation Year: ${filters.graduationYear}`,
+        label: t("resumes.activeFilters.graduationYear", {
+          year: filters.graduationYear,
+        }),
         clear: () => updateFilter("graduationYear", ""),
       });
     }
 
     if (filters.specialization) {
       activeFilters.push({
-        label: `Specialization: ${filters.specialization}`,
+        label: t("resumes.activeFilters.specialization", {
+          specialization: filters.specialization,
+        }),
         clear: () => updateFilter("specialization", ""),
       });
     }
 
     filters.skills.forEach((skill) => {
       activeFilters.push({
-        label: `Skill: ${skill}`,
+        label: t("resumes.activeFilters.skill", { skill }),
         clear: () => removeSkill(skill),
       });
     });
@@ -644,7 +686,7 @@ const Resumes = () => {
             <Search className="w-6 h-6 text-gray-400 ml-2" />
             <input
               type="text"
-              placeholder="Search for resumes..."
+              placeholder={t("resumes.search.placeholder")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="flex-1 bg-transparent border-none outline-none text-white placeholder-gray-400 text-lg"
@@ -654,7 +696,7 @@ const Resumes = () => {
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition-colors"
             >
               <Filter className="w-5 h-5" />
-              Filters
+              {t("resumes.search.filters")}
             </button>
           </div>
         </div>
@@ -666,13 +708,9 @@ const Resumes = () => {
           <div className="flex items-center gap-2 text-emerald-400">
             <CheckCircle className="w-5 h-5" />
             <span className="font-medium">
-              На ваше резюме откликнулись: {userResumeApplications.length}{" "}
-              компани
-              {userResumeApplications.length === 1
-                ? "я"
-                : userResumeApplications.length < 5
-                ? "и"
-                : "й"}
+              {t("resumes.notifications.resumeResponses", {
+                count: userResumeApplications.length,
+              })}
             </span>
           </div>
         </div>
@@ -693,7 +731,7 @@ const Resumes = () => {
               <div>
                 <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                   <UserIcon className="w-5 h-5 text-emerald-400" />
-                  Gender
+                  {t("resumes.filters.gender.title")}
                 </h3>
                 <div className="relative">
                   <select
@@ -701,7 +739,7 @@ const Resumes = () => {
                     onChange={(e) => updateFilter("gender", e.target.value)}
                     className="w-[400px] px-3 py-2 bg-gray-700 rounded-lg text-white appearance-none focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   >
-                    <option value="">All Genders</option>
+                    <option value="">{t("resumes.filters.gender.all")}</option>
                     {filterOptions.genders.map((gender) => (
                       <option key={gender} value={gender}>
                         {gender}
@@ -716,7 +754,7 @@ const Resumes = () => {
               <div>
                 <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                   <Briefcase className="w-5 h-5 text-emerald-400" />
-                  Profession
+                  {t("resumes.filters.profession.title")}
                 </h3>
                 <div className="relative">
                   <select
@@ -724,7 +762,9 @@ const Resumes = () => {
                     onChange={(e) => updateFilter("profession", e.target.value)}
                     className="w-full px-3 py-2 bg-gray-700 rounded-lg text-white appearance-none focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   >
-                    <option value="">All Professions</option>
+                    <option value="">
+                      {t("resumes.filters.profession.all")}
+                    </option>
                     {filterOptions.professions.map((profession) => (
                       <option key={profession} value={profession}>
                         {profession}
@@ -739,13 +779,13 @@ const Resumes = () => {
               <div>
                 <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                   <Award className="w-5 h-5 text-emerald-400" />
-                  Experience
+                  {t("resumes.filters.experience.title")}
                 </h3>
                 <input
                   type="text"
                   value={filters.experience}
                   onChange={(e) => updateFilter("experience", e.target.value)}
-                  placeholder="Enter experience"
+                  placeholder={t("resumes.filters.experience.placeholder")}
                   className="w-full px-3 py-2 bg-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
@@ -754,7 +794,7 @@ const Resumes = () => {
               <div>
                 <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                   <GraduationCap className="w-5 h-5 text-emerald-400" />
-                  Education
+                  {t("resumes.filters.education.title")}
                 </h3>
                 <div className="relative">
                   <select
@@ -762,7 +802,9 @@ const Resumes = () => {
                     onChange={(e) => updateFilter("education", e.target.value)}
                     className="w-full px-3 py-2 bg-gray-700 rounded-lg text-white appearance-none focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   >
-                    <option value="">All Education Levels</option>
+                    <option value="">
+                      {t("resumes.filters.education.all")}
+                    </option>
                     {filterOptions.educations.map((education) => (
                       <option key={education} value={education}>
                         {education}
@@ -777,7 +819,7 @@ const Resumes = () => {
               <div>
                 <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                   <Building className="w-5 h-5 text-emerald-400" />
-                  Institution
+                  {t("resumes.filters.institution.title")}
                 </h3>
                 <input
                   type="text"
@@ -785,7 +827,7 @@ const Resumes = () => {
                   onChange={(e) =>
                     updateFilter("institutionName", e.target.value)
                   }
-                  placeholder="Enter institution name"
+                  placeholder={t("resumes.filters.institution.placeholder")}
                   className="w-full px-3 py-2 bg-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
@@ -794,7 +836,7 @@ const Resumes = () => {
               <div>
                 <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                   <Calendar className="w-5 h-5 text-emerald-400" />
-                  Graduation Year
+                  {t("resumes.filters.graduationYear.title")}
                 </h3>
                 <input
                   type="text"
@@ -802,7 +844,7 @@ const Resumes = () => {
                   onChange={(e) =>
                     updateFilter("graduationYear", e.target.value)
                   }
-                  placeholder="Enter graduation year"
+                  placeholder={t("resumes.filters.graduationYear.placeholder")}
                   className="w-full px-3 py-2 bg-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
@@ -811,7 +853,7 @@ const Resumes = () => {
               <div>
                 <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-emerald-400" />
-                  Specialization
+                  {t("resumes.filters.specialization.title")}
                 </h3>
                 <input
                   type="text"
@@ -819,7 +861,7 @@ const Resumes = () => {
                   onChange={(e) =>
                     updateFilter("specialization", e.target.value)
                   }
-                  placeholder="Enter specialization"
+                  placeholder={t("resumes.filters.specialization.placeholder")}
                   className="w-full px-3 py-2 bg-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
@@ -828,7 +870,7 @@ const Resumes = () => {
               <div>
                 <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                   <Code className="w-5 h-5 text-emerald-400" />
-                  Skills
+                  {t("resumes.filters.skills.title")}
                 </h3>
                 <div className="relative" ref={skillsInputRef}>
                   <input
@@ -837,7 +879,7 @@ const Resumes = () => {
                     onChange={(e) =>
                       updateFilter("skillsQuery", e.target.value)
                     }
-                    placeholder="Search for skills..."
+                    placeholder={t("resumes.filters.skills.placeholder")}
                     className="w-full px-3 py-2 bg-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     onFocus={() =>
                       setShowSkillSuggestions(skillSuggestions.length > 0)
@@ -895,11 +937,17 @@ const Resumes = () => {
                     onChange={(e) => updateFilter("sortBy", e.target.value)}
                     className="appearance-none bg-gray-700 text-white px-4 py-2 pr-8 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   >
-                    <option value="relevance">Most Relevant</option>
-                    <option value="newest">Newest</option>
-                    <option value="oldest">Oldest</option>
-                    <option value="experience-desc">Most Experience</option>
-                    <option value="experience-asc">Least Experience</option>
+                    <option value="relevance">
+                      {t("resumes.sort.relevance")}
+                    </option>
+                    <option value="newest">{t("resumes.sort.newest")}</option>
+                    <option value="oldest">{t("resumes.sort.oldest")}</option>
+                    <option value="experience-desc">
+                      {t("resumes.sort.experienceDesc")}
+                    </option>
+                    <option value="experience-asc">
+                      {t("resumes.sort.experienceAsc")}
+                    </option>
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none w-4 h-4" />
                 </div>
@@ -911,10 +959,14 @@ const Resumes = () => {
                     onChange={(e) => updateFilter("timeFrame", e.target.value)}
                     className="appearance-none bg-gray-700 text-white px-4 py-2 pr-8 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   >
-                    <option value="all">All Time</option>
-                    <option value="today">Today</option>
-                    <option value="week">This Week</option>
-                    <option value="month">This Month</option>
+                    <option value="all">{t("resumes.timeFrame.all")}</option>
+                    <option value="today">
+                      {t("resumes.timeFrame.today")}
+                    </option>
+                    <option value="week">{t("resumes.timeFrame.week")}</option>
+                    <option value="month">
+                      {t("resumes.timeFrame.month")}
+                    </option>
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none w-4 h-4" />
                 </div>
@@ -929,9 +981,15 @@ const Resumes = () => {
                   }
                   className="appearance-none bg-gray-700 text-white px-4 py-2 pr-8 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 >
-                  <option value={5}>5 Resumes</option>
-                  <option value={10}>10 Resumes</option>
-                  <option value={15}>15 Resumes</option>
+                  <option value={5}>
+                    {t("resumes.perPage.resumes", { count: 5 })}
+                  </option>
+                  <option value={10}>
+                    {t("resumes.perPage.resumes", { count: 10 })}
+                  </option>
+                  <option value={15}>
+                    {t("resumes.perPage.resumes", { count: 15 })}
+                  </option>
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none w-4 h-4" />
               </div>
@@ -942,13 +1000,13 @@ const Resumes = () => {
               <div className="bg-gray-800 rounded-lg p-4 mb-6">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-lg font-semibold text-white">
-                    Active Filters
+                    {t("resumes.activeFilters.title")}
                   </h3>
                   <button
                     onClick={clearAllFilters}
                     className="text-sm text-emerald-400 hover:text-emerald-300"
                   >
-                    Clear All
+                    {t("resumes.activeFilters.clearAll")}
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -995,7 +1053,10 @@ const Resumes = () => {
                               src={
                                 getUserAvatar(resume.user) || "/placeholder.svg"
                               }
-                              alt={resume.profession || "Profile"}
+                              alt={
+                                resume.profession ||
+                                t("resumes.card.profileAlt")
+                              }
                               className="w-24 h-24 rounded-lg object-cover bg-gray-700"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
@@ -1018,11 +1079,15 @@ const Resumes = () => {
                           <div className="flex justify-between items-start mb-4">
                             <div>
                               <h3 className="text-xl font-semibold text-white mb-2">
-                                {resume.profession || "Untitled Resume"}
+                                {resume.profession ||
+                                  t("resumes.card.untitledResume")}
                               </h3>
                               <div className="flex items-center gap-2 text-gray-400">
                                 <UserIcon className="w-4 h-4" />
-                                <span>{resume.gender || "Not specified"}</span>
+                                <span>
+                                  {resume.gender ||
+                                    t("resumes.card.notSpecified")}
+                                </span>
                               </div>
                             </div>
                             <div className="flex gap-2">
@@ -1031,7 +1096,9 @@ const Resumes = () => {
                                   {resumeContacted ? (
                                     <div className="flex items-center gap-2 text-emerald-400 px-4 py-2 bg-emerald-600/20 rounded-lg">
                                       <CheckCircle className="w-5 h-5" />
-                                      <span>You've already applied</span>
+                                      <span>
+                                        {t("resumes.card.alreadyContacted")}
+                                      </span>
                                     </div>
                                   ) : (
                                     <button
@@ -1039,7 +1106,7 @@ const Resumes = () => {
                                       className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors flex items-center gap-2"
                                     >
                                       <MessageCircle className="w-4 h-4" />
-                                      Contact
+                                      {t("resumes.actions.contact")}
                                     </button>
                                   )}
                                 </>
@@ -1050,7 +1117,7 @@ const Resumes = () => {
                                 className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors flex items-center gap-2"
                               >
                                 <UserIcon className="w-4 h-4" />
-                                View Profile
+                                {t("resumes.actions.viewProfile")}
                               </button>
                             </div>
                           </div>
@@ -1078,10 +1145,12 @@ const Resumes = () => {
                                 <Award className="w-5 h-5 text-emerald-400" />
                               </div>
                               <div>
-                                <div className="font-semibold">Experience:</div>
+                                <div className="font-semibold">
+                                  {t("resumes.card.experience")}:
+                                </div>
                                 <div>
                                   {resume.experience ||
-                                    "No experience information provided"}
+                                    t("resumes.card.noExperience")}
                                 </div>
                               </div>
                             </div>
@@ -1092,8 +1161,13 @@ const Resumes = () => {
                                 <GraduationCap className="w-5 h-5 text-emerald-400" />
                               </div>
                               <div>
-                                <div className="font-semibold">Education:</div>
-                                <div>{resume.education || "Not specified"}</div>
+                                <div className="font-semibold">
+                                  {t("resumes.card.education")}:
+                                </div>
+                                <div>
+                                  {resume.education ||
+                                    t("resumes.card.notSpecified")}
+                                </div>
                               </div>
                             </div>
 
@@ -1104,10 +1178,11 @@ const Resumes = () => {
                               </div>
                               <div>
                                 <div className="font-semibold">
-                                  Specialization:
+                                  {t("resumes.card.specialization")}:
                                 </div>
                                 <div>
-                                  {resume.specialization || "Not specified"}
+                                  {resume.specialization ||
+                                    t("resumes.card.notSpecified")}
                                 </div>
                               </div>
                             </div>
@@ -1118,7 +1193,8 @@ const Resumes = () => {
                             <div className="flex items-center gap-2 text-gray-500">
                               <Clock className="w-4 h-4" />
                               <span>
-                                Created: {formatDate(resume.created_at)}
+                                {t("resumes.card.created")}:{" "}
+                                {formatDate(resume.created_at)}
                               </span>
                             </div>
                           </div>
@@ -1141,7 +1217,7 @@ const Resumes = () => {
                     disabled={currentPage === 1}
                     className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Previous
+                    {t("resumes.pagination.previous")}
                   </button>
                   {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
                     // Show pages around current page
@@ -1178,7 +1254,7 @@ const Resumes = () => {
                     disabled={currentPage === totalPages}
                     className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Next
+                    {t("resumes.pagination.next")}
                   </button>
                 </nav>
               </div>
@@ -1188,13 +1264,13 @@ const Resumes = () => {
             {!isLoading && !error && filteredResumes.length === 0 && (
               <div className="text-center py-12 bg-gray-800 rounded-lg">
                 <p className="text-gray-400 text-lg">
-                  No resumes found matching your filters.
+                  {t("resumes.noResults.message")}
                 </p>
                 <button
                   onClick={clearAllFilters}
                   className="mt-4 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors"
                 >
-                  Clear All Filters
+                  {t("resumes.noResults.clearFilters")}
                 </button>
               </div>
             )}
@@ -1214,7 +1290,7 @@ const Resumes = () => {
                   onClick={() => window.location.reload()}
                   className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-500 transition-colors"
                 >
-                  Try Again
+                  {t("resumes.errors.tryAgain")}
                 </button>
               </div>
             )}

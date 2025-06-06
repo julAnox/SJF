@@ -1,9 +1,9 @@
 "use client";
 
 import type React from "react";
-
 import { useState, useEffect, type KeyboardEvent } from "react";
 import { X, Code, Figma, PenTool } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface SkillSelectProps {
   selectedSkills: string;
@@ -11,6 +11,7 @@ interface SkillSelectProps {
 }
 
 const SkillSelect = ({ selectedSkills, onChange }: SkillSelectProps) => {
+  const { t } = useTranslation();
   const [inputValue, setInputValue] = useState("");
   const [skills, setSkills] = useState<string[]>([]);
 
@@ -111,11 +112,9 @@ const SkillSelect = ({ selectedSkills, onChange }: SkillSelectProps) => {
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
         className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-        placeholder="Type skills and press space or enter to add"
+        placeholder={t("skillSelect.placeholder")}
       />
-      <p className="text-xs text-gray-400 mt-1">
-        Type a skill and press space or enter to add it
-      </p>
+      <p className="text-xs text-gray-400 mt-1">{t("skillSelect.hint")}</p>
     </div>
   );
 };

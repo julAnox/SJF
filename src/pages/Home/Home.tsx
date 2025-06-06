@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import StarRating from "../../components/StarRating/StarRating";
-import { commentsApi, usersApi } from "../../services/api";
+import { commentsApi, usersApi, jobsApi } from "../../services/api";
 import { companiesApi } from "../../services/api";
 
 interface CommentWithUser extends Comment {
@@ -30,10 +30,46 @@ interface CommentWithUser extends Comment {
   avatar?: string;
 }
 
+interface User {
+  id: number;
+  first_name: string;
+  last_name: string;
+  avatar?: string;
+}
+
+interface Company {
+  id: number;
+  name: string;
+  logo?: string;
+  created_at: string;
+  status: string;
+}
+
+interface Job {
+  id: number;
+  status: string;
+}
+
+interface Statistics {
+  activeJobs: number;
+  totalStudents: number;
+  activeCompanies: number;
+}
+
 const Home = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
+
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const [statistics, setStatistics] = useState<Statistics>({
+    activeJobs: 0,
+    totalStudents: 0,
+    activeCompanies: 0,
+  });
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
+
   const [allComments, setAllComments] = useState<CommentWithUser[]>([]);
   const [newComment, setNewComment] = useState({
     content: "",
@@ -58,6 +94,73 @@ const Home = () => {
   );
   const totalPages = Math.ceil(allComments.length / commentsPerPage);
 
+  const fetchStatistics = async () => {
+    setIsLoadingStats(true);
+    try {
+      const [jobsData, usersData, companiesData] = await Promise.all([
+        jobsApi.getAll(),
+        usersApi.getAll(),
+        companiesApi.getAll(),
+      ]);
+
+      const activeJobs = jobsData.filter(
+        (job: any) => job.status === "active"
+      ).length;
+
+      const totalStudents = usersData.length;
+
+      const activeCompanies = companiesData.filter(
+        (company: any) => company.status === "active"
+      ).length;
+
+      setStatistics({
+        activeJobs,
+        totalStudents,
+        activeCompanies,
+      });
+    } catch (error) {
+      console.error("Error fetching statistics:", error);
+      setStatistics({
+        activeJobs: 0,
+        totalStudents: 0,
+        activeCompanies: 0,
+      });
+    } finally {
+      setIsLoadingStats(false);
+    }
+  };
+
+  const handleSearch = () => {
+    console.log("Search triggered with query:", searchQuery);
+    try {
+      if (searchQuery.trim()) {
+        const searchUrl = `/jobs?search=${encodeURIComponent(
+          searchQuery.trim()
+        )}`;
+        console.log("Navigating to:", searchUrl); // Debug log
+        navigate(searchUrl);
+      } else {
+        console.log("Navigating to jobs page without search");
+        navigate("/jobs");
+      }
+    } catch (error) {
+      console.error("Navigation error:", error);
+      if (searchQuery.trim()) {
+        window.location.href = `/jobs?search=${encodeURIComponent(
+          searchQuery.trim()
+        )}`;
+      } else {
+        window.location.href = "/jobs";
+      }
+    }
+  };
+
+  const handleSearchKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
+
   useEffect(() => {
     const parallaxScroll = () => {
       const scrolled = window.scrollY;
@@ -73,6 +176,7 @@ const Home = () => {
 
   useEffect(() => {
     fetchComments();
+    fetchStatistics();
     const savedLikedComments = localStorage.getItem("likedComments");
     if (savedLikedComments) {
       setLikedComments(JSON.parse(savedLikedComments));
@@ -348,14 +452,21 @@ const Home = () => {
             <input
               type="text"
               placeholder={t("home.hero.searchPlaceholder")}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyPress={handleSearchKeyPress}
               className="flex-1 bg-transparent border-none outline-none text-white placeholder-gray-400 text-lg px-4"
             />
-            <button className="px-8 py-3 bg-emerald-500 text-white rounded-lg font-semibold hover:bg-emerald-600 transition-colors hover:scale-105 transform duration-200">
+            <button
+              onClick={handleSearch}
+              className="px-8 py-3 bg-emerald-500 text-white rounded-lg font-semibold hover:bg-emerald-600 transition-colors hover:scale-105 transform duration-200"
+            >
               {t("home.hero.search")}
             </button>
           </motion.div>
         </div>
 
+        {/* Статистика с реальными данными */}
         <div className="flex justify-center gap-12 px-8 py-8 bg-gray-800 rounded-lg w-auto mx-4">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -364,7 +475,11 @@ const Home = () => {
             className="text-center"
           >
             <h3 className="text-4xl font-bold mb-2 font-mono text-emerald-400">
-              5000+
+              {isLoadingStats ? (
+                <Loader2 className="w-8 h-8 animate-spin mx-auto" />
+              ) : (
+                statistics.activeJobs
+              )}
             </h3>
             <p className="text-sm text-gray-300">{t("home.stats.jobs")}</p>
           </motion.div>
@@ -375,7 +490,11 @@ const Home = () => {
             className="text-center"
           >
             <h3 className="text-4xl font-bold mb-2 font-mono text-emerald-400">
-              10000+
+              {isLoadingStats ? (
+                <Loader2 className="w-8 h-8 animate-spin mx-auto" />
+              ) : (
+                statistics.totalStudents
+              )}
             </h3>
             <p className="text-sm text-gray-300">{t("home.stats.students")}</p>
           </motion.div>
@@ -386,7 +505,11 @@ const Home = () => {
             className="text-center"
           >
             <h3 className="text-4xl font-bold mb-2 font-mono text-emerald-400">
-              1000+
+              {isLoadingStats ? (
+                <Loader2 className="w-8 h-8 animate-spin mx-auto" />
+              ) : (
+                statistics.activeCompanies
+              )}
             </h3>
             <p className="text-sm text-gray-300">{t("home.stats.companies")}</p>
           </motion.div>
@@ -539,7 +662,7 @@ const Home = () => {
               viewport={{ once: true }}
               className="text-4xl font-bold text-white"
             >
-              Student Reviews
+              {t("home.cta.studre")}
             </motion.h2>
             {isAuthenticated ? (
               <motion.button
@@ -550,7 +673,7 @@ const Home = () => {
                 className="px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors flex items-center gap-2"
               >
                 <MessageSquare className="w-5 h-5" />
-                Share Your Experience
+                {t("home.cta.sharestu")}
               </motion.button>
             ) : (
               <motion.button
@@ -560,7 +683,7 @@ const Home = () => {
                 onClick={() => navigate("/login")}
                 className="px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors flex items-center gap-2"
               >
-                Login to Review
+                {t("home.cta.logintorewiew")}
               </motion.button>
             )}
           </div>
@@ -574,7 +697,7 @@ const Home = () => {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Rating
+                    {t("home.cta.rate")}
                   </label>
                   <StarRating
                     rating={newComment.stars}
@@ -587,7 +710,7 @@ const Home = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Your Review
+                    {t("home.cta.youreview")}
                   </label>
                   <textarea
                     value={newComment.content}
@@ -598,7 +721,7 @@ const Home = () => {
                       }))
                     }
                     className="w-full px-4 py-2 bg-gray-700 rounded-lg text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 h-32 resize-none"
-                    placeholder="Share your experience with Student's Job..."
+                    placeholder={t("home.cta.shareyourexp")}
                     required
                   />
                 </div>
@@ -612,7 +735,7 @@ const Home = () => {
                     }}
                     className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
                   >
-                    Cancel
+                    {t("home.cta.cancelreview")}
                   </button>
                   <button
                     type="submit"
@@ -624,7 +747,7 @@ const Home = () => {
                     ) : (
                       <Send className="w-4 h-4" />
                     )}
-                    Submit Review
+                    {t("home.cta.submitreview")}
                   </button>
                 </div>
               </form>
@@ -641,7 +764,7 @@ const Home = () => {
               <div className="flex justify-end mb-6">
                 <div className="relative inline-block">
                   <div className="flex items-center gap-2 text-gray-300 text-sm">
-                    <span>Comments per page:</span>
+                    <span>{t("home.cta.commentsperpage")}</span>
                     <div className="relative">
                       <select
                         value={commentsPerPage}
@@ -781,7 +904,18 @@ const Home = () => {
           <p className="text-xl mb-8 text-gray-300">
             {t("home.cta.description")}
           </p>
-          <button className="px-12 py-4 bg-emerald-500 text-white rounded-lg font-semibold text-lg hover:bg-emerald-600 transition-colors hover:scale-105 transform duration-200">
+          <button
+            onClick={() => {
+              console.log("CTA button clicked");
+              try {
+                navigate("/jobs");
+              } catch (error) {
+                console.error("Navigation error:", error);
+                window.location.href = "/jobs";
+              }
+            }}
+            className="px-12 py-4 bg-emerald-500 text-white rounded-lg font-semibold text-lg hover:bg-emerald-600 transition-colors hover:scale-105 transform duration-200"
+          >
             {t("home.cta.button")}
           </button>
         </motion.div>

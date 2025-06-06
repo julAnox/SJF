@@ -126,7 +126,7 @@ const Register = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Account Type
+              {t("home.cta.accounttype")}
             </label>
             <div className="grid grid-cols-2 gap-4">
               <button
@@ -141,7 +141,7 @@ const Register = () => {
                 } transition-colors flex flex-col items-center gap-2`}
               >
                 <GraduationCap className="w-6 h-6" />
-                <span>Student</span>
+                <span>{t("home.cta.accounttypest")}</span>
               </button>
               <button
                 type="button"
@@ -155,7 +155,7 @@ const Register = () => {
                 } transition-colors flex flex-col items-center gap-2`}
               >
                 <Building2 className="w-6 h-6" />
-                <span>Company</span>
+                <span>{t("home.cta.accounttypecp")}</span>
               </button>
             </div>
           </div>

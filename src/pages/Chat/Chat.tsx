@@ -40,7 +40,6 @@ import messagesService from "../../services/messagesService";
 import applicationsService from "../../services/applicationsService";
 import { resumeApplicationsService } from "../../services/resumeApplicationsService";
 import pinnedChatsService from "../../services/pinnedChatsService";
-import ShareContactModal from "../../components/Modals/ShareContactModal";
 import { toast } from "../../utils/toast";
 import EmojiPicker from "emoji-picker-react";
 
@@ -111,34 +110,6 @@ const Chat = () => {
       navigate("/login");
     }
   }, [isAuthenticated, isLoading, navigate]);
-
-  /*
-useEffect(() => {
-  const fetchPinnedChats = async () => {
-    if (!user) return
-
-    try {
-      const userPinnedChats = await pinnedChatsService.getByUserId(user.id)
-      const pinnedChatIds = userPinnedChats.map((pc) => pc.chat.toString())
-      setPinnedChats(pinnedChatIds)
-      localStorage.setItem("pinnedChats", JSON.stringify(pinnedChatIds))
-    } catch (error) {
-      console.error("Error fetching pinned chats:", error)
-      const savedPinnedChats = localStorage.getItem("pinnedChats")
-      if (savedPinnedChats) {
-        try {
-          const pinnedChatIds = JSON.parse(savedPinnedChats)
-          setPinnedChats(pinnedChatIds)
-        } catch (e) {
-          console.error("Error parsing pinned chats from localStorage:", e)
-        }
-      }
-    }
-  }
-
-  fetchPinnedChats()
-}, [user])
-*/
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -248,7 +219,6 @@ useEffect(() => {
 
       clearAllCaches();
 
-      // Получаем все данные заново
       const allChats = await chatsService.getAll();
       const allApplications = await applicationsService.getAll();
       const allResumeApplications = await resumeApplicationsService.getAll();
@@ -300,7 +270,6 @@ useEffect(() => {
 
           if (!isRelevant) continue;
 
-          // Получаем сообщения для каждого чата заново
           const chatMessages = await messagesService.getByChatId(
             chat.id.toString()
           );
@@ -478,7 +447,6 @@ useEffect(() => {
         const userPinnedChats = await pinnedChatsService.getByUserId(user.id);
         const pinnedChatIds = userPinnedChats.map((pc) => pc.chat.toString());
 
-        // Обновляем состояние только если изменилось
         if (JSON.stringify(pinnedChatIds) !== JSON.stringify(pinnedChats)) {
           setPinnedChats(pinnedChatIds);
           localStorage.setItem("pinnedChats", JSON.stringify(pinnedChatIds));
@@ -504,7 +472,6 @@ useEffect(() => {
         setChats(updatedChatsWithPins);
       } catch (error) {
         console.error("Error updating pinned chats:", error);
-        // Используем локальные данные как fallback
         const savedPinnedChats = localStorage.getItem("pinnedChats");
         if (savedPinnedChats) {
           try {
@@ -732,7 +699,7 @@ useEffect(() => {
   };
 
   const startPolling = () => {
-    console.log(`[${new Date().toISOString()}] 🚀 Starting fresh polling...`);
+    console.log(`[${new Date().toISOString()}]  Starting fresh polling...`);
     stopPolling();
 
     if (location.pathname.includes("/chat")) {
@@ -743,7 +710,7 @@ useEffect(() => {
 
       pollingIntervalRef.current = setInterval(() => {
         if (isPageActive.current && document.hasFocus()) {
-          console.log(`[${new Date().toISOString()}] 🔄 Polling update...`);
+          console.log(`[${new Date().toISOString()}]  Polling update...`);
           fetchChats();
           if (selectedChat) {
             fetchMessages();
@@ -751,12 +718,12 @@ useEffect(() => {
         }
       }, 2000);
 
-      console.log(`[${new Date().toISOString()}] ✅ Polling started`);
+      console.log(`[${new Date().toISOString()}]  Polling started`);
     }
   };
 
   const stopPolling = () => {
-    console.log(`[${new Date().toISOString()}] ⏹️ Stopping polling...`);
+    console.log(`[${new Date().toISOString()}]  Stopping polling...`);
 
     if (pollingIntervalRef.current) {
       clearInterval(pollingIntervalRef.current);
@@ -1544,13 +1511,7 @@ Specialization: ${resume.specialization || "Not provided"}
                     <XCircle className="w-4 h-4" />
                     {t("chat.settings.clear")}
                   </button>
-                  <button
-                    onClick={() => handleChatAction("share")}
-                    className="w-full px-4 py-2 text-left text-gray-300 hover:bg-gray-700 flex items-center gap-2"
-                  >
-                    <Share2 className="w-4 h-4" />
-                    {t("chat.settings.share")}
-                  </button>
+
                   <button
                     onClick={() => handleChatAction("block")}
                     className="w-full px-4 py-2 text-left text-red-400 hover:bg-gray-700 flex items-center gap-2"
@@ -1788,18 +1749,6 @@ Specialization: ${resume.specialization || "Not provided"}
           </div>
         </div>
       )}
-
-      {/* Share Contact Modal */}
-      <ShareContactModal
-        isOpen={showShareModal}
-        onClose={() => setShowShareModal(false)}
-        onShare={(chatId) => {
-          if (selectedChat && otherUser) {
-            toast.success(`Contact shared to chat`);
-          }
-        }}
-        chats={shareableChats}
-      />
     </div>
   );
 };
