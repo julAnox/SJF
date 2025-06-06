@@ -1,6 +1,6 @@
 "use client";
 
-import { NavLink } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useState, useEffect, useCallback } from "react";
 import {
@@ -25,6 +25,8 @@ import { jobsApi, companiesApi } from "../../services/api";
 
 const Header = () => {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
@@ -37,6 +39,34 @@ const Header = () => {
 
   const closeMenu = () => {
     setIsMenuOpen(false);
+  };
+
+  const handleNavigation = (path: string) => {
+    navigate(path);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    closeMenu();
+  };
+
+  const handleLogoClick = () => {
+    navigate("/");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleProfileClick = () => {
+    navigate("/profile");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    closeMenu();
+  };
+
+  const handleAuthClick = (path: string) => {
+    navigate(path);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    closeMenu();
+  };
+
+  const handleLogout = () => {
+    logout();
+    closeMenu();
   };
 
   const isStudent = user?.role === "student";
@@ -211,19 +241,23 @@ const Header = () => {
     };
   }, [user, fetchUnreadMessages]);
 
+  const isActivePath = (path: string) => {
+    return location.pathname === path;
+  };
+
   return (
     <header className="fixed top-0 left-0 right-0 bg-gray-900/80 backdrop-blur-md z-50 border-b border-gray-800">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between px-6 py-6 lg:py-5">
           {/* Logo */}
-          <NavLink
-            to="/"
+          <button
+            onClick={handleLogoClick}
             className="flex items-center gap-4 text-xl md:text-2xl font-bold text-emerald-400 hover:text-emerald-300 transition-colors shrink-0"
           >
             <span className="text-xl">Student's</span>
             <img src={logo || "/placeholder.svg"} alt="" className="w-10" />
             <span className="text-xl">Job</span>
-          </NavLink>
+          </button>
 
           {/* Mobile Menu Button */}
           <button
@@ -240,46 +274,40 @@ const Header = () => {
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center justify-between flex-1 max-w-7xl ml-7">
             <nav className="flex items-center gap-2">
-              <NavLink
-                to="/jobs"
-                className={({ isActive }) =>
-                  `flex items-center gap-2 px-4 py-3 rounded-lg transition-all duration-300 ease-in-out text-sm
+              <button
+                onClick={() => handleNavigation("/jobs")}
+                className={`flex items-center gap-2 px-4 py-3 rounded-lg transition-all duration-300 ease-in-out text-sm
                   ${
-                    isActive
+                    isActivePath("/jobs")
                       ? "text-emerald-400 bg-gray-800"
                       : "text-gray-400 hover:text-emerald-400 hover:bg-gray-800"
-                  }`
-                }
+                  }`}
               >
                 <BriefcaseIcon className="w-5 h-5" />
                 {t("nav.jobs")}
-              </NavLink>
+              </button>
               {!isStudent && (
-                <NavLink
-                  to="/resumes"
-                  className={({ isActive }) =>
-                    `flex items-center gap-2 px-4 py-3 rounded-lg transition-all duration-300 ease-in-out text-sm
+                <button
+                  onClick={() => handleNavigation("/resumes")}
+                  className={`flex items-center gap-2 px-4 py-3 rounded-lg transition-all duration-300 ease-in-out text-sm
                     ${
-                      isActive
+                      isActivePath("/resumes")
                         ? "text-emerald-400 bg-gray-800"
                         : "text-gray-400 hover:text-emerald-400 hover:bg-gray-800"
-                    }`
-                  }
+                    }`}
                 >
                   <FileTextIcon className="w-5 h-5" />
                   {t("nav.resumes")}
-                </NavLink>
+                </button>
               )}
-              <NavLink
-                to="/chat"
-                className={({ isActive }) =>
-                  `flex items-center gap-2 px-4 py-3 rounded-lg transition-all duration-300 ease-in-out text-sm
+              <button
+                onClick={() => handleNavigation("/chat")}
+                className={`flex items-center gap-2 px-4 py-3 rounded-lg transition-all duration-300 ease-in-out text-sm
                   ${
-                    isActive
+                    isActivePath("/chat")
                       ? "text-emerald-400 bg-gray-800"
                       : "text-gray-400 hover:text-emerald-400 hover:bg-gray-800"
-                  }`
-                }
+                  }`}
               >
                 <div className="relative">
                   <MessagesSquareIcon className="w-5 h-5" />
@@ -290,35 +318,31 @@ const Header = () => {
                   )}
                 </div>
                 {t("nav.chat")}
-              </NavLink>
-              <NavLink
-                to="/auction"
-                className={({ isActive }) =>
-                  `flex items-center gap-2 px-4 py-3 rounded-lg transition-all duration-300 ease-in-out text-sm
+              </button>
+              <button
+                onClick={() => handleNavigation("/auction")}
+                className={`flex items-center gap-2 px-4 py-3 rounded-lg transition-all duration-300 ease-in-out text-sm
                   ${
-                    isActive
+                    isActivePath("/auction")
                       ? "text-emerald-400 bg-gray-800"
                       : "text-gray-400 hover:text-emerald-400 hover:bg-gray-800"
-                  }`
-                }
+                  }`}
               >
                 <GavelIcon className="w-5 h-5" />
                 {t("nav.auction")}
-              </NavLink>
-              <NavLink
-                to="/about"
-                className={({ isActive }) =>
-                  `flex items-center gap-2 px-4 py-3 rounded-lg transition-all duration-300 ease-in-out text-sm
+              </button>
+              <button
+                onClick={() => handleNavigation("/about")}
+                className={`flex items-center gap-2 px-4 py-3 rounded-lg transition-all duration-300 ease-in-out text-sm
                   ${
-                    isActive
+                    isActivePath("/about")
                       ? "text-emerald-400 bg-gray-800"
                       : "text-gray-400 hover:text-emerald-400 hover:bg-gray-800"
-                  }`
-                }
+                  }`}
               >
                 <InfoIcon className="w-5 h-5" />
                 {t("nav.about")}
-              </NavLink>
+              </button>
             </nav>
 
             {/* Desktop Auth & Language */}
@@ -333,8 +357,8 @@ const Header = () => {
 
               {isAuthenticated ? (
                 <div className="flex items-center gap-4">
-                  <NavLink
-                    to="/profile"
+                  <button
+                    onClick={handleProfileClick}
                     className="flex items-center gap-2 text-gray-400 hover:text-emerald-400 transition-colors"
                   >
                     <img
@@ -350,9 +374,9 @@ const Header = () => {
                     <span className="text-sm">
                       {user?.first_name} {user?.last_name}
                     </span>
-                  </NavLink>
+                  </button>
                   <button
-                    onClick={logout}
+                    onClick={handleLogout}
                     className="flex items-center gap-2 px-4 py-2 rounded-lg text-gray-400 hover:text-emerald-400 hover:bg-gray-800 transition-all duration-300 ease-in-out text-sm"
                   >
                     <LogInIcon className="w-5 h-5" />
@@ -361,21 +385,21 @@ const Header = () => {
                 </div>
               ) : (
                 <>
-                  <NavLink
-                    to="/login"
+                  <button
+                    onClick={() => handleAuthClick("/login")}
                     className="flex items-center gap-2 px-4 py-3 rounded-lg text-gray-400 hover:text-emerald-400 hover:bg-gray-800 transition-all duration-300 ease-in-out text-sm"
                   >
                     <LogInIcon className="w-5 h-5" />
                     {t("nav.login")}
-                  </NavLink>
+                  </button>
 
-                  <NavLink
-                    to="/signup"
+                  <button
+                    onClick={() => handleAuthClick("/signup")}
                     className="flex items-center gap-2 px-4 py-3 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 transition-all duration-300 ease-in-out text-sm"
                   >
                     <UserPlusIcon className="w-5 h-5" />
                     {t("nav.signup")}
-                  </NavLink>
+                  </button>
                 </>
               )}
             </div>
@@ -391,49 +415,40 @@ const Header = () => {
           }`}
         >
           <nav className="flex flex-col px-4 pb-4 space-y-2">
-            <NavLink
-              to="/jobs"
-              onClick={closeMenu}
-              className={({ isActive }) =>
-                `flex items-center gap-2 px-4 py-3 rounded-lg transition-all duration-300 ease-in-out
+            <button
+              onClick={() => handleNavigation("/jobs")}
+              className={`flex items-center gap-2 px-4 py-3 rounded-lg transition-all duration-300 ease-in-out text-left
                 ${
-                  isActive
+                  isActivePath("/jobs")
                     ? "text-emerald-400 bg-gray-800"
                     : "text-gray-400 hover:text-emerald-400 hover:bg-gray-800"
-                }`
-              }
+                }`}
             >
               <BriefcaseIcon className="w-5 h-5" />
               {t("nav.jobs")}
-            </NavLink>
+            </button>
             {!isStudent && (
-              <NavLink
-                to="/resumes"
-                onClick={closeMenu}
-                className={({ isActive }) =>
-                  `flex items-center gap-2 px-4 py-3 rounded-lg transition-all duration-300 ease-in-out
+              <button
+                onClick={() => handleNavigation("/resumes")}
+                className={`flex items-center gap-2 px-4 py-3 rounded-lg transition-all duration-300 ease-in-out text-left
                   ${
-                    isActive
+                    isActivePath("/resumes")
                       ? "text-emerald-400 bg-gray-800"
                       : "text-gray-400 hover:text-emerald-400 hover:bg-gray-800"
-                  }`
-                }
+                  }`}
               >
                 <FileTextIcon className="w-5 h-5" />
                 {t("nav.resumes")}
-              </NavLink>
+              </button>
             )}
-            <NavLink
-              to="/chat"
-              onClick={closeMenu}
-              className={({ isActive }) =>
-                `flex items-center gap-2 px-4 py-3 rounded-lg transition-all duration-300 ease-in-out
+            <button
+              onClick={() => handleNavigation("/chat")}
+              className={`flex items-center gap-2 px-4 py-3 rounded-lg transition-all duration-300 ease-in-out text-left
                 ${
-                  isActive
+                  isActivePath("/chat")
                     ? "text-emerald-400 bg-gray-800"
                     : "text-gray-400 hover:text-emerald-400 hover:bg-gray-800"
-                }`
-              }
+                }`}
             >
               <div className="relative">
                 <MessagesSquareIcon className="w-5 h-5" />
@@ -444,37 +459,31 @@ const Header = () => {
                 )}
               </div>
               {t("nav.chat")}
-            </NavLink>
-            <NavLink
-              to="/auction"
-              onClick={closeMenu}
-              className={({ isActive }) =>
-                `flex items-center gap-2 px-4 py-3 rounded-lg transition-all duration-300 ease-in-out
+            </button>
+            <button
+              onClick={() => handleNavigation("/auction")}
+              className={`flex items-center gap-2 px-4 py-3 rounded-lg transition-all duration-300 ease-in-out text-left
                 ${
-                  isActive
+                  isActivePath("/auction")
                     ? "text-emerald-400 bg-gray-800"
                     : "text-gray-400 hover:text-emerald-400 hover:bg-gray-800"
-                }`
-              }
+                }`}
             >
               <GavelIcon className="w-5 h-5" />
               {t("nav.auction")}
-            </NavLink>
-            <NavLink
-              to="/about"
-              onClick={closeMenu}
-              className={({ isActive }) =>
-                `flex items-center gap-2 px-4 py-3 rounded-lg transition-all duration-300 ease-in-out
+            </button>
+            <button
+              onClick={() => handleNavigation("/about")}
+              className={`flex items-center gap-2 px-4 py-3 rounded-lg transition-all duration-300 ease-in-out text-left
                 ${
-                  isActive
+                  isActivePath("/about")
                     ? "text-emerald-400 bg-gray-800"
                     : "text-gray-400 hover:text-emerald-400 hover:bg-gray-800"
-                }`
-              }
+                }`}
             >
               <InfoIcon className="w-5 h-5" />
               {t("nav.about")}
-            </NavLink>
+            </button>
 
             <div className="pt-2 border-t border-gray-700">
               <button
@@ -482,7 +491,7 @@ const Header = () => {
                   toggleLanguage();
                   closeMenu();
                 }}
-                className="w-full flex items-center gap-2 px-4 py-3 rounded-lg text-gray-400 hover:text-emerald-400 hover:bg-gray-800 transition-all duration-300 ease-in-out"
+                className="w-full flex items-center gap-2 px-4 py-3 rounded-lg text-gray-400 hover:text-emerald-400 hover:bg-gray-800 transition-all duration-300 ease-in-out text-left"
               >
                 <Globe className="w-5 h-5" />
                 {i18n.language.toUpperCase()}
@@ -490,20 +499,16 @@ const Header = () => {
 
               {isAuthenticated ? (
                 <>
-                  <NavLink
-                    to="/profile"
-                    onClick={closeMenu}
-                    className="w-full flex items-center gap-2 px-4 py-3 mt-2 rounded-lg text-gray-400 hover:text-emerald-400 hover:bg-gray-800 transition-all duration-300 ease-in-out"
+                  <button
+                    onClick={handleProfileClick}
+                    className="w-full flex items-center gap-2 px-4 py-3 mt-2 rounded-lg text-gray-400 hover:text-emerald-400 hover:bg-gray-800 transition-all duration-300 ease-in-out text-left"
                   >
                     <User className="w-5 h-5" />
                     Profile
-                  </NavLink>
+                  </button>
                   <button
-                    onClick={() => {
-                      logout();
-                      closeMenu();
-                    }}
-                    className="w-full flex items-center gap-2 px-4 py-3 mt-2 rounded-lg text-gray-400 hover:text-emerald-400 hover:bg-gray-800 transition-all duration-300 ease-in-out"
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-2 px-4 py-3 mt-2 rounded-lg text-gray-400 hover:text-emerald-400 hover:bg-gray-800 transition-all duration-300 ease-in-out text-left"
                   >
                     <LogInIcon className="w-5 h-5" />
                     Logout
@@ -511,23 +516,21 @@ const Header = () => {
                 </>
               ) : (
                 <>
-                  <NavLink
-                    to="/login"
-                    onClick={closeMenu}
-                    className="w-full flex items-center gap-2 px-4 py-3 mt-2 rounded-lg text-gray-400 hover:text-emerald-400 hover:bg-gray-800 transition-all duration-300 ease-in-out"
+                  <button
+                    onClick={() => handleAuthClick("/login")}
+                    className="w-full flex items-center gap-2 px-4 py-3 mt-2 rounded-lg text-gray-400 hover:text-emerald-400 hover:bg-gray-800 transition-all duration-300 ease-in-out text-left"
                   >
                     <LogInIcon className="w-5 h-5" />
                     {t("nav.login")}
-                  </NavLink>
+                  </button>
 
-                  <NavLink
-                    to="/signup"
-                    onClick={closeMenu}
-                    className="w-full flex items-center gap-2 px-4 py-3 mt-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 transition-all duration-300 ease-in-out"
+                  <button
+                    onClick={() => handleAuthClick("/signup")}
+                    className="w-full flex items-center gap-2 px-4 py-3 mt-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 transition-all duration-300 ease-in-out text-left"
                   >
                     <UserPlusIcon className="w-5 h-5" />
                     {t("nav.signup")}
-                  </NavLink>
+                  </button>
                 </>
               )}
             </div>

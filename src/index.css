@@ -6,7 +6,7 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   line-height: 1.5;
   font-weight: 400;
   color-scheme: dark;
@@ -31,4 +31,12 @@ body {
 
 .animate-slideDown {
   animation: slideDown 0.5s ease-out;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+.scroll-mt-24 {
+  scroll-margin-top: 6rem;
 }

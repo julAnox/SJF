@@ -1,4 +1,3 @@
-// about.tsx
 "use client";
 
 import type React from "react";
@@ -26,6 +25,15 @@ import {
   usersApi,
   commentsApi,
 } from "../../services/api";
+
+interface Issue {
+  id: number;
+  user: number;
+  issue: string;
+  solution: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
 const About = () => {
   const { t } = useTranslation();
@@ -132,21 +140,25 @@ const About = () => {
       icon: <Lightbulb className="w-8 h-8" />,
       title: t("about.values.innovation.title"),
       description: t("about.values.innovation.description"),
+      id: "innovation",
     },
     {
       icon: <Shield className="w-8 h-8" />,
       title: t("about.values.integrity.title"),
       description: t("about.values.integrity.description"),
+      id: "integrity",
     },
     {
       icon: <Users className="w-8 h-8" />,
       title: t("about.values.inclusion.title"),
       description: t("about.values.inclusion.description"),
+      id: "inclusion",
     },
     {
       icon: <Target className="w-8 h-8" />,
       title: t("about.values.impact.title"),
       description: t("about.values.impact.description"),
+      id: "impact",
     },
   ];
 
@@ -287,7 +299,10 @@ const About = () => {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
             >
-              <h2 className="text-4xl font-bold text-white mb-6">
+              <h2
+                id="mission"
+                className="text-4xl font-bold text-white mb-6 scroll-mt-24"
+              >
                 {t("about.mission.title")}
               </h2>
               <p className="text-gray-300 text-lg leading-relaxed">
@@ -301,7 +316,10 @@ const About = () => {
               viewport={{ once: true }}
               className="grid gap-8"
             >
-              <div className="grid md:grid-cols-2 gap-8">
+              <div
+                id="stats"
+                className="grid md:grid-cols-2 gap-8 scroll-mt-24"
+              >
                 {statsDisplay.map((stat, index) => (
                   <motion.div
                     key={index}
@@ -324,10 +342,11 @@ const About = () => {
       <section className="py-24 bg-gray-900">
         <div className="max-w-7xl mx-auto px-4">
           <motion.h2
+            id="values"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-4xl font-bold text-center text-white mb-16"
+            className="text-4xl font-bold text-center text-white mb-16 scroll-mt-24"
           >
             {t("about.values.title")}
           </motion.h2>
@@ -341,8 +360,9 @@ const About = () => {
             {values.map((value, index) => (
               <motion.div
                 key={index}
+                id={value.id}
                 variants={itemVariants}
-                className="bg-gray-800 p-8 rounded-xl text-center"
+                className="bg-gray-800 p-8 rounded-xl text-center scroll-mt-24"
               >
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-600/10 text-emerald-400 mb-6">
                   {value.icon}
@@ -366,7 +386,10 @@ const About = () => {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-4xl font-bold text-white mb-4">
+            <h2
+              id="faq"
+              className="text-4xl font-bold text-white mb-4 scroll-mt-24"
+            >
               {t("about.faq.title")}
             </h2>
             <p className="text-gray-300">{t("about.faq.subtitle")}</p>
@@ -430,7 +453,10 @@ const About = () => {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-4xl font-bold text-white mb-4">
+            <h2
+              id="bugReport"
+              className="text-4xl font-bold text-white mb-4 scroll-mt-24"
+            >
               {t("about.bugReport.title")}
             </h2>
             <p className="text-gray-300">{t("about.bugReport.subtitle")}</p>
@@ -556,7 +582,10 @@ const About = () => {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-4xl font-bold text-white mb-4">
+            <h2
+              id="recentQuestions"
+              className="text-4xl font-bold text-white mb-4 scroll-mt-24"
+            >
               {t("about.recentQuestions.title")}
             </h2>
             <p className="text-gray-300">{t("home.cta.track")}</p>
