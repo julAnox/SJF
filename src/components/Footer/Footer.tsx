@@ -9,8 +9,6 @@ import {
   PhoneIcon,
   MailIcon,
   MapPinIcon,
-  FacebookIcon,
-  TwitterIcon,
   InstagramIcon,
   LinkedinIcon,
   GithubIcon,
@@ -295,7 +293,8 @@ const Footer = () => {
                 {t("footer.newsletterDescription")}
               </p>
               <form onSubmit={handleNewsletterSubmit} className="space-y-4">
-                <div className="flex gap-4">
+                {/* Адаптивная форма подписки: на планшетах кнопка снизу, на десктопе - справа */}
+                <div className="flex flex-col md:flex-col lg:flex-row gap-4">
                   <input
                     type="email"
                     value={email}
@@ -307,7 +306,7 @@ const Footer = () => {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="px-6 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 transition-colors text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    className="px-6 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 transition-colors text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 md:w-full lg:w-auto"
                   >
                     {isSubmitting ? (
                       <>
@@ -369,7 +368,7 @@ const Footer = () => {
         </div>
 
         {/* Copyright */}
-        <div className="mt-8 pt-8 border-t border-gray-800 text-center flex">
+        <div className="mt-8 pt-8 border-t border-gray-800 text-center">
           <p className="text-gray-400">
             © 2025 Student's Job. {t("footer.rights")}
           </p>

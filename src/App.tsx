@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
@@ -11,6 +11,7 @@ import Home from "./pages/Home/Home";
 import Jobs from "./pages/Jobs/Jobs";
 import Resumes from "./pages/Resumes/Resumes";
 import Chat from "./pages/Chat/Chat";
+import Auction from "./pages/Auction/Auction";
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
 import About from "./pages/About/About";
@@ -50,6 +51,7 @@ function App() {
               <Route path="/resumes" element={<Resumes />} />
               <Route path="/chat" element={<Chat />} />
               <Route path="/chat/:id" element={<Chat />} />
+              <Route path="/auction" element={<Auction />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Register />} />
               <Route path="/about" element={<About />} />

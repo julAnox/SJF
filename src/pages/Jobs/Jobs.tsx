@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -76,7 +76,8 @@ const formatDate = (dateString: string, t: any) => {
 const Jobs = () => {
   const location = useLocation();
   const { t } = useTranslation();
-  const [isFiltersOpen, setIsFiltersOpen] = useState(true);
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
     city: "",
     metro: "",
@@ -88,7 +89,7 @@ const Jobs = () => {
     currency: "",
     sortBy: "relevance",
     timeFrame: "all",
-    perPage: 3,
+    perPage: 6,
   });
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -108,6 +109,24 @@ const Jobs = () => {
   const [imageError, setImageError] = useState<Record<number, boolean>>({});
   const [userApplications, setUserApplications] = useState<number[]>([]);
   const { user } = useAuth();
+
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1500);
+      if (window.innerWidth >= 1500) {
+        setIsFiltersOpen(true);
+        setIsMobileFiltersOpen(false);
+      } else {
+        setIsFiltersOpen(false);
+      }
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   useEffect(() => {
     console.log("Jobs page loaded, checking URL params");
@@ -278,11 +297,6 @@ const Jobs = () => {
         searchQuery.trim() === "" ||
         (job.title || "").toLowerCase().includes(searchQuery.toLowerCase());
 
-      console.log(
-        `Job "${job.title}" matches search "${searchQuery}":`,
-        matchesSearch
-      );
-
       const matchesCity =
         !filters.city ||
         (job.city || "").toLowerCase().includes(filters.city.toLowerCase());
@@ -389,245 +403,296 @@ const Jobs = () => {
 
   const activeFilters = getActiveFilters();
 
-  return (
-    <div className="pt-20 bg-gray-900">
-      {/* Search Header */}
-      <div className="bg-gray-800 border-b border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="flex items-center gap-4 bg-gray-900/50 rounded-lg p-2">
-            <SearchIcon className="w-6 h-6 text-gray-400 ml-2" />
+  // Filter Component
+  const FilterContent = () => (
+    <div className="space-y-6">
+      {/* Location Filters */}
+      <div>
+        <h3 className="text-lg font-semibold text-white mb-4">
+          {t("home.cta.filterslocation")}
+        </h3>
+        <div className="space-y-4">
+          <div>
+            <div className="flex items-center gap-2 text-gray-400 mb-2">
+              <MapPinIcon className="w-4 h-4" />
+              <span>{t("home.cta.filterscity")}</span>
+            </div>
             <input
               type="text"
-              placeholder={t("home.cta.searchforjobs")}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 bg-transparent border-none outline-none text-white placeholder-gray-400 text-lg"
+              value={filters.city}
+              onChange={(e) => handleFilterChange("city", e.target.value)}
+              className="w-full px-3 py-2 bg-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              placeholder={t("home.cta.filterscityinput")}
             />
+          </div>
+          <div>
+            <div className="flex items-center gap-2 text-gray-400 mb-2">
+              <TrainIcon className="w-4 h-4" />
+              <span>{t("home.cta.filtersmetro")}</span>
+            </div>
+            <input
+              type="text"
+              value={filters.metro}
+              onChange={(e) => handleFilterChange("metro", e.target.value)}
+              className="w-full px-3 py-2 bg-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              placeholder={t("home.cta.filtersmetroinput")}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Experience Range */}
+      <div>
+        <h3 className="text-lg font-semibold text-white mb-4">
+          {t("home.cta.filtersexp")}
+        </h3>
+        <div className="space-y-4">
+          <input
+            type="range"
+            min="0"
+            max="10"
+            step="1"
+            value={filters.experiense}
+            onChange={(e) =>
+              handleFilterChange("experiense", Number.parseInt(e.target.value))
+            }
+            className="w-full accent-emerald-500"
+          />
+          <div className="flex justify-between text-gray-400">
+            <span>0 {t("home.cta.filtersyears")}</span>
+            <span>
+              {filters.experiense} {t("home.cta.filtersyears")}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Currency */}
+      <div>
+        <h3 className="text-lg font-semibold text-white mb-4">
+          {t("home.cta.filterscurrency")}
+        </h3>
+        <input
+          type="text"
+          value={filters.currency}
+          onChange={(e) => handleFilterChange("currency", e.target.value)}
+          className="w-full px-3 py-2 bg-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          placeholder={t("home.cta.filterscurrencyinput")}
+          maxLength={3}
+        />
+      </div>
+
+      {/* Salary Range */}
+      <div>
+        <h3 className="text-lg font-semibold text-white mb-4">
+          {t("home.cta.filterssalary")}
+        </h3>
+        <div className="space-y-4">
+          <div className="flex gap-4 items-center">
+            <input
+              type="number"
+              min="0"
+              max={filters.salary_max}
+              value={filters.salary_min}
+              onChange={(e) =>
+                handleFilterChange(
+                  "salary_min",
+                  Number.parseInt(e.target.value)
+                )
+              }
+              className="w-full px-3 py-2 bg-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+            <span className="text-gray-400">{t("home.cta.do")}</span>
+            <input
+              type="number"
+              min={filters.salary_min}
+              value={filters.salary_max}
+              onChange={(e) =>
+                handleFilterChange(
+                  "salary_max",
+                  Number.parseInt(e.target.value)
+                )
+              }
+              className="w-full px-3 py-2 bg-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+          </div>
+          <input
+            type="range"
+            min="0"
+            max="1000000"
+            step="10000"
+            value={filters.salary_max}
+            onChange={(e) =>
+              handleFilterChange("salary_max", Number.parseInt(e.target.value))
+            }
+            className="w-full accent-emerald-500"
+          />
+          <div className="flex justify-between text-gray-400">
+            <span>{formatSalary(filters.salary_min)}</span>
+            <span>{formatSalary(filters.salary_max)}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Type */}
+      <div>
+        <h3 className="text-lg font-semibold text-white mb-4">
+          {t("jobs.card.type")}
+        </h3>
+        <div className="relative">
+          <select
+            value={filters.type}
+            onChange={(e) => handleFilterChange("type", e.target.value)}
+            className="appearance-none w-full px-3 py-2 pr-10 bg-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+          >
+            <option value="">{t("jobs.card.allTypes")}</option>
+            {Array.from(new Set(jobs.map((job) => job.type))).map((type) => (
+              <option key={type} value={type}>
+                {type}
+              </option>
+            ))}
+          </select>
+          <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
+        </div>
+      </div>
+
+      {/* Schedule */}
+      <div>
+        <h3 className="text-lg font-semibold text-white mb-4">
+          {t("jobs.card.schedule")}
+        </h3>
+        <div className="relative">
+          <select
+            value={filters.schedule}
+            onChange={(e) => handleFilterChange("schedule", e.target.value)}
+            className="appearance-none w-full px-3 py-2 pr-10 bg-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+          >
+            <option value="">{t("jobs.card.allSchedules")}</option>
+            {Array.from(new Set(jobs.map((job) => job.schedule))).map(
+              (schedule) => (
+                <option key={schedule} value={schedule}>
+                  {schedule}
+                </option>
+              )
+            )}
+          </select>
+          <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="pt-16 sm:pt-20 bg-gray-900 min-h-screen">
+      {/* Search Header */}
+      <div className="bg-gray-800 border-b border-gray-700 mt-5 sm:mt-0">
+        <div className="max-w-7xl mx-auto px-4 py-6 sm:py-6">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-4">
+            <div className="flex items-center gap-4 bg-gray-900/50 rounded-lg p-3 flex-1">
+              <SearchIcon className="w-5 h-5 sm:w-5 sm:h-5 text-gray-400 ml-1" />
+              <input
+                type="text"
+                placeholder={t("home.cta.searchforjobs")}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-1 bg-transparent border-none outline-none text-white placeholder-gray-400 text-base sm:text-lg"
+              />
+            </div>
             <button
-              onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition-colors"
+              onClick={() => {
+                if (isMobile) {
+                  setIsMobileFiltersOpen(true);
+                } else {
+                  setIsFiltersOpen(!isFiltersOpen);
+                }
+              }}
+              className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition-colors whitespace-nowrap"
             >
-              <FilterIcon className="w-5 h-5" />
-              {t("home.cta.searchforjobsfilters")}
+              <FilterIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="hidden sm:inline">
+                {t("home.cta.searchforjobsfilters")}
+              </span>
+              <span className="sm:hidden">Фильтры</span>
             </button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex gap-8">
-          {/* Filters Sidebar */}
-          <motion.div
-            initial={false}
-            animate={{ width: isFiltersOpen ? "auto" : 0 }}
-            className={`${
-              isFiltersOpen ? "w-80" : "w-0"
-            } flex-shrink-0 overflow-hidden`}
-          >
-            <div className="bg-gray-800 rounded-lg p-6 space-y-6">
-              {/* Location Filters */}
-              <div>
-                <h3 className="text-lg font-semibold text-white mb-4">
-                  {t("home.cta.filterslocation")}
-                </h3>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex items-center gap-2 text-gray-400 mb-2">
-                      <MapPinIcon className="w-4 h-4" />
-                      <span>{t("home.cta.filterscity")}</span>
-                    </div>
-                    <input
-                      type="text"
-                      value={filters.city}
-                      onChange={(e) =>
-                        handleFilterChange("city", e.target.value)
-                      }
-                      className="w-full px-3 py-2 bg-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      placeholder={t("home.cta.filterscityinput")}
-                    />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 text-gray-400 mb-2">
-                      <TrainIcon className="w-4 h-4" />
-                      <span>{t("home.cta.filtersmetro")}</span>
-                    </div>
-                    <input
-                      type="text"
-                      value={filters.metro}
-                      onChange={(e) =>
-                        handleFilterChange("metro", e.target.value)
-                      }
-                      className="w-full px-3 py-2 bg-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      placeholder={t("home.cta.filtersmetroinput")}
-                    />
-                  </div>
-                </div>
+      <div className="max-w-7xl mx-auto px-4 py-6 sm:py-8">
+        <div className="flex gap-6 lg:gap-8">
+          {/* Desktop Filters Sidebar */}
+          {!isMobile && (
+            <motion.div
+              initial={false}
+              animate={{ width: isFiltersOpen ? "400px" : 0 }}
+              className="flex-shrink-0 overflow-hidden"
+            >
+              <div className="bg-gray-800 rounded-lg p-6 min-w-[400px]">
+                <FilterContent />
               </div>
+            </motion.div>
+          )}
 
-              {/* Experience Range */}
-              <div>
-                <h3 className="text-lg font-semibold text-white mb-4">
-                  {t("home.cta.filtersexp")}
-                </h3>
-                <div className="space-y-4">
-                  <input
-                    type="range"
-                    min="0"
-                    max="10"
-                    step="1"
-                    value={filters.experiense}
-                    onChange={(e) =>
-                      handleFilterChange(
-                        "experiense",
-                        Number.parseInt(e.target.value)
-                      )
-                    }
-                    className="w-full accent-emerald-500"
-                  />
-                  <div className="flex justify-between text-gray-400">
-                    <span>0 {t("home.cta.filtersyears")}</span>
-                    <span>
-                      {filters.experiense} {t("home.cta.filtersyears")}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Currency */}
-              <div>
-                <h3 className="text-lg font-semibold text-white mb-4">
-                  {t("home.cta.filterscurrency")}
-                </h3>
-                <input
-                  type="text"
-                  value={filters.currency}
-                  onChange={(e) =>
-                    handleFilterChange("currency", e.target.value)
-                  }
-                  className="w-full px-3 py-2 bg-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  placeholder={t("home.cta.filterscurrencyinput")}
-                  maxLength={3}
+          {/* Mobile Filters Modal */}
+          <AnimatePresence>
+            {isMobileFiltersOpen && (
+              <>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 bg-black/50 z-40"
+                  style={{ display: isMobile ? "block" : "none" }}
+                  onClick={() => setIsMobileFiltersOpen(false)}
                 />
-              </div>
-
-              {/* Salary Range */}
-              <div>
-                <h3 className="text-lg font-semibold text-white mb-4">
-                  {t("home.cta.filterssalary")}
-                </h3>
-                <div className="space-y-4">
-                  <div className="flex gap-4 items-center">
-                    <input
-                      type="number"
-                      min="0"
-                      max={filters.salary_max}
-                      value={filters.salary_min}
-                      onChange={(e) =>
-                        handleFilterChange(
-                          "salary_min",
-                          Number.parseInt(e.target.value)
-                        )
-                      }
-                      className="w-full px-3 py-2 bg-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    />
-                    <span className="text-gray-400">{t("home.cta.do")}</span>
-                    <input
-                      type="number"
-                      min={filters.salary_min}
-                      value={filters.salary_max}
-                      onChange={(e) =>
-                        handleFilterChange(
-                          "salary_max",
-                          Number.parseInt(e.target.value)
-                        )
-                      }
-                      className="w-full px-3 py-2 bg-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    />
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="1000000"
-                    step="10000"
-                    value={filters.salary_max}
-                    onChange={(e) =>
-                      handleFilterChange(
-                        "salary_max",
-                        Number.parseInt(e.target.value)
-                      )
-                    }
-                    className="w-full accent-emerald-500"
-                  />
-                  <div className="flex justify-between text-gray-400">
-                    <span>{formatSalary(filters.salary_min)}</span>
-                    <span>{formatSalary(filters.salary_max)}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Type */}
-              <div>
-                <h3 className="text-lg font-semibold text-white mb-4">
-                  {t("jobs.card.type")}
-                </h3>
-                <select
-                  value={filters.type}
-                  onChange={(e) => handleFilterChange("type", e.target.value)}
-                  className="w-full px-3 py-2 bg-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                <motion.div
+                  initial={{ x: "-100%" }}
+                  animate={{ x: 0 }}
+                  exit={{ x: "-100%" }}
+                  transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                  className="fixed left-0 top-0 bottom-0 w-80 max-w-[90vw] bg-gray-800 z-50 overflow-y-auto"
+                  style={{ display: isMobile ? "block" : "none" }}
                 >
-                  <option value="">{t("jobs.card.allTypes")}</option>
-                  {Array.from(new Set(jobs.map((job) => job.type))).map(
-                    (type) => (
-                      <option key={type} value={type}>
-                        {type}
-                      </option>
-                    )
-                  )}
-                </select>
-              </div>
-
-              {/* Schedule */}
-              <div>
-                <h3 className="text-lg font-semibold text-white mb-4">
-                  {t("jobs.card.schedule")}
-                </h3>
-                <select
-                  value={filters.schedule}
-                  onChange={(e) =>
-                    handleFilterChange("schedule", e.target.value)
-                  }
-                  className="w-full px-3 py-2 bg-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                >
-                  <option value="">{t("jobs.card.allSchedules")}</option>
-                  {Array.from(new Set(jobs.map((job) => job.schedule))).map(
-                    (schedule) => (
-                      <option key={schedule} value={schedule}>
-                        {schedule}
-                      </option>
-                    )
-                  )}
-                </select>
-              </div>
-            </div>
-          </motion.div>
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <h2 className="text-xl font-bold text-white">Фильтры</h2>
+                      <button
+                        onClick={() => setIsMobileFiltersOpen(false)}
+                        className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-gray-700 transition-colors"
+                      >
+                        <XIcon className="w-6 h-6" />
+                      </button>
+                    </div>
+                    <FilterContent />
+                    <div className="mt-6 pt-6 border-t border-gray-700 bottom-0 bg-gray-800 -mx-6 px-6">
+                      <button
+                        onClick={() => setIsMobileFiltersOpen(false)}
+                        className="w-full px-4 py-4 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors font-medium text-base"
+                      >
+                        Применить фильтры
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
 
           {/* Main Content */}
-          <div className="flex-grow">
+          <div className="flex-1 min-w-0">
             {/* Sort and View Options */}
-            <div className="bg-gray-800 rounded-lg p-4 mb-6">
-              <div className="flex items-center justify-between">
-                {" "}
-                {/* Главный контейнер с выравниванием по краям */}
-                {/* Левая группа - первые два фильтра */}
-                <div className="flex items-center gap-4">
+            <div className="bg-gray-800 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
+                {/* Left group - Sort and Time filters */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
                   {/* Sort Dropdown */}
-                  <div className="relative">
+                  <div className="relative min-w-[200px]">
                     <select
                       value={filters.sortBy}
                       onChange={(e) =>
                         handleFilterChange("sortBy", e.target.value)
                       }
-                      className="appearance-none bg-gray-700 text-white px-4 py-2 pr-8 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="appearance-none bg-gray-700 text-white px-3 sm:px-4 py-2 pr-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full text-sm sm:text-base cursor-pointer"
                     >
                       {sortOptions.map((option) => (
                         <option key={option.value} value={option.value}>
@@ -635,17 +700,17 @@ const Jobs = () => {
                         </option>
                       ))}
                     </select>
-                    <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none" />
+                    <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
                   </div>
 
                   {/* Time Frame Dropdown */}
-                  <div className="relative">
+                  <div className="relative min-w-[180px]">
                     <select
                       value={filters.timeFrame}
                       onChange={(e) =>
                         handleFilterChange("timeFrame", e.target.value)
                       }
-                      className="appearance-none bg-gray-700 text-white px-4 py-2 pr-8 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="appearance-none bg-gray-700 text-white px-3 sm:px-4 py-2 pr-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full text-sm sm:text-base cursor-pointer"
                     >
                       {timeFrameOptions.map((option) => (
                         <option key={option.value} value={option.value}>
@@ -653,11 +718,12 @@ const Jobs = () => {
                         </option>
                       ))}
                     </select>
-                    <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none" />
+                    <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
                   </div>
                 </div>
-                {/* Правый фильтр (Per Page) */}
-                <div className="relative">
+
+                {/* Right filter (Per Page) */}
+                <div className="relative min-w-[140px]">
                   <select
                     value={filters.perPage}
                     onChange={(e) =>
@@ -666,7 +732,7 @@ const Jobs = () => {
                         Number.parseInt(e.target.value)
                       )
                     }
-                    className="appearance-none bg-gray-700 text-white px-4 py-2 pr-8 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="appearance-none bg-gray-700 text-white px-3 sm:px-4 py-2 pr-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full text-sm sm:text-base cursor-pointer"
                   >
                     {perPageOptions.map((option) => (
                       <option key={option.value} value={option.value}>
@@ -674,16 +740,16 @@ const Jobs = () => {
                       </option>
                     ))}
                   </select>
-                  <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none" />
+                  <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
             </div>
 
             {/* Active Filters */}
             {activeFilters.length > 0 && (
-              <div className="bg-gray-800 rounded-lg p-4 mb-6">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-lg font-semibold text-white">
+              <div className="bg-gray-800 rounded-lg p-4 mb-4 sm:mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-base sm:text-lg font-semibold text-white">
                     {t("jobs.activeFilters.title")}
                   </h3>
                   <button
@@ -709,15 +775,17 @@ const Jobs = () => {
                   {activeFilters.map((filter, index) => (
                     <div
                       key={index}
-                      className="flex items-center gap-2 bg-gray-700 text-white px-3 py-1 rounded-full"
+                      className="flex items-center gap-2 bg-gray-700 text-white px-3 py-1 rounded-full text-sm"
                     >
                       {filter.icon}
-                      <span>{filter.label}</span>
+                      <span className="truncate max-w-[200px] sm:max-w-none">
+                        {filter.label}
+                      </span>
                       <button
                         onClick={() =>
                           clearFilter(filter.type as keyof FilterState)
                         }
-                        className="text-gray-400 hover:text-white"
+                        className="text-gray-400 hover:text-white flex-shrink-0"
                       >
                         <XIcon className="w-4 h-4" />
                       </button>
@@ -751,7 +819,7 @@ const Jobs = () => {
 
             {/* Jobs List */}
             {!isLoading && !error && (
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 {paginatedJobs.map((job) => {
                   const jobApplied = hasApplied(job.id);
                   const companyId =
@@ -762,44 +830,49 @@ const Jobs = () => {
                   return (
                     <div
                       key={job.id}
-                      className={`bg-gray-800 rounded-lg p-6 hover:bg-gray-750 transition-colors ${
+                      className={`bg-gray-800 rounded-lg p-4 sm:p-6 hover:bg-gray-750 transition-colors overflow-hidden ${
                         jobApplied ? "opacity-70" : ""
                       }`}
                     >
-                      <div className="flex justify-between items-start">
-                        <div className="flex items-center gap-4">
+                      <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                        <div className="flex items-start gap-3 sm:gap-4 flex-1">
                           {/* Company Logo */}
                           {job.company && (job.company as Company).logo ? (
                             <img
                               src={
                                 (job.company as Company).logo ||
                                 "/placeholder.svg?height=80&width=80" ||
+                                "/placeholder.svg" ||
+                                "/placeholder.svg" ||
+                                "/placeholder.svg" ||
+                                "/placeholder.svg" ||
+                                "/placeholder.svg" ||
                                 "/placeholder.svg"
                               }
                               alt={(job.company as Company).name}
-                              className="w-20 h-20 rounded-lg object-cover"
+                              className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg object-cover flex-shrink-0"
                               onError={() => handleImageError(job.id)}
                               loading="lazy"
                             />
                           ) : (
-                            <div className="w-20 h-20 bg-emerald-600 rounded-lg flex items-center justify-center text-white">
-                              <Building2 className="w-6 h-6" />
+                            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-emerald-600 rounded-lg flex items-center justify-center text-white flex-shrink-0">
+                              <Building2 className="w-6 h-6 sm:w-8 sm:h-8" />
                             </div>
                           )}
-                          <div>
-                            <h3 className="text-xl font-semibold text-white mb-2">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-lg sm:text-xl font-semibold text-white mb-2 break-words word-break">
                               {job.title}
                             </h3>
-                            <div className="flex items-center gap-4 text-gray-400">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-gray-400 text-sm sm:text-base">
                               <div className="flex items-center gap-2">
-                                <MapPinIcon className="w-4 h-4" />
-                                <span>
+                                <MapPinIcon className="w-4 h-4 flex-shrink-0" />
+                                <span className="truncate max-w-[200px] sm:max-w-none">
                                   {job.city || t("jobs.card.noLocation")} •{" "}
                                   {job.metro || t("jobs.card.noMetro")}
                                 </span>
                               </div>
                               <div className="flex items-center gap-2">
-                                <BriefcaseIcon className="w-4 h-4" />
+                                <BriefcaseIcon className="w-4 h-4 flex-shrink-0" />
                                 <span>
                                   {job.experiense || 0}{" "}
                                   {t("jobs.card.yearsExperience")}
@@ -808,37 +881,48 @@ const Jobs = () => {
                             </div>
                           </div>
                         </div>
-                        {jobApplied ? (
-                          <div className="flex items-center gap-2 text-emerald-400 px-4 py-2 bg-emerald-600/20 rounded-lg">
-                            <CheckCircle className="w-5 h-5" />
-                            <span>{t("jobs.card.appliedAlready")}</span>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => {
-                              setSelectedJobId(job.id);
-                              setSelectedCompanyId(companyId.toString());
-                              setShowApplicationModal(true);
-                            }}
-                            className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors"
-                          >
-                            {t("home.cta.vacapply")}
-                          </button>
-                        )}
+
+                        {/* Apply Button */}
+                        <div className="w-full sm:w-auto flex-shrink-0">
+                          {jobApplied ? (
+                            <div className="flex items-center justify-center gap-2 text-emerald-400 px-4 py-2 bg-emerald-600/20 rounded-lg w-full sm:w-auto">
+                              <CheckCircle className="w-5 h-5" />
+                              <span className="text-sm sm:text-base">
+                                {t("jobs.card.appliedAlready")}
+                              </span>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                setSelectedJobId(job.id);
+                                setSelectedCompanyId(companyId.toString());
+                                setShowApplicationModal(true);
+                              }}
+                              className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors text-sm sm:text-base"
+                            >
+                              {t("home.cta.vacapply")}
+                            </button>
+                          )}
+                        </div>
                       </div>
 
                       <div className="mt-4">
-                        <p className="text-gray-300">
-                          <h4 className="text-lg font-semibold text-white mb-2">
-                            {t("jobs.card.description")}
-                          </h4>
+                        <h4 className="text-base sm:text-lg font-semibold text-white mb-2">
+                          {t("jobs.card.description")}
+                        </h4>
+                        <p className="text-gray-300 text-sm sm:text-base">
                           {expandedDescriptions[job.id]
                             ? job.description
-                            : `${job.description.substring(0, 350)}${
-                                job.description.length > 350 ? "..." : ""
+                            : `${job.description.substring(
+                                0,
+                                isMobile ? 200 : 350
+                              )}${
+                                job.description.length > (isMobile ? 200 : 350)
+                                  ? "..."
+                                  : ""
                               }`}
                         </p>
-                        {job.description.length > 350 && (
+                        {job.description.length > (isMobile ? 200 : 350) && (
                           <button
                             onClick={() => toggleDescription(job.id)}
                             className="mt-2 text-emerald-400 hover:text-emerald-300 text-sm"
@@ -851,29 +935,39 @@ const Jobs = () => {
 
                         {job.requirements && job.requirements.length > 0 && (
                           <div className="mt-4">
-                            <h4 className="text-lg font-semibold text-white mb-2">
+                            <h4 className="text-base sm:text-lg font-semibold text-white mb-2">
                               {t("jobs.card.requirements")}
                             </h4>
                             <div className="flex flex-wrap gap-2">
                               {job.requirements
                                 .split(", ")
+                                .slice(0, isMobile ? 4 : 8)
                                 .map((req, index) => (
                                   <span
                                     key={index}
-                                    className="px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-sm"
+                                    className="px-2 sm:px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-xs sm:text-sm"
                                   >
                                     {req.trim()}
                                   </span>
                                 ))}
+                              {job.requirements.split(", ").length >
+                                (isMobile ? 4 : 8) && (
+                                <span className="px-2 sm:px-3 py-1 bg-gray-700 text-gray-400 rounded-full text-xs sm:text-sm">
+                                  +
+                                  {job.requirements.split(", ").length -
+                                    (isMobile ? 4 : 8)}{" "}
+                                  еще
+                                </span>
+                              )}
                             </div>
                           </div>
                         )}
                       </div>
 
-                      <div className="mt-4 flex items-center justify-between">
-                        <div className="flex items-center gap-4 text-gray-400">
+                      <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-gray-400 text-sm sm:text-base">
                           <div className="flex items-center gap-2">
-                            <BanknoteIcon className="w-4 h-4" />
+                            <BanknoteIcon className="w-4 h-4 flex-shrink-0" />
                             <span>
                               {formatSalary(job.salary_min || 0)} -{" "}
                               {formatSalary(job.salary_max || 0)}{" "}
@@ -881,16 +975,15 @@ const Jobs = () => {
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <ClockIcon className="w-4 h-4" />
-                            <span>
+                            <ClockIcon className="w-4 h-4 flex-shrink-0" />
+                            <span className="truncate">
                               {job.type || "Full-time"} •{" "}
                               {job.schedule || "Standard"}
                             </span>
                           </div>
                         </div>
-                        {/* Пример использования в карточке вакансии */}
-                        <div className="flex items-center gap-2 text-gray-500">
-                          <CalendarIcon className="w-4 h-4" />
+                        <div className="flex items-center gap-2 text-gray-500 text-sm">
+                          <CalendarIcon className="w-4 h-4 flex-shrink-0" />
                           <span>
                             {t("jobs.card.posted")}{" "}
                             {formatDate(job.created_at, t)}
@@ -905,38 +998,48 @@ const Jobs = () => {
 
             {/* Pagination */}
             {!isLoading && !error && paginatedJobs.length > 0 && (
-              <div className="flex justify-center mt-8">
-                <nav className="flex items-center gap-2">
+              <div className="flex justify-center mt-6 sm:mt-8">
+                <nav className="flex items-center gap-1 sm:gap-2">
                   <button
                     onClick={() =>
                       setCurrentPage((prev) => Math.max(prev - 1, 1))
                     }
                     disabled={currentPage === 1}
-                    className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 sm:px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
                   >
                     {t("jobs.pagination.previous")}
                   </button>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                    (page) => (
-                      <button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`px-4 py-2 rounded-lg transition-colors ${
-                          page === currentPage
-                            ? "bg-emerald-600 text-white"
-                            : "bg-gray-800 text-white hover:bg-gray-700"
-                        }`}
-                      >
-                        {page}
-                      </button>
+
+                  {/* Mobile: Show only current page and total */}
+                  {isMobile ? (
+                    <span className="px-3 py-2 text-gray-400 text-sm">
+                      {currentPage} / {totalPages}
+                    </span>
+                  ) : (
+                    /* Desktop: Show all pages */
+                    Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                      (page) => (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`px-4 py-2 rounded-lg transition-colors ${
+                            page === currentPage
+                              ? "bg-emerald-600 text-white"
+                              : "bg-gray-800 text-white hover:bg-gray-700"
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      )
                     )
                   )}
+
                   <button
                     onClick={() =>
                       setCurrentPage((prev) => Math.min(prev + 1, totalPages))
                     }
                     disabled={currentPage === totalPages}
-                    className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 sm:px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
                   >
                     {t("jobs.pagination.next")}
                   </button>
@@ -975,6 +1078,16 @@ const Jobs = () => {
           </div>
         </div>
       </div>
+
+      {/* Floating Filter Button for Mobile */}
+      {isMobile && !isMobileFiltersOpen && (
+        <button
+          onClick={() => setIsMobileFiltersOpen(true)}
+          className="fixed bottom-6 right-6 z-30 w-14 h-14 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full shadow-lg flex items-center justify-center transition-colors"
+        >
+          <FilterIcon className="w-6 h-6" />
+        </button>
+      )}
 
       {/* Application Modal */}
       {showApplicationModal && selectedJobId && (

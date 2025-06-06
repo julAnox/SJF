@@ -40,3 +40,6 @@ html {
 .scroll-mt-24 {
   scroll-margin-top: 6rem;
 }
+.swipe-indicator {
+  z-index: 50;
+}

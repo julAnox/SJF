@@ -1,10 +1,11 @@
 "use client";
 
 import type React from "react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../contexts/AuthContext";
+import { useSwipeable } from "react-swipeable";
 import {
   Search,
   MessagesSquare,
@@ -28,6 +29,8 @@ import {
   X,
   GraduationCap,
   Bell,
+  ArrowLeft,
+  ChevronLeft,
 } from "lucide-react";
 import {
   jobsApi,
@@ -104,6 +107,82 @@ const Chat = () => {
   const [uploadedFiles, setUploadedFiles] = useState<
     { file: File; preview: string; type: string }[]
   >([]);
+
+  const [isMobile, setIsMobile] = useState(false);
+  const [isVerySmall, setIsVerySmall] = useState(false);
+  const [showChatList, setShowChatList] = useState(true);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [isSwipeActive, setIsSwipeActive] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 768;
+      const verySmall = window.innerWidth < 420;
+      setIsMobile(mobile);
+      setIsVerySmall(verySmall);
+
+      if (mobile) {
+        setShowChatList(!selectedChat);
+      } else {
+        setShowChatList(true);
+      }
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, [selectedChat]);
+
+  const resetSwipeState = useCallback(() => {
+    setSwipeOffset(0);
+    setIsSwipeActive(false);
+  }, []);
+
+  const swipeHandlers = useSwipeable({
+    onSwipeStart: (eventData) => {
+      if (isMobile && selectedChat && !showChatList) {
+        setIsSwipeActive(true);
+      }
+    },
+    onSwiping: (eventData) => {
+      if (isMobile && selectedChat && !showChatList && isSwipeActive) {
+        if (eventData.deltaX > 0) {
+          const offset = Math.min(eventData.deltaX, window.innerWidth * 0.8);
+          setSwipeOffset(offset);
+        }
+      }
+    },
+    onSwipedRight: (eventData) => {
+      if (isMobile && selectedChat && !showChatList && isSwipeActive) {
+        if (eventData.deltaX > window.innerWidth * 0.3) {
+          handleBackToChats();
+        }
+        resetSwipeState();
+      }
+    },
+    onSwipedLeft: resetSwipeState,
+    onSwiped: resetSwipeState,
+    trackMouse: false,
+    trackTouch: true,
+    preventScrollOnSwipe: true,
+    delta: 10,
+  });
+
+  const handleChatSelect = (chatId: string) => {
+    setSelectedChat(chatId);
+    if (isMobile) {
+      setShowChatList(false);
+    }
+  };
+
+  const handleBackToChats = useCallback(() => {
+    if (isMobile) {
+      resetSwipeState();
+      setSelectedChat(null);
+      setShowChatList(true);
+      navigate("/chat");
+    }
+  }, [isMobile, navigate, resetSwipeState]);
 
   useEffect(() => {
     if (!isAuthenticated && !isLoading) {
@@ -572,7 +651,7 @@ const Chat = () => {
 
       const chatMessages = await messagesService.getByChatId(selectedChat);
       console.log(
-        `[${new Date().toISOString()}] 📨 Got ${
+        `[${new Date().toISOString()}]  Got ${
           chatMessages.length
         } messages for chat ${selectedChat}`
       );
@@ -612,7 +691,7 @@ const Chat = () => {
 
         if (hasChanges) {
           console.log(
-            `[${new Date().toISOString()}] 🔄 Messages content changed, updating...`
+            `[${new Date().toISOString()}]  Messages content changed, updating...`
           );
           setMessages(transformedMessages);
         }
@@ -620,7 +699,7 @@ const Chat = () => {
 
       await markMessagesAsRead(selectedChat);
     } catch (error) {
-      console.error("❌ Error fetching messages:", error);
+      console.error("Error fetching messages:", error);
     }
   };
 
@@ -1116,25 +1195,47 @@ Specialization: ${resume.specialization || "Not provided"}
       if (isFromCurrentUser && user?.role === "company") {
         return (
           <div className="space-y-2">
-            <div className="text-sm text-emerald-200 font-medium flex items-center gap-1">
-              <Briefcase className="w-4 h-4" />
+            <div
+              className={`${
+                isVerySmall ? "text-xs" : "text-sm"
+              } text-emerald-200 font-medium flex items-center gap-1`}
+            >
+              <Briefcase className={`${isVerySmall ? "w-3 h-3" : "w-4 h-4"}`} />
               Вы отправили отклик на резюме: {currentChat?.jobTitle || "Резюме"}
             </div>
             <div className="bg-emerald-700/30 rounded-lg p-3 border-l-4 border-emerald-500">
-              <p className="leading-relaxed break-words">{message.content}</p>
+              <p
+                className={`leading-relaxed break-words ${
+                  isVerySmall ? "text-xs" : "text-sm"
+                }`}
+              >
+                {message.content}
+              </p>
             </div>
           </div>
         );
       } else if (!isFromCurrentUser && user?.role === "student") {
         return (
           <div className="space-y-2">
-            <div className="text-sm text-blue-200 font-medium flex items-center gap-1">
-              <GraduationCap className="w-4 h-4" />
+            <div
+              className={`${
+                isVerySmall ? "text-xs" : "text-sm"
+              } text-blue-200 font-medium flex items-center gap-1`}
+            >
+              <GraduationCap
+                className={`${isVerySmall ? "w-3 h-3" : "w-4 h-4"}`}
+              />
               На ваше резюме откликнулись:{" "}
               {currentChat?.companyName || "Компания"}
             </div>
             <div className="bg-gray-700/50 rounded-lg p-3 border-l-4 border-blue-500">
-              <p className="leading-relaxed break-words">{message.content}</p>
+              <p
+                className={`leading-relaxed break-words ${
+                  isVerySmall ? "text-xs" : "text-sm"
+                }`}
+              >
+                {message.content}
+              </p>
             </div>
           </div>
         );
@@ -1150,7 +1251,9 @@ Specialization: ${resume.specialization || "Not provided"}
             <img
               src={imageUrl || "/placeholder.svg"}
               alt={message.metadata.fileName || "Image"}
-              className="rounded-md max-w-full max-h-64 object-contain cursor-pointer"
+              className={`rounded-md max-w-full object-contain cursor-pointer ${
+                isVerySmall ? "max-h-40" : "max-h-64"
+              }`}
               onClick={() => {
                 window.open(imageUrl, "_blank");
               }}
@@ -1166,7 +1269,11 @@ Specialization: ${resume.specialization || "Not provided"}
                   window.open(imageUrl, "_blank");
                 }}
               >
-                <Download className="w-5 h-5 text-white" />
+                <Download
+                  className={`${
+                    isVerySmall ? "w-4 h-4" : "w-5 h-5"
+                  } text-white`}
+                />
               </button>
             </div>
           </div>
@@ -1197,24 +1304,40 @@ Specialization: ${resume.specialization || "Not provided"}
 
       return (
         <div className="flex flex-col mb-3">
-          <div className="flex items-center gap-2 bg-gray-800/30 p-3 rounded-lg hover:bg-gray-700/30 transition-colors">
+          <div
+            className={`flex items-center gap-2 bg-gray-800/30 rounded-lg hover:bg-gray-700/30 transition-colors ${
+              isVerySmall ? "p-2" : "p-3"
+            }`}
+          >
             <div
-              className={`w-8 h-8 flex items-center justify-center rounded-lg bg-gray-700/50 ${iconColor}`}
+              className={`flex items-center justify-center rounded-lg bg-gray-700/50 ${iconColor} ${
+                isVerySmall ? "w-6 h-6" : "w-8 h-8"
+              }`}
             >
-              <File className="w-5 h-5" />
+              <File className={`${isVerySmall ? "w-3 h-3" : "w-5 h-5"}`} />
             </div>
             <div className="flex-1 overflow-hidden">
-              <span className="block truncate text-sm font-medium">
+              <span
+                className={`block truncate font-medium ${
+                  isVerySmall ? "text-xs" : "text-sm"
+                }`}
+              >
                 {fileName}
               </span>
               {message.metadata.fileSize && (
-                <span className="text-xs text-gray-400">
+                <span
+                  className={`text-gray-400 ${
+                    isVerySmall ? "text-xs" : "text-xs"
+                  }`}
+                >
                   {(message.metadata.fileSize / 1024).toFixed(1)} KB
                 </span>
               )}
             </div>
             <button
-              className="p-2 bg-gray-700/50 hover:bg-emerald-500/30 rounded transition-colors"
+              className={`bg-gray-700/50 hover:bg-emerald-500/30 rounded transition-colors ${
+                isVerySmall ? "p-1" : "p-2"
+              }`}
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
@@ -1239,54 +1362,94 @@ Specialization: ${resume.specialization || "Not provided"}
                 }
               }}
             >
-              <Download className="w-4 h-4 text-white" />
+              <Download
+                className={`text-white ${isVerySmall ? "w-3 h-3" : "w-4 h-4"}`}
+              />
             </button>
           </div>
-          <div className="text-xs text-gray-400 mt-1 ml-1">
+          <div
+            className={`text-gray-400 mt-1 ml-1 ${
+              isVerySmall ? "text-xs" : "text-xs"
+            }`}
+          >
             Click to download
           </div>
         </div>
       );
     } else if (message.type === "resume") {
       return (
-        <div className="flex items-center justify-between gap-2 mb-2 bg-gray-800/30 p-2 rounded">
+        <div
+          className={`flex items-center justify-between gap-2 mb-2 bg-gray-800/30 rounded ${
+            isVerySmall ? "p-2" : "p-2"
+          }`}
+        >
           <div className="flex items-center gap-2">
-            <FileText className="w-5 h-5" />
-            <span>{t("chat.messages.resume")}</span>
+            <FileText className={`${isVerySmall ? "w-4 h-4" : "w-5 h-5"}`} />
+            <span className={`${isVerySmall ? "text-xs" : "text-sm"}`}>
+              {t("chat.messages.resume")}
+            </span>
           </div>
           <button
             onClick={() => handleDownloadResume(message)}
             className="p-1 hover:bg-emerald-500/20 rounded transition-colors"
             title="Download Resume"
           >
-            <Download className="w-4 h-4" />
+            <Download className={`${isVerySmall ? "w-3 h-3" : "w-4 h-4"}`} />
           </button>
         </div>
       );
     } else if (message.type === "coverLetter") {
       return (
         <div className="border border-gray-800/30 rounded-lg overflow-hidden">
-          <div className="flex items-center gap-2 bg-gray-800/30 p-3 border-b border-gray-800/20">
-            <FileText className="w-5 h-5 flex-shrink-0" />
-            <span className="font-medium truncate">
+          <div
+            className={`flex items-center gap-2 bg-gray-800/30 border-b border-gray-800/20 ${
+              isVerySmall ? "p-2" : "p-3"
+            }`}
+          >
+            <FileText
+              className={`flex-shrink-0 ${isVerySmall ? "w-4 h-4" : "w-5 h-5"}`}
+            />
+            <span
+              className={`font-medium truncate ${
+                isVerySmall ? "text-xs" : "text-sm"
+              }`}
+            >
               {t("chat.messages.coverLetter")}
             </span>
           </div>
-          <div className="whitespace-pre-wrap text-sm p-4 bg-gray-900/10">
+          <div
+            className={`whitespace-pre-wrap bg-gray-900/10 ${
+              isVerySmall ? "text-xs p-2" : "text-sm p-4"
+            }`}
+          >
             {message.content}
           </div>
         </div>
       );
     } else if (message.type === "jobOffer") {
       return (
-        <div className="flex items-center gap-2 mb-2 bg-gray-800/30 p-2 rounded">
-          <Briefcase className="w-5 h-5" />
-          <span>{t("chat.messages.jobOffer")}</span>
+        <div
+          className={`flex items-center gap-2 mb-2 bg-gray-800/30 rounded ${
+            isVerySmall ? "p-2" : "p-2"
+          }`}
+        >
+          <Briefcase className={`${isVerySmall ? "w-4 h-4" : "w-5 h-5"}`} />
+          <span className={`${isVerySmall ? "text-xs" : "text-sm"}`}>
+            {t("chat.messages.jobOffer")}
+          </span>
         </div>
       );
     }
 
-    return <p className="leading-relaxed break-words">{message.content}</p>;
+    return (
+      <p
+        className={`leading-relaxed break-words ${
+          isVerySmall ? "text-xs" : "text-sm"
+        }`}
+      >
+        {message.content}
+      </p>
+    );
   };
 
   const filteredChats = chats.filter(
@@ -1303,45 +1466,77 @@ Specialization: ${resume.specialization || "Not provided"}
 
   return (
     <div
-      className="fixed inset-0 pt-20 bg-gray-900 flex"
+      className="fixed inset-0 pt-16 sm:pt-20 bg-gray-900 flex"
       onClick={() => {
         if (showEmojiPicker) {
           setShowEmojiPicker(false);
         }
       }}
     >
-      {/* Chat List */}
-      <div className="w-96 border-r border-gray-700 bg-gray-900 flex flex-col">
-        <div className="p-4 border-b border-gray-700">
+      {/* Chat List - Mobile responsive */}
+      <div
+        className={`${
+          isMobile ? (showChatList ? "w-full" : "hidden") : "w-80 sm:w-96"
+        } border-r border-gray-700 bg-gray-900 flex flex-col`}
+      >
+        <div
+          className={`border-b border-gray-700 mt-6 sm:mt-0 ${
+            isVerySmall ? "p-2" : "p-3 sm:p-4"
+          }`}
+        >
           <div className="relative">
             <input
               type="text"
               placeholder={t("chat.search")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-2 pl-10 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className={`w-full bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
+                isVerySmall
+                  ? "px-2 py-1.5 pl-7 text-sm"
+                  : "px-3 sm:px-4 py-2 pl-8 sm:pl-10 text-sm sm:text-base"
+              }`}
             />
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Search
+              className={`absolute top-1/2 transform -translate-y-1/2 text-gray-400 ${
+                isVerySmall
+                  ? "left-2 w-3 h-3"
+                  : "left-2 sm:left-3 w-4 h-4 sm:w-5 sm:h-5"
+              }`}
+            />
           </div>
         </div>
 
         <div className="flex-1 overflow-y-auto">
           {isLoading && !selectedChat ? (
             <div className="flex justify-center items-center h-32">
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-emerald-500"></div>
+              <div
+                className={`animate-spin rounded-full border-t-2 border-b-2 border-emerald-500 ${
+                  isVerySmall ? "h-5 w-5" : "h-6 w-6 sm:h-8 sm:w-8"
+                }`}
+              ></div>
             </div>
           ) : filteredChats.length > 0 ? (
             filteredChats.map((chat) => (
               <div
                 key={chat.id}
-                onClick={() => setSelectedChat(chat.id)}
-                className={`p-4 hover:bg-gray-800 cursor-pointer transition-colors ${
+                onClick={() => handleChatSelect(chat.id)}
+                className={`hover:bg-gray-800 cursor-pointer transition-colors ${
                   selectedChat === chat.id ? "bg-gray-800" : ""
-                } ${chat.isPinned ? "border-l-4 border-emerald-500" : ""}`}
+                } ${chat.isPinned ? "border-l-4 border-emerald-500" : ""} ${
+                  isVerySmall ? "p-2" : "p-3 sm:p-4"
+                }`}
               >
-                <div className="flex items-center gap-4">
+                <div
+                  className={`flex items-center ${
+                    isVerySmall ? "gap-2" : "gap-3 sm:gap-4"
+                  }`}
+                >
                   <div className="relative">
-                    <div className="w-12 h-12 rounded-full bg-red-500 flex items-center justify-center text-white font-bold overflow-hidden">
+                    <div
+                      className={`rounded-full bg-red-500 flex items-center justify-center text-white font-bold overflow-hidden ${
+                        isVerySmall ? "w-8 h-8" : "w-10 h-10 sm:w-12 sm:h-12"
+                      }`}
+                    >
                       {chat.avatarUrl ? (
                         <img
                           src={chat.avatarUrl || "/placeholder.svg"}
@@ -1356,64 +1551,112 @@ Specialization: ${resume.specialization || "Not provided"}
                           }}
                         />
                       ) : (
-                        <span>{chat.companyName.charAt(0)}</span>
+                        <span
+                          className={`${
+                            isVerySmall ? "text-xs" : "text-sm sm:text-base"
+                          }`}
+                        >
+                          {chat.companyName.charAt(0)}
+                        </span>
                       )}
                     </div>
                     {chat.unreadCount > 0 && (
-                      <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg">
+                      <div
+                        className={`absolute -top-1 -right-1 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg ${
+                          isVerySmall ? "w-4 h-4" : "w-4 h-4 sm:w-5 sm:h-5"
+                        }`}
+                      >
                         {chat.unreadCount > 99 ? "99+" : chat.unreadCount}
                       </div>
                     )}
                   </div>
-                  <div className="flex-grow">
+                  <div className="flex-grow min-w-0">
                     <div className="flex justify-between items-start">
-                      <h3 className="font-semibold text-white flex items-center gap-2">
-                        {chat.companyName}
+                      <h3
+                        className={`font-semibold text-white flex items-center gap-2 truncate ${
+                          isVerySmall ? "text-xs" : "text-sm sm:text-base"
+                        }`}
+                      >
+                        <span className="truncate">{chat.companyName}</span>
                         {user?.role === "student" ? (
                           <Briefcase
-                            className="w-4 h-4 text-blue-400"
+                            className={`text-blue-400 flex-shrink-0 ${
+                              isVerySmall ? "w-3 h-3" : "w-3 h-3 sm:w-4 sm:h-4"
+                            }`}
                             title="Company"
                           />
                         ) : (
                           <GraduationCap
-                            className="w-4 h-4 text-emerald-400"
+                            className={`text-emerald-400 flex-shrink-0 ${
+                              isVerySmall ? "w-3 h-3" : "w-3 h-3 sm:w-4 sm:h-4"
+                            }`}
                             title="Student"
                           />
                         )}
                       </h3>
-                      <span className="text-xs text-gray-400">
+                      <span
+                        className={`text-gray-400 flex-shrink-0 ml-2 ${
+                          isVerySmall ? "text-xs" : "text-xs"
+                        }`}
+                      >
                         {formatTime(chat.timestamp)}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-400 truncate">
+                    <p
+                      className={`text-gray-400 truncate ${
+                        isVerySmall ? "text-xs" : "text-xs sm:text-sm"
+                      }`}
+                    >
                       {chat.jobTitle}
                     </p>
                     {chat.lastMessage && (
-                      <p className="text-xs text-gray-500 truncate mt-1">
+                      <p
+                        className={`text-gray-500 truncate mt-1 ${
+                          isVerySmall ? "text-xs" : "text-xs"
+                        }`}
+                      >
                         {chat.lastMessage}
                       </p>
                     )}
                   </div>
                   <button
                     onClick={(e) => togglePinChat(chat.id, e)}
-                    className={`p-1 rounded-full ${
+                    className={`p-1 rounded-full flex-shrink-0 transition-colors ${
                       chat.isPinned
                         ? "text-emerald-500 hover:text-emerald-400"
                         : "text-gray-500 hover:text-gray-400"
-                    } transition-colors`}
+                    }`}
                     title={chat.isPinned ? "Unpin chat" : "Pin chat"}
                   >
-                    <Pin className="w-4 h-4" />
+                    <Pin
+                      className={`${
+                        isVerySmall ? "w-3 h-3" : "w-3 h-3 sm:w-4 sm:h-4"
+                      }`}
+                    />
                   </button>
                 </div>
               </div>
             ))
           ) : (
-            <div className="flex flex-col items-center justify-center h-32 text-gray-400">
-              <p>No chats</p>
+            <div
+              className={`flex flex-col items-center justify-center h-32 text-gray-400 ${
+                isVerySmall ? "px-2" : "px-4"
+              }`}
+            >
+              <p
+                className={`${
+                  isVerySmall ? "text-xs" : "text-sm sm:text-base"
+                }`}
+              >
+                No chats
+              </p>
               <button
                 onClick={() => navigate("/jobs")}
-                className="mt-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors text-sm"
+                className={`mt-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors ${
+                  isVerySmall
+                    ? "px-2 py-1 text-xs"
+                    : "px-3 sm:px-4 py-2 text-xs sm:text-sm"
+                }`}
               >
                 Browse Jobs
               </button>
@@ -1422,101 +1665,200 @@ Specialization: ${resume.specialization || "Not provided"}
         </div>
       </div>
 
-      {/* Chat Area */}
+      {/* Chat Area - Mobile responsive */}
       {selectedChat ? (
-        <div className="flex-1 flex flex-col bg-gray-900">
-          {/* Chat Header */}
-          <div className="p-4 border-b border-gray-700 bg-gray-800 flex items-center justify-between">
-            {isLoading ? (
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-gray-700 animate-pulse"></div>
-                <div className="space-y-2">
-                  <div className="h-4 w-32 bg-gray-700 rounded animate-pulse"></div>
-                  <div className="h-3 w-24 bg-gray-700 rounded animate-pulse"></div>
+        <div
+          {...swipeHandlers}
+          className={`${
+            isMobile && showChatList ? "hidden" : "flex-1"
+          } flex flex-col bg-gray-900 relative overflow-hidden`}
+          style={{
+            transform:
+              isMobile && isSwipeActive && swipeOffset > 0
+                ? `translateX(${swipeOffset}px)`
+                : "none",
+            transition: isSwipeActive ? "none" : "transform 0.3s ease-out",
+          }}
+        >
+          {/* Swipe indicator */}
+          {isMobile && isSwipeActive && swipeOffset > 50 && (
+            <div className="absolute left-4 top-1/2 transform -translate-y-1/2 z-50 bg-gray-800 rounded-full p-3 shadow-lg">
+              <ChevronLeft className="w-6 h-6 text-emerald-400" />
+            </div>
+          )}
+          {/* Chat Header - Mobile responsive */}
+          <div
+            className={`border-b border-gray-700 bg-gray-800 flex items-center justify-between mt-6 sm:mt-1 ${
+              isVerySmall ? "p-2" : "p-3 sm:p-4"
+            }`}
+          >
+            <div
+              className={`flex items-center ${
+                isVerySmall ? "gap-2" : "gap-3 sm:gap-4"
+              }`}
+            >
+              {/* Mobile back button */}
+              {isMobile && (
+                <button
+                  onClick={handleBackToChats}
+                  className="p-1 text-gray-400 hover:text-white transition-colors"
+                >
+                  <ArrowLeft
+                    className={`${isVerySmall ? "w-4 h-4" : "w-5 h-5"}`}
+                  />
+                </button>
+              )}
+
+              {isLoading ? (
+                <div
+                  className={`flex items-center ${
+                    isVerySmall ? "gap-2" : "gap-3 sm:gap-4"
+                  }`}
+                >
+                  <div
+                    className={`rounded-full bg-gray-700 animate-pulse ${
+                      isVerySmall ? "w-6 h-6" : "w-8 h-8 sm:w-10 sm:h-10"
+                    }`}
+                  ></div>
+                  <div className="space-y-2">
+                    <div
+                      className={`bg-gray-700 rounded animate-pulse ${
+                        isVerySmall ? "h-2 w-16" : "h-3 sm:h-4 w-24 sm:w-32"
+                      }`}
+                    ></div>
+                    <div
+                      className={`bg-gray-700 rounded animate-pulse ${
+                        isVerySmall ? "h-2 w-12" : "h-2 sm:h-3 w-16 sm:w-24"
+                      }`}
+                    ></div>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center text-white font-bold overflow-hidden">
-                  {chats.find((c) => c.id === selectedChat)?.avatarUrl ? (
-                    <img
-                      src={
-                        chats.find((c) => c.id === selectedChat)?.avatarUrl ||
-                        "/placeholder.svg"
-                      }
-                      alt={
-                        chats.find((c) => c.id === selectedChat)?.companyName
-                      }
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        const chatName =
-                          chats.find((c) => c.id === selectedChat)
-                            ?.companyName || "User";
-                        (
-                          e.target as HTMLImageElement
-                        ).src = `https://ui-avatars.com/api/?name=${chatName.charAt(
-                          0
-                        )}&background=FF4500&color=fff`;
-                      }}
-                    />
-                  ) : (
-                    <span>
-                      {chats
-                        .find((c) => c.id === selectedChat)
-                        ?.companyName.charAt(0)}
-                    </span>
-                  )}
-                </div>
-                <div>
-                  <h2 className="font-semibold text-white flex items-center gap-2">
-                    {chats.find((c) => c.id === selectedChat)?.companyName}
-                    {user?.role === "student" ? (
-                      <Briefcase
-                        className="w-4 h-4 text-blue-400"
-                        title="Company"
+              ) : (
+                <>
+                  <div
+                    className={`rounded-full bg-red-500 flex items-center justify-center text-white font-bold overflow-hidden ${
+                      isVerySmall ? "w-6 h-6" : "w-8 h-8 sm:w-10 sm:h-10"
+                    }`}
+                  >
+                    {chats.find((c) => c.id === selectedChat)?.avatarUrl ? (
+                      <img
+                        src={
+                          chats.find((c) => c.id === selectedChat)?.avatarUrl ||
+                          "/placeholder.svg"
+                        }
+                        alt={
+                          chats.find((c) => c.id === selectedChat)?.companyName
+                        }
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const chatName =
+                            chats.find((c) => c.id === selectedChat)
+                              ?.companyName || "User";
+                          (
+                            e.target as HTMLImageElement
+                          ).src = `https://ui-avatars.com/api/?name=${chatName.charAt(
+                            0
+                          )}&background=FF4500&color=fff`;
+                        }}
                       />
                     ) : (
-                      <GraduationCap
-                        className="w-4 h-4 text-emerald-400"
-                        title="Student"
-                      />
+                      <span
+                        className={`${isVerySmall ? "text-xs" : "text-sm"}`}
+                      >
+                        {chats
+                          .find((c) => c.id === selectedChat)
+                          ?.companyName.charAt(0)}
+                      </span>
                     )}
-                  </h2>
-                  <p className="text-sm text-gray-400">
-                    {chats.find((c) => c.id === selectedChat)?.jobTitle}
-                  </p>
-                </div>
-              </div>
-            )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h2
+                      className={`font-semibold text-white flex items-center gap-2 ${
+                        isVerySmall ? "text-xs" : "text-sm sm:text-base"
+                      }`}
+                    >
+                      <span className="truncate">
+                        {chats.find((c) => c.id === selectedChat)?.companyName}
+                      </span>
+                      {user?.role === "student" ? (
+                        <Briefcase
+                          className={`text-blue-400 flex-shrink-0 ${
+                            isVerySmall ? "w-3 h-3" : "w-3 h-3 sm:w-4 sm:h-4"
+                          }`}
+                          title="Company"
+                        />
+                      ) : (
+                        <GraduationCap
+                          className={`text-emerald-400 flex-shrink-0 ${
+                            isVerySmall ? "w-3 h-3" : "w-3 h-3 sm:w-4 sm:h-4"
+                          }`}
+                          title="Student"
+                        />
+                      )}
+                    </h2>
+                    <p
+                      className={`text-gray-400 truncate ${
+                        isVerySmall ? "text-xs" : "text-xs sm:text-sm"
+                      }`}
+                    >
+                      {chats.find((c) => c.id === selectedChat)?.jobTitle}
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
             <div className="relative">
               <button
                 onClick={() => setShowSettings(!showSettings)}
-                className="text-gray-400 hover:text-white transition-colors"
+                className="text-gray-400 hover:text-white transition-colors p-1"
               >
-                <MoreVertical className="w-6 h-6" />
+                <MoreVertical
+                  className={`${
+                    isVerySmall ? "w-4 h-4" : "w-5 h-5 sm:w-6 sm:h-6"
+                  }`}
+                />
               </button>
               {showSettings && (
-                <div className="absolute right-0 top-full mt-2 w-48 bg-gray-800 rounded-lg shadow-lg border border-gray-700 py-1 z-50">
+                <div
+                  className={`absolute right-0 top-full mt-2 bg-gray-800 rounded-lg shadow-lg border border-gray-700 py-1 z-50 ${
+                    isVerySmall ? "w-36" : "w-44 sm:w-48"
+                  }`}
+                >
                   <button
                     onClick={() => handleChatAction("delete")}
-                    className="w-full px-4 py-2 text-left text-gray-300 hover:bg-gray-700 flex items-center gap-2"
+                    className={`w-full text-left text-gray-300 hover:bg-gray-700 flex items-center gap-2 ${
+                      isVerySmall
+                        ? "px-2 py-1 text-xs"
+                        : "px-3 sm:px-4 py-2 text-sm"
+                    }`}
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2
+                      className={`${isVerySmall ? "w-3 h-3" : "w-4 h-4"}`}
+                    />
                     {t("chat.settings.delete")}
                   </button>
                   <button
                     onClick={() => handleChatAction("clear")}
-                    className="w-full px-4 py-2 text-left text-gray-300 hover:bg-gray-700 flex items-center gap-2"
+                    className={`w-full text-left text-gray-300 hover:bg-gray-700 flex items-center gap-2 ${
+                      isVerySmall
+                        ? "px-2 py-1 text-xs"
+                        : "px-3 sm:px-4 py-2 text-sm"
+                    }`}
                   >
-                    <XCircle className="w-4 h-4" />
+                    <XCircle
+                      className={`${isVerySmall ? "w-3 h-3" : "w-4 h-4"}`}
+                    />
                     {t("chat.settings.clear")}
                   </button>
-
                   <button
                     onClick={() => handleChatAction("block")}
-                    className="w-full px-4 py-2 text-left text-red-400 hover:bg-gray-700 flex items-center gap-2"
+                    className={`w-full text-left text-red-400 hover:bg-gray-700 flex items-center gap-2 ${
+                      isVerySmall
+                        ? "px-2 py-1 text-xs"
+                        : "px-3 sm:px-4 py-2 text-sm"
+                    }`}
                   >
-                    <Ban className="w-4 h-4" />
+                    <Ban className={`${isVerySmall ? "w-3 h-3" : "w-4 h-4"}`} />
                     {t("chat.settings.block")}
                   </button>
                 </div>
@@ -1524,22 +1866,45 @@ Specialization: ${resume.specialization || "Not provided"}
             </div>
           </div>
 
-          {/* Messages */}
+          {/* Messages - Mobile responsive */}
           <div
             ref={messagesContainerRef}
-            className="flex-1 overflow-y-auto p-4 space-y-4 messages-container bg-gradient-to-b from-gray-900 to-gray-800"
+            className={`flex-1 overflow-y-auto messages-container bg-gradient-to-b from-gray-900 to-gray-800 ${
+              isVerySmall
+                ? "p-2 space-y-2"
+                : "p-3 sm:p-4 space-y-3 sm:space-y-4"
+            }`}
             onScroll={handleMessagesScroll}
           >
             {isLoading ? (
               <div className="flex justify-center items-center h-32">
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-emerald-500"></div>
+                <div
+                  className={`animate-spin rounded-full border-t-2 border-b-2 border-emerald-500 ${
+                    isVerySmall ? "h-5 w-5" : "h-6 w-6 sm:h-8 sm:w-8"
+                  }`}
+                ></div>
               </div>
             ) : groupedMessages.length > 0 ? (
               groupedMessages.map((group, groupIndex) => (
-                <div key={groupIndex} className="space-y-4">
+                <div
+                  key={groupIndex}
+                  className={`${
+                    isVerySmall ? "space-y-2" : "space-y-3 sm:space-y-4"
+                  }`}
+                >
                   <div className="flex justify-center">
-                    <div className="bg-gray-800 text-gray-300 text-xs px-3 py-1 rounded-full flex items-center shadow-md">
-                      <Clock className="w-3 h-3 mr-1" />
+                    <div
+                      className={`bg-gray-800 text-gray-300 rounded-full flex items-center shadow-md ${
+                        isVerySmall
+                          ? "text-xs px-2 py-0.5"
+                          : "text-xs px-2 sm:px-3 py-1"
+                      }`}
+                    >
+                      <Clock
+                        className={`mr-1 ${
+                          isVerySmall ? "w-2 h-2" : "w-3 h-3"
+                        }`}
+                      />
                       {formatDate(group.messages[0].timestamp)}
                     </div>
                   </div>
@@ -1554,29 +1919,49 @@ Specialization: ${resume.specialization || "Not provided"}
                       }`}
                     >
                       <div
-                        className={`max-w-[70%] rounded-lg p-4 shadow-md ${
+                        className={`rounded-lg shadow-md ${
                           message.type === "notification"
-                            ? "bg-transparent p-0 max-w-[90%]"
+                            ? "bg-transparent p-0 max-w-[95%] sm:max-w-[90%]"
                             : message.senderId === user?.id
                             ? "bg-emerald-600 text-white"
                             : "bg-gray-800 text-white"
+                        } ${
+                          isVerySmall
+                            ? "max-w-[90%] p-2"
+                            : "max-w-[85%] sm:max-w-[70%] p-3 sm:p-4"
                         }`}
                       >
                         {renderMessageContent(message)}
                         {message.type !== "notification" && (
                           <div className="flex justify-between items-center mt-1 gap-2">
-                            <span className="text-xs opacity-75 block">
+                            <span
+                              className={`opacity-75 block ${
+                                isVerySmall ? "text-xs" : "text-xs"
+                              }`}
+                            >
                               {formatTime(message.timestamp)}
                             </span>
                             {message.senderId === user?.id && (
                               <div className="text-lg">
                                 {message.read ? (
                                   <div className="text-gray-900" title="Read">
-                                    <CheckCheck className="w-4 h-4" />
+                                    <CheckCheck
+                                      className={`${
+                                        isVerySmall
+                                          ? "w-3 h-3"
+                                          : "w-3 h-3 sm:w-4 sm:h-4"
+                                      }`}
+                                    />
                                   </div>
                                 ) : (
                                   <div className="text-gray-300" title="Sent">
-                                    <CheckCheck className="w-4 h-4" />
+                                    <CheckCheck
+                                      className={`${
+                                        isVerySmall
+                                          ? "w-3 h-3"
+                                          : "w-3 h-3 sm:w-4 sm:h-4"
+                                      }`}
+                                    />
                                   </div>
                                 )}
                               </div>
@@ -1590,30 +1975,56 @@ Specialization: ${resume.specialization || "Not provided"}
               ))
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                <MessagesSquare className="w-12 h-12 mb-2" />
-                <p>No messages yet</p>
+                <MessagesSquare
+                  className={`mb-2 ${
+                    isVerySmall ? "w-8 h-8" : "w-10 h-10 sm:w-12 sm:h-12"
+                  }`}
+                />
+                <p
+                  className={`${
+                    isVerySmall ? "text-xs" : "text-sm sm:text-base"
+                  }`}
+                >
+                  No messages yet
+                </p>
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Scroll to bottom button */}
+          {/* Scroll to bottom button - Mobile responsive */}
           {showScrollButton && (
             <div
-              className="fixed bottom-24 right-8 bg-gray-900 text-white rounded-full p-3 shadow-lg cursor-pointer z-10 hover:bg-emerald-600 transition-colors"
+              className={`fixed bg-gray-900 text-white rounded-full shadow-lg cursor-pointer z-10 hover:bg-emerald-600 transition-colors ${
+                isVerySmall
+                  ? "bottom-16 right-2 p-2"
+                  : "bottom-20 sm:bottom-24 right-4 sm:right-8 p-2 sm:p-3"
+              }`}
               onClick={scrollToBottom}
             >
-              <ArrowDown className="w-5 h-5 text-white" />
+              <ArrowDown
+                className={`text-white ${
+                  isVerySmall ? "w-3 h-3" : "w-4 h-4 sm:w-5 sm:h-5"
+                }`}
+              />
             </div>
           )}
 
-          {/* File preview area */}
+          {/* File preview area - Mobile responsive */}
           {uploadedFiles.length > 0 && (
-            <div className="p-2 border-t border-gray-700 bg-gray-800 flex flex-wrap gap-2">
+            <div
+              className={`border-t border-gray-700 bg-gray-800 flex flex-wrap gap-2 ${
+                isVerySmall ? "p-1" : "p-2"
+              }`}
+            >
               {uploadedFiles.map((file, index) => (
                 <div key={index} className="relative group">
                   {ALLOWED_FILE_TYPES.images.includes(file.file.type) ? (
-                    <div className="w-16 h-16 rounded overflow-hidden">
+                    <div
+                      className={`rounded overflow-hidden ${
+                        isVerySmall ? "w-10 h-10" : "w-12 h-12 sm:w-16 sm:h-16"
+                      }`}
+                    >
                       <img
                         src={file.preview || "/placeholder.svg"}
                         alt={file.file.name}
@@ -1621,28 +2032,54 @@ Specialization: ${resume.specialization || "Not provided"}
                       />
                     </div>
                   ) : (
-                    <div className="w-16 h-16 rounded bg-gray-700 flex flex-col items-center justify-center p-1">
-                      <File className="w-6 h-6 text-gray-400" />
-                      <span className="text-xs text-gray-400 truncate w-full text-center">
-                        {file.file.name.substring(0, 10)}...
+                    <div
+                      className={`rounded bg-gray-700 flex flex-col items-center justify-center p-1 ${
+                        isVerySmall ? "w-10 h-10" : "w-12 h-12 sm:w-16 sm:h-16"
+                      }`}
+                    >
+                      <File
+                        className={`text-gray-400 ${
+                          isVerySmall ? "w-3 h-3" : "w-4 h-4 sm:w-6 sm:h-6"
+                        }`}
+                      />
+                      <span
+                        className={`text-gray-400 truncate w-full text-center ${
+                          isVerySmall ? "text-xs" : "text-xs"
+                        }`}
+                      >
+                        {file.file.name.substring(0, isVerySmall ? 4 : 6)}...
                       </span>
                     </div>
                   )}
                   <button
-                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={() => removeFile(index)}
                   >
-                    <X className="w-3 h-3" />
+                    <X
+                      className={`${
+                        isVerySmall ? "w-2 h-2" : "w-2 h-2 sm:w-3 sm:h-3"
+                      }`}
+                    />
                   </button>
                 </div>
               ))}
             </div>
           )}
 
-          {/* Message Input */}
+          {/* Message Input - Mobile responsive */}
           {chatStatus === "blocked" ? (
-            <div className="p-4 border-t border-gray-700 bg-gray-800 text-center">
-              <p className="text-gray-400">{t("chat.blocked")}</p>
+            <div
+              className={`border-t border-gray-700 bg-gray-800 text-center ${
+                isVerySmall ? "p-2" : "p-3 sm:p-4"
+              }`}
+            >
+              <p
+                className={`text-gray-400 ${
+                  isVerySmall ? "text-xs" : "text-sm sm:text-base"
+                }`}
+              >
+                {t("chat.blocked")}
+              </p>
               <button
                 onClick={async () => {
                   if (selectedChat) {
@@ -1650,21 +2087,41 @@ Specialization: ${resume.specialization || "Not provided"}
                     setChatStatus("active");
                   }
                 }}
-                className="mt-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors"
+                className={`mt-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors ${
+                  isVerySmall
+                    ? "px-2 py-1 text-xs"
+                    : "px-3 sm:px-4 py-2 text-sm"
+                }`}
               >
                 {t("chat.unblock")}
               </button>
             </div>
           ) : chatStatus === "closed" ? (
-            <div className="p-4 border-t border-gray-700 bg-gray-800 text-center">
-              <p className="text-gray-400">{t("chat.closed")}</p>
+            <div
+              className={`border-t border-gray-700 bg-gray-800 text-center ${
+                isVerySmall ? "p-2" : "p-3 sm:p-4"
+              }`}
+            >
+              <p
+                className={`text-gray-400 ${
+                  isVerySmall ? "text-xs" : "text-sm sm:text-base"
+                }`}
+              >
+                {t("chat.closed")}
+              </p>
             </div>
           ) : (
             <form
               onSubmit={handleSendMessage}
-              className="p-4 border-t border-gray-700 bg-gray-800"
+              className={`border-t border-gray-700 bg-gray-800 ${
+                isVerySmall ? "p-2" : "p-3 sm:p-4"
+              }`}
             >
-              <div className="flex items-center gap-2">
+              <div
+                className={`flex items-center ${
+                  isVerySmall ? "gap-1" : "gap-2"
+                }`}
+              >
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -1676,10 +2133,16 @@ Specialization: ${resume.specialization || "Not provided"}
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="p-2 text-gray-400 hover:text-emerald-400 transition-colors"
+                  className={`text-gray-400 hover:text-emerald-400 transition-colors ${
+                    isVerySmall ? "p-1" : "p-2"
+                  }`}
                   title="Attach file"
                 >
-                  <Paperclip className="w-5 h-5" />
+                  <Paperclip
+                    className={`${
+                      isVerySmall ? "w-3 h-3" : "w-4 h-4 sm:w-5 sm:h-5"
+                    }`}
+                  />
                 </button>
 
                 <input
@@ -1693,10 +2156,16 @@ Specialization: ${resume.specialization || "Not provided"}
                 <button
                   type="button"
                   onClick={() => imageInputRef.current?.click()}
-                  className="p-2 text-gray-400 hover:text-emerald-400 transition-colors"
+                  className={`text-gray-400 hover:text-emerald-400 transition-colors ${
+                    isVerySmall ? "p-1" : "p-2"
+                  }`}
                   title="Add image"
                 >
-                  <ImageIcon className="w-5 h-5" />
+                  <ImageIcon
+                    className={`${
+                      isVerySmall ? "w-3 h-3" : "w-4 h-4 sm:w-5 sm:h-5"
+                    }`}
+                  />
                 </button>
 
                 <div className="relative">
@@ -1706,15 +2175,23 @@ Specialization: ${resume.specialization || "Not provided"}
                       e.stopPropagation();
                       setShowEmojiPicker(!showEmojiPicker);
                     }}
-                    className="p-2 text-gray-400 hover:text-emerald-400 transition-colors"
+                    className={`text-gray-400 hover:text-emerald-400 transition-colors ${
+                      isVerySmall ? "p-1" : "p-2"
+                    }`}
                     title="Add emoji"
                   >
-                    <Smile className="w-5 h-5" />
+                    <Smile
+                      className={`${
+                        isVerySmall ? "w-3 h-3" : "w-4 h-4 sm:w-5 sm:h-5"
+                      }`}
+                    />
                   </button>
 
                   {showEmojiPicker && (
                     <div
-                      className="absolute bottom-12 left-0 z-50"
+                      className={`absolute z-50 ${
+                        isVerySmall ? "bottom-8 left-0" : "bottom-12 left-0"
+                      }`}
                       onClick={(e) => e.stopPropagation()}
                     >
                       <EmojiPicker onEmojiClick={handleEmojiSelect} />
@@ -1727,25 +2204,49 @@ Specialization: ${resume.specialization || "Not provided"}
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   placeholder={t("chat.input.placeholder")}
-                  className="flex-grow px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className={`flex-grow bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
+                    isVerySmall
+                      ? "px-2 py-1.5 text-xs"
+                      : "px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base"
+                  }`}
                 />
                 <button
                   type="submit"
-                  className="px-4 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors flex items-center gap-2"
+                  className={`bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors flex items-center gap-2 ${
+                    isVerySmall ? "px-2 py-1.5" : "px-3 sm:px-4 py-2 sm:py-3"
+                  }`}
                 >
-                  <Send className="w-4 h-4" />
-                  {t("chat.input.send")}
+                  <Send className={`${isVerySmall ? "w-3 h-3" : "w-4 h-4"}`} />
+                  {!isVerySmall && (
+                    <span className="hidden sm:inline">
+                      {t("chat.input.send")}
+                    </span>
+                  )}
                 </button>
               </div>
             </form>
           )}
         </div>
       ) : (
-        <div className="flex-grow flex items-center justify-center text-gray-400 bg-gradient-to-b from-gray-900 to-gray-800">
-          <div className="text-center">
-            <MessagesSquare className="w-16 h-16 mx-auto mb-4 opacity-50" />
-            <p className="text-xl">No messages yet</p>
-            <p className="mt-2 text-sm">Select a chat</p>
+        <div
+          className={`${
+            isMobile && showChatList ? "hidden" : "flex-grow"
+          } flex items-center justify-center text-gray-400 bg-gradient-to-b from-gray-900 to-gray-800`}
+        >
+          <div className={`text-center ${isVerySmall ? "px-2" : "px-4"}`}>
+            <MessagesSquare
+              className={`mx-auto mb-4 opacity-50 ${
+                isVerySmall ? "w-10 h-10" : "w-12 h-12 sm:w-16 sm:h-16"
+              }`}
+            />
+            <p
+              className={`${isVerySmall ? "text-base" : "text-lg sm:text-xl"}`}
+            >
+              No messages yet
+            </p>
+            <p className={`mt-2 ${isVerySmall ? "text-xs" : "text-sm"}`}>
+              Select a chat
+            </p>
           </div>
         </div>
       )}
