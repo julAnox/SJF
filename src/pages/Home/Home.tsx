@@ -352,6 +352,7 @@ const Home = () => {
     setCommentsPerPage(value);
     localStorage.setItem("commentsPerPage", value.toString());
   };
+  console.log("Hello!");
 
   const getPageNumbers = () => {
     const pages = [];
