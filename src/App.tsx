@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route } from "react-router-dom";
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -40,7 +40,7 @@ function App() {
   }, []);
 
   return (
-    <BrowserRouter>
+    <HashRouter>
       <AuthProvider>
         <div className="min-h-screen bg-slate-50 flex flex-col">
           <Header />
@@ -61,7 +61,7 @@ function App() {
           <Footer />
         </div>
       </AuthProvider>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
 

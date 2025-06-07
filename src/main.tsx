@@ -5,7 +5,6 @@ import "./index.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    console.log("React mounted!")
     <App />
   </StrictMode>
 );
