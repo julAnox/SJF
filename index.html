@@ -5,19 +5,57 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="format-detection" content="telephone=no" />
     <link
       href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
     <title>Student's Job</title>
     <link rel="icon" type="image/png" href="/src/assets/logo.png" />
+    <style>
+      /* iOS Safari fixes */
+      * {
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+      }
+
+      html,
+      body {
+        height: 100%;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      #root {
+        min-height: 100vh;
+        min-height: -webkit-fill-available;
+      }
+
+      /* Prevent zoom on input focus */
+      input,
+      select,
+      textarea {
+        font-size: 16px !important;
+      }
+
+      /* Fix for iOS viewport units */
+      @supports (-webkit-touch-callout: none) {
+        .min-h-screen {
+          min-height: -webkit-fill-available;
+        }
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <script src="https://unpkg.com/core-js-bundle@3.6.5/minified.js"></script>
   </body>
 </html>

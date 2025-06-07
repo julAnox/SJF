@@ -2,10 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
+/* iOS Safari compatibility fixes */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  min-height: -webkit-fill-available;
   font-family: "JetBrains Mono", monospace;
   line-height: 1.5;
   font-weight: 400;
@@ -16,6 +23,40 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background-color: rgb(17 24 39);
   color: rgb(243 244 246);
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+html {
+  scroll-behavior: smooth;
+  height: 100%;
+  height: -webkit-fill-available;
+}
+
+#root {
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+}
+
+/* Prevent zoom on input focus for iOS */
+input,
+select,
+textarea,
+button {
+  font-size: 16px !important;
+  -webkit-appearance: none;
+  border-radius: 0;
+}
+
+/* Fix for iOS viewport units */
+@supports (-webkit-touch-callout: none) {
+  .min-h-screen {
+    min-height: -webkit-fill-available !important;
+  }
+
+  .h-screen {
+    height: -webkit-fill-available !important;
+  }
 }
 
 @keyframes slideDown {
@@ -33,13 +74,51 @@ body {
   animation: slideDown 0.5s ease-out;
 }
 
-html {
-  scroll-behavior: smooth;
-}
-
 .scroll-mt-24 {
   scroll-margin-top: 6rem;
 }
+
 .swipe-indicator {
   z-index: 50;
+}
+
+/* Additional iOS fixes */
+button {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Fix for iOS Safari address bar */
+.hero {
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+}
+
+/* Smooth scrolling for iOS */
+.overflow-y-auto {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Fix for iOS input styling */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="tel"],
+input[type="url"],
+input[type="number"],
+textarea,
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  border-radius: 0.5rem;
+}
+
+/* Fix for iOS button styling */
+button {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
 }
