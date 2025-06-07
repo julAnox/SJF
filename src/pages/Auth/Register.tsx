@@ -88,7 +88,7 @@ const Register = () => {
 
     try {
       await signup(formData.email, formData.password1, formData.role);
-      navigate("/profile");
+      navigate("/chat"); ///было профиль
     } catch (error: any) {
       console.error("Registration error:", error);
       setApiError(

@@ -3,7 +3,15 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { LogIn, Mail, Lock, Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
+import {
+  LogIn,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  Loader2,
+  AlertCircle,
+} from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 
 const Login = () => {
@@ -23,7 +31,7 @@ const Login = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate("/profile");
+      navigate("/chat"); ///было профиль
     }
   }, [isAuthenticated, navigate]);
 
@@ -68,13 +76,13 @@ const Login = () => {
 
     try {
       await login(formData.email, formData.password);
-      navigate("/profile");
+      navigate("/chat"); ///было профиль;
     } catch (error: any) {
       console.error("Login error:", error);
       setApiError(
-        error.response?.data?.detail || 
-        error.response?.data?.non_field_errors?.[0] || 
-        "Failed to login. Please check your credentials and try again."
+        error.response?.data?.detail ||
+          error.response?.data?.non_field_errors?.[0] ||
+          "Failed to login. Please check your credentials and try again."
       );
     } finally {
       setIsLoading(false);

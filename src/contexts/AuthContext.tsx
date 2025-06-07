@@ -153,7 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(transformedUser);
       localStorage.setItem("user", JSON.stringify(transformedUser));
 
-      navigate("/profile");
+      navigate("/chat"); ///было профиль
 
       return transformedUser;
     } catch (error: any) {
