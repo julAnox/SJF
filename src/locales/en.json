@@ -1,0 +1,1203 @@
+{
+  "nav": {
+    "jobs": "Jobs",
+    "resumes": "Resumes",
+    "chat": "Chat",
+    "auction": "Auction",
+    "about": "About",
+    "login": "Log In",
+    "signup": "Sign Up"
+  },
+  "chat": {
+    "title": "Messages",
+    "search": "Search conversations...",
+    "empty": "No messages yet",
+    "settings": {
+      "title": "Chat Settings",
+      "delete": "Delete Chat",
+      "clear": "Clear History",
+      "share": "Share Contact",
+      "close": "Close Chat",
+      "block": "Block User",
+      "confirmDelete": "Are you sure you want to delete this chat?",
+      "confirmClear": "Are you sure you want to clear chat history?",
+      "confirmBlock": "Are you sure you want to block this user?"
+    },
+    "messages": {
+      "resume": "Attached Resume",
+      "coverLetter": "Cover Letter",
+      "jobOffer": "Job Offer"
+    },
+    "input": {
+      "placeholder": "Type a message...",
+      "send": "Send"
+    },
+    "share": {
+      "title": "Share Contact",
+      "search": "Search chats..."
+    },
+    "blocked": "This chat is blocked",
+    "unblock": "Unblock Chat",
+    "closed": "This chat is closed"
+  },
+  "applications": {
+    "modal": {
+      "title": "Apply for Position",
+      "selectResume": "Choose Resume",
+      "profileResumes": "From Your Profile",
+      "uploadResume": "Or Upload New Resume",
+      "dropResume": "Drop DOC/DOCX file here or click to browse",
+      "coverLetter": "Cover Letter",
+      "coverLetterPlaceholder": "Write a brief cover letter explaining why you're a good fit for this position...",
+      "coverLetterHint": "Tell the employer why you're interested in this role",
+      "submit": "Submit Application",
+      "submitting": "Submitting...",
+      "cancel": "Cancel",
+      "resumeLabel": "Resume",
+      "myResume": "My Resume",
+      "resumeUploadedAsDocument": "Resume uploaded as document",
+      "resumeDefaultTitle": "Resume",
+      "yearsExperience": "{{years}} years experience",
+      "noResumesFound": "No resumes found in your profile",
+      "createResumeInProfile": "Create Resume in Profile",
+      "success": {
+        "title": "Application Submitted!",
+        "description": "Your application has been sent to {{companyName}}. You'll be redirected to the chat to communicate with the employer."
+      },
+      "errors": {
+        "failedToLoadResumes": "Failed to load resumes",
+        "selectResumeAndCoverLetter": "Please select a resume and provide a cover letter",
+        "mustBeLoggedIn": "You must be logged in to apply",
+        "failedToSubmit": "Failed to submit application. Please try again."
+      }
+    }
+  },
+  "resumeContact": {
+    "title": "Contact {{firstName}} {{lastName}}",
+    "defaultStudent": "Student",
+    "defaultResume": "Resume",
+    "messageLabel": "Your Message",
+    "messagePlaceholder": "Write your message to the student here...",
+    "messageHint": "This message will start a new conversation with the student.",
+    "cancel": "Cancel",
+    "sendMessage": "Send Message",
+    "sending": "Sending...",
+    "success": {
+      "title": "Message Sent Successfully!",
+      "description": "Your message has been sent to {{firstName}}. You'll be redirected to the chat shortly.",
+      "messageSent": "Message sent successfully!"
+    },
+    "errors": {
+      "notAuthenticated": "User is not authenticated. Please log in.",
+      "onlyCompanies": "Only companies can contact students about resumes.",
+      "noCompanyProfile": "No company profile found. Please create a company profile first.",
+      "failedToSend": "Failed to send message. Please try again."
+    },
+    "errorDetails": "Error Details (for debugging)"
+  },
+  "profileModal": {
+    "title": "Profile Details",
+    "contact": {
+      "email": "email@example.com",
+      "phone": "+1 234 567 890",
+      "website": "portfolio.com",
+      "linkedin": "linkedin.com/in/profile",
+      "github": "github.com/profile"
+    },
+    "skills": {
+      "title": "Skills"
+    },
+    "languages": {
+      "title": "Languages"
+    },
+    "experience": {
+      "title": "Experience",
+      "current": "Current Position",
+      "previous": "Previous Position"
+    },
+    "education": {
+      "title": "Education",
+      "graduated": "Graduated"
+    },
+    "additional": {
+      "title": "Additional Information",
+      "experience": "{{years}} years experience",
+      "expectedSalary": "Expected"
+    }
+  },
+  "resumeViewModal": {
+    "defaultTitle": "Resume",
+    "created": "Created",
+    "notSpecified": "Not specified",
+    "close": "Close",
+    "personalInfo": {
+      "title": "Personal Information"
+    },
+    "education": {
+      "title": "Education"
+    },
+    "experience": {
+      "title": "Work Experience",
+      "noExperience": "No work experience specified"
+    },
+    "skills": {
+      "title": "Skills",
+      "noSkills": "No skills specified"
+    },
+    "contacts": {
+      "title": "Additional Contacts",
+      "noContacts": "No additional contacts specified"
+    }
+  },
+  "offers": {
+    "modal": {
+      "title": "Send Job Offer",
+      "position": "Position",
+      "company": "Company",
+      "salary": "Salary Range",
+      "description": "Job Description",
+      "requirements": "Requirements",
+      "benefits": "Benefits",
+      "submit": "Send Offer",
+      "cancel": "Cancel"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Welcome Back",
+      "subtitle": "Sign in to your account",
+      "email": "Email Address",
+      "password": "Password",
+      "rememberMe": "Remember me",
+      "forgotPassword": "Forgot password?",
+      "signIn": "Sign In",
+      "noAccount": "Don't have an account?",
+      "signUp": "Sign up",
+      "emailRequired": "Email is required",
+      "emailInvalid": "Email is invalid",
+      "passwordRequired": "Password is required",
+      "passwordLength": "Password must be at least 6 characters"
+    },
+    "register": {
+      "title": "Create Account",
+      "subtitle": "Join our community of students and employers",
+      "email": "Email Address",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "terms": "I agree to the",
+      "termsLink": "Terms of Service",
+      "and": "and",
+      "privacyLink": "Privacy Policy",
+      "createAccount": "Create Account",
+      "haveAccount": "Already have an account?",
+      "signIn": "Sign in",
+      "emailRequired": "Email is required",
+      "emailInvalid": "Email is invalid",
+      "passwordRequired": "Password is required",
+      "passwordLength": "Password must be at least 6 characters",
+      "signupFailed": "Failed to create account. Please try again.",
+      "confirmPasswordRequired": "Please confirm your password",
+      "passwordsNoMatch": "Passwords do not match"
+    }
+  },
+  "about": {
+    "issues": {
+      "notif": "You need to be logged in to submit an issue"
+    },
+    "hero": {
+      "title": "About Student's Job",
+      "subtitle": "Connecting talented students with their dream careers"
+    },
+    "mission": {
+      "title": "Our Mission",
+      "description": "We're on a mission to revolutionize how students find employment opportunities. By connecting talented students with forward-thinking employers, we're building bridges to successful careers and helping shape the future workforce."
+    },
+    "stats": {
+      "users_stats": "Registered users",
+      "companies": "Registered companies",
+      "dailyVisits": "Daily visits",
+      "fiveStarReviews": "Five star reviews"
+    },
+    "values": {
+      "title": "Our Values",
+      "innovation": {
+        "title": "Innovation",
+        "description": "Constantly improving our platform to provide the best job search experience"
+      },
+      "integrity": {
+        "title": "Integrity",
+        "description": "Maintaining honest and transparent relationships with all our users"
+      },
+      "inclusion": {
+        "title": "Inclusion",
+        "description": "Creating equal opportunities for students from all backgrounds"
+      },
+      "impact": {
+        "title": "Impact",
+        "description": "Making a real difference in students' career journeys"
+      }
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "subtitle": "Find answers to common questions about our platform",
+      "questions": [
+        {
+          "question": "How do I create an account?",
+          "answer": "Creating an account is simple! Click the 'Sign Up' button in the top right corner, enter your email address, create a password, and you're ready to go."
+        },
+        {
+          "question": "Is the service free for students?",
+          "answer": "Yes! Student's Job is completely free for students. We believe in providing equal access to career opportunities for all students."
+        },
+        {
+          "question": "How do I apply for jobs?",
+          "answer": "Once you've created an account and completed your profile, you can browse available positions and apply directly through our platform with just a few clicks."
+        },
+        {
+          "question": "Can I use the platform if I'm still studying?",
+          "answer": "We especially encourage current students to use our platform to find internships and part-time positions that fit their schedule."
+        },
+        {
+          "question": "How do I contact employers?",
+          "answer": "After applying for a position, you can communicate with employers through our built-in messaging system. This ensures professional and tracked communication."
+        },
+        {
+          "question": "What types of jobs are available?",
+          "answer": "We offer a wide range of opportunities including internships, part-time positions, project-based work, and full-time roles suitable for students and recent graduates."
+        }
+      ]
+    },
+    "recentQuestions": {
+      "title": "Recent Questions",
+      "viewAll": "View All Questions"
+    },
+    "bugReport": {
+      "title": "Report an Issue",
+      "subtitle": "Help us improve by reporting any problems you encounter",
+      "form": {
+        "name": "Your Name",
+        "email": "Email Address",
+        "issue": "Describe the Issue",
+        "submit": "Submit Report",
+        "success": "Thank you for your report! We'll look into it.",
+        "namePlaceholder": "Enter your name",
+        "emailPlaceholder": "Enter your email",
+        "issuePlaceholder": "Please describe the problem in detail"
+      }
+    }
+  },
+  "home": {
+    "hero": {
+      "title": "Find Your Dream Student Job",
+      "subtitle": "Connect with top employers looking for talented students",
+      "searchPlaceholder": "Search for jobs, skills, or companies...",
+      "search": "Search"
+    },
+    "stats": {
+      "jobs": "Active Jobs",
+      "students": "Students",
+      "companies": "Partner Companies"
+    },
+    "features": {
+      "jobs": {
+        "title": "Latest Job Opportunities",
+        "description": "Discover internships and part-time positions tailored for students"
+      },
+      "students": {
+        "title": "Student Community",
+        "description": "Join a growing network of ambitious students and professionals"
+      },
+      "opportunities": {
+        "title": "Career Growth",
+        "description": "Access exclusive opportunities and advance your career path"
+      },
+      "education": {
+        "title": "Skill Development",
+        "description": "Learn from industry experts and enhance your professional skills"
+      }
+    },
+    "howItWorks": {
+      "title": "How It Works",
+      "step1": {
+        "title": "Create Your Profile",
+        "description": "Build your professional profile and showcase your skills"
+      },
+      "step2": {
+        "title": "Explore Opportunities",
+        "description": "Browse through thousands of job listings and find your perfect match"
+      },
+      "step3": {
+        "title": "Apply and Connect",
+        "description": "Apply to positions and connect directly with employers"
+      }
+    },
+    "companies": {
+      "title": "Trusted by Leading Companies",
+      "subtitle": "Join thousands of companies who trust us with their hiring needs"
+    },
+    "testimonials": {
+      "title": "Success Stories",
+      "testimonial1": "Found my first internship through Student's Job. The platform made it incredibly easy to connect with employers.",
+      "testimonial2": "The quality of job opportunities here is outstanding. I've built valuable connections for my career.",
+      "testimonial3": "Student's Job helped me land my dream position. The process was smooth and professional.",
+      "author1": {
+        "name": "Alex Johnson",
+        "role": "Software Engineering Intern"
+      },
+      "author2": {
+        "name": "Sarah Williams",
+        "role": "Marketing Assistant"
+      },
+      "author3": {
+        "name": "Michael Chen",
+        "role": "Data Analyst"
+      }
+    },
+    "cta": {
+      "title": "Ready to Start Your Career Journey?",
+      "description": "Join thousands of students who have found their perfect job opportunity",
+      "button": "Get Started Now",
+      "studre": "Student And Companies Reviews",
+      "sharestu": "Share Your Experience",
+      "logintorewiew": "Login to Review",
+      "cancelreview": "Cancel",
+      "commentsperpage": "Comments per page:",
+      "rate": "Rating",
+      "youreview": "Your Review",
+      "submitreview": "Submit Review",
+      "shareyourexp": "Share your experience with Student's Job",
+      "log": "Logout",
+      "track": "Track our latest improvements and bug fixes",
+      "showless": "Show Less",
+      "emailauto": "Email is automatically filled from your account",
+      "accounttype": "Account Type",
+      "accounttypest": "Student",
+      "accounttypecp": "Company",
+      "searchforjobs": "Search for jobs...",
+      "searchforjobsfilters": "Filters",
+      "filterslocation": "Location",
+      "filterscity": "City",
+      "filterscityinput": "Enter city name",
+      "filtersmetro": "Metro",
+      "filtersmetroinput": "Enter metro station",
+      "filtersexp": "Experience",
+      "filtersyears": "Years",
+      "vacapply": "Apply now",
+      "filterscurrency": "Currency",
+      "filterscurrencyinput": "Enter currency (e.g. USD)",
+      "filterssalary": "Salary",
+      "do": "to"
+    }
+  },
+  "footer": {
+    "description": "Connecting talented students with their dream jobs. Building bridges to successful careers.",
+    "mainNavigation": "Main Navigation",
+    "jobs": "Jobs",
+    "resumes": "Resumes",
+    "chat": "Chat",
+    "auction": "Auction",
+    "aboutSections1": "About Us",
+    "aboutSections2": "Help & Support",
+    "mission": "Our Mission",
+    "values": "Our Values",
+    "innovation": "Innovation",
+    "integrity": "Integrity",
+    "inclusion": "Inclusion",
+    "faq": "FAQ",
+    "bugReport": "Report a Bug",
+    "recentQuestions": "Recent Questions",
+    "stats": "Statistics",
+    "companies": "Companies",
+    "forStudents": "For Students",
+    "myProfile": "My Profile",
+    "myResumes": "My Resumes",
+    "appliedJobs": "Applied Jobs",
+    "jobAlerts": "Job Alerts",
+    "careerTips": "Career Tips",
+    "forEmployers": "For Employers",
+    "postJob": "Post a Job",
+    "browseResumes": "Browse Resumes",
+    "companyProfile": "Company Profile",
+    "pricing": "Pricing",
+    "recruitmentSolutions": "Recruitment Solutions",
+    "newsletter": "Newsletter",
+    "newsletterDescription": "Stay updated with the latest job opportunities and career insights.",
+    "emailPlaceholder": "Enter your email",
+    "subscribe": "Subscribe",
+    "subscribing": "Sending",
+    "followUs": "Follow Us",
+    "rights": "All rights reserved."
+  },
+  "jobs": {
+    "search": {
+      "placeholder": "Search for jobs...",
+      "filters": "Filters"
+    },
+    "filters": {
+      "location": {
+        "title": "Location",
+        "city": "City",
+        "cityPlaceholder": "Enter city...",
+        "metro": "Metro Station",
+        "metroPlaceholder": "Enter metro station..."
+      },
+      "experience": {
+        "title": "Experience (years)",
+        "min": "Min",
+        "max": "Max"
+      },
+      "salary": {
+        "title": "Salary Range (₽)",
+        "min": "Min",
+        "max": "Max"
+      },
+      "employmentType": {
+        "title": "Employment Type",
+        "fulltime": "Full-time",
+        "parttime": "Part-time",
+        "contract": "Contract",
+        "temporary": "Temporary",
+        "remote": "Remote"
+      },
+      "schedule": {
+        "title": "Work Schedule",
+        "fullday": "Full day",
+        "flexiblehours": "Flexible hours",
+        "shiftwork": "Shift work",
+        "nightshifts": "Night shifts"
+      },
+      "sideWork": {
+        "title": "Side Work",
+        "onetimetask": "One-time task",
+        "parttime": "Part-time",
+        "atleast4hoursaday": "At least 4 hours a day",
+        "onweekends": "On weekends",
+        "intheevenings": "In the evenings"
+      }
+    },
+    "sort": {
+      "title": "Sort",
+      "relevance": "By relevance",
+      "date": "By date modified",
+      "salaryDesc": "By descending salary",
+      "salaryAsc": "By ascending salary"
+    },
+    "timeFrame": {
+      "title": "Time Frame",
+      "all": "All time",
+      "month": "This month",
+      "week": "This week",
+      "threeDays": "Last three days",
+      "day": "Last day"
+    },
+    "perPage": {
+      "vacancies": "vacancies"
+    },
+    "activeFilters": {
+      "title": "Active Filters",
+      "clearAll": "Clear all filters",
+      "noResults": "No jobs found matching your criteria",
+      "city": "City: {city}",
+      "metro": "Metro: {metro}",
+      "experience": "Experience: {years} years",
+      "salary": "Salary: up to ₽{salary}"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "card": {
+      "applyNow": "Apply Now",
+      "posted": "Posted",
+      "description": "Description",
+      "requirements": "Requirements",
+      "expand": "Expand",
+      "collapse": "Collapse",
+      "appliedAlready": "You've already applied",
+      "loading": "Loading jobs...",
+      "error": "Failed to load jobs. Please try again later.",
+      "retry": "Retry",
+      "noJobs": "No jobs found",
+      "adjustFilters": "Try adjusting your filters or search query",
+      "resetFilters": "Reset All Filters",
+      "noLocation": "No location",
+      "noMetro": "No metro",
+      "yearsExperience": "years experience",
+      "allTypes": "All Types",
+      "allSchedules": "All Schedules",
+      "mostRelevant": "Most Relevant",
+      "newest": "Newest",
+      "highestSalary": "Highest Salary",
+      "lowestSalary": "Lowest Salary",
+      "allTime": "All Time",
+      "pastMonth": "Past Month",
+      "pastWeek": "Past Week",
+      "past3Days": "Past 3 Days",
+      "past24Hours": "Past 24 Hours",
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "daysAgo": "{{days}} days ago",
+      "weeksAgo": "{{weeks}} weeks ago",
+      "monthsAgo": "{{months}} months ago",
+      "yearsAgo": "{{years}} years ago",
+      "type": "Type",
+      "schedule": "Schedule",
+      "clearAll": "Clear All"
+    }
+  },
+  "resumes": {
+    "search": {
+      "placeholder": "Search resumes...",
+      "filters": "Filters"
+    },
+    "filters": {
+      "gender": {
+        "title": "Gender",
+        "all": "All Genders"
+      },
+      "profession": {
+        "title": "Profession",
+        "all": "All Professions"
+      },
+      "experience": {
+        "title": "Experience",
+        "placeholder": "Enter experience"
+      },
+      "education": {
+        "title": "Education",
+        "all": "All Education Levels"
+      },
+      "institution": {
+        "title": "Institution",
+        "placeholder": "Enter institution name"
+      },
+      "graduationYear": {
+        "title": "Graduation Year",
+        "placeholder": "Enter graduation year"
+      },
+      "specialization": {
+        "title": "Specialization",
+        "placeholder": "Enter specialization"
+      },
+      "skills": {
+        "title": "Skills",
+        "placeholder": "Search for skills..."
+      }
+    },
+    "sort": {
+      "relevance": "Most Relevant",
+      "newest": "Newest",
+      "oldest": "Oldest",
+      "experienceDesc": "Most Experience",
+      "experienceAsc": "Least Experience"
+    },
+    "timeFrame": {
+      "all": "All Time",
+      "today": "Today",
+      "week": "This Week",
+      "month": "This Month"
+    },
+    "perPage": {
+      "resumes": "{{count}} Resumes"
+    },
+    "activeFilters": {
+      "title": "Active Filters",
+      "clearAll": "Clear All",
+      "gender": "Gender: {{gender}}",
+      "profession": "Profession: {{profession}}",
+      "education": "Education: {{education}}",
+      "experience": "Experience: {{experience}}",
+      "institution": "Institution: {{institution}}",
+      "graduationYear": "Graduation Year: {{year}}",
+      "specialization": "Specialization: {{specialization}}",
+      "skill": "Skill: {{skill}}"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "actions": {
+      "contact": "Contact",
+      "viewProfile": "View Profile"
+    },
+    "card": {
+      "profileAlt": "Profile",
+      "untitledResume": "Untitled Resume",
+      "notSpecified": "Not specified",
+      "alreadyContacted": "You've already contacted",
+      "experience": "Experience",
+      "education": "Education",
+      "specialization": "Specialization",
+      "noExperience": "No experience information provided",
+      "created": "Created"
+    },
+    "notifications": {
+      "resumeResponses": "Companies have responded to your resume: {{count}} compan{{count, plural, one {y} other {ies}}}"
+    },
+    "noResults": {
+      "message": "No resumes found matching your filters.",
+      "clearFilters": "Clear All Filters"
+    },
+    "errors": {
+      "failedToLoad": "Failed to load resumes. Please try again later.",
+      "onlyCompaniesCanContact": "Only companies can contact students about resumes.",
+      "tryAgain": "Try Again"
+    }
+  },
+  "auction": {
+    "title": "Top Companies, Jobs, Students Ranking",
+    "subtitle": "Objective top 5 companies, students, vacancies on the Student's Job platform based on user reviews and performance comparison indicators",
+    "loading": "Loading companies data...",
+    "tryAgain": "Try Again",
+    "evaluationCriteria": "Evaluation Criteria",
+    "noCompanies": "No companies found",
+    "detailedComparison": "Detailed Comparison",
+    "bestHighlighted": "Best indicators are highlighted in green",
+    "metric": "Metric",
+    "score": "Score",
+    "points": "points",
+    "reviews": "Review",
+    "noDescription": "No description provided",
+    "bestJobs": "Best Jobs from Top Companies",
+    "bestJobsDesc": "Most attractive offers from each company",
+    "from": "from",
+    "to": "up to",
+    "salaryNotSpecified": "Salary not specified",
+    "fullTime": "Full-time",
+    "yearsExperience": "years experience",
+    "bestIndicator": "Best indicator in category",
+    "topCandidates": "Top Candidates",
+    "topCandidatesDesc": "Independent of companies - the 5 best candidates",
+    "candidate": "Candidate",
+    "talentScore": "Talent Score",
+    "education": "Education",
+    "specialization": "Specialization",
+    "experience": "Experience",
+    "skills": "Skills",
+    "notSpecified": "Not specified",
+    "years": "years",
+    "rank": "Rank",
+    "company": "Company",
+    "overallScore": "Overall Score",
+    "userScore": "User Score",
+    "scale": "Scale",
+    "jobQuality": "Job Quality",
+    "digital": "Digital",
+    "job": "Job",
+    "salary": "Salary",
+    "location": "Location",
+    "type": "Type",
+    "portfolio": "Portfolio",
+    "any": "Any",
+    "notEnoughApplications": {
+      "title": "Not Enough Applications",
+      "description": "You need to apply to at least 3 positions before participating in the auction.",
+      "currentlyApplied": "Currently applied to: {count} positions"
+    },
+    "countdown": {
+      "title": "Auction Starting Soon",
+      "description": "Get ready to receive competitive offers from top companies!"
+    },
+    "stages": {
+      "salary": {
+        "name": "Salary",
+        "description": "Base salary bidding"
+      },
+      "equity": {
+        "name": "Equity",
+        "description": "Company equity percentage"
+      },
+      "benefits": {
+        "name": "Benefits",
+        "description": "Social benefits package"
+      },
+      "position": {
+        "name": "Position",
+        "description": "Job position and level"
+      }
+    },
+    "tutorial": {
+      "welcome": {
+        "title": "Welcome to Talent Auction",
+        "description": "Companies will compete for your talent through a 4-stage bidding process. Each stage focuses on a different aspect of the job offer."
+      },
+      "salary": {
+        "title": "Stage 1: Salary Bidding",
+        "description": "Companies will bid on your base salary. Each company has 10 seconds to make their offer, and the highest bid sets the bar for the next company."
+      },
+      "equity": {
+        "title": "Stage 2: Equity Offering",
+        "description": "Companies will offer equity percentages in their organization. This represents your ownership stake in the company."
+      },
+      "benefits": {
+        "title": "Stage 3: Benefits Package",
+        "description": "Companies will compete on benefits packages, including health insurance, vacation days, professional development, and other perks."
+      },
+      "position": {
+        "title": "Stage 4: Position Level",
+        "description": "Finally, companies will bid on your position level, from Junior to Head of Department, affecting your role and responsibilities."
+      },
+      "next": "Next",
+      "previous": "Previous",
+      "start": "Start Auction"
+    },
+    "timers": {
+      "stageTime": "Stage Time",
+      "companyTime": "Company Time"
+    },
+    "currentStage": "Current Stage",
+    "currentTurn": "Current Turn",
+    "bidHistory": "Bid History",
+    "enterBid": "Enter bid",
+    "bid": "Bid",
+    "results": {
+      "title": "Auction Results",
+      "noBid": "No bid",
+      "chooseOffer": "Choose Offer"
+    },
+    "positions": {
+      "junior": "Junior",
+      "middle": "Middle",
+      "senior": "Senior",
+      "lead": "Lead",
+      "head": "Head"
+    },
+    "errors": {
+      "failedToLoad": "Failed to load data. Please try again later."
+    },
+    "tabs": {
+      "companies": "Companies",
+      "jobs": "Best Jobs",
+      "resumes": "Top Resumes"
+    },
+    "metrics": {
+      "foundedYear": "Founded Year",
+      "size": "Company Size",
+      "industry": "Industry",
+      "website": "Website",
+      "notSpecified": "Not specified",
+      "available": "Available",
+      "notAvailable": "Not available"
+    },
+    "criteria": {
+      "userScore": "User Score",
+      "userScoreDesc": "Average rating based on student and employee reviews",
+      "experience": "Experience & Stability",
+      "experienceDesc": "Company founding year - an indicator of reliability and experience",
+      "scale": "Scale of Operations",
+      "scaleDesc": "Company size and number of employees",
+      "jobQuality": "Job Quality",
+      "jobQualityDesc": "Average level of salaries and working conditions",
+      "digitalPresence": "Digital Presence",
+      "digitalPresenceDesc": "Availability of corporate website and online activity",
+      "salaryLevel": "Salary Level",
+      "salaryLevelDesc": "Competitiveness of salary compared to market standards",
+      "companyRating": "Company Rating",
+      "companyRatingDesc": "Overall rating and reputation of the hiring company",
+      "jobRequirements": "Job Requirements",
+      "jobRequirementsDesc": "Clarity and reasonableness of job requirements",
+      "locationAppeal": "Location Appeal",
+      "locationAppealDesc": "Attractiveness and accessibility of job location",
+      "educationLevel": "Education Level",
+      "educationLevelDesc": "Academic qualifications and educational background",
+      "workExperience": "Work Experience",
+      "workExperienceDesc": "Professional experience and career progression",
+      "technicalSkills": "Technical Skills",
+      "technicalSkillsDesc": "Relevant technical and professional skills",
+      "portfolioQuality": "Portfolio Quality",
+      "portfolioQualityDesc": "Quality and relevance of projects and portfolio"
+    },
+    "calculations": {
+      "companies": {
+        "title": "Company Score Calculation Example",
+        "example": "Example: TechCorp with 4.5 user rating, founded 2010 (14 years), 500+ employees, $80k avg salary, has website",
+        "breakdown": "Score = (4.5 × 40%) + (3.5 × 25%) + (4.0 × 20%) + (4.0 × 10%) + (5.0 × 5%) = 4.2/5.0"
+      },
+      "jobs": {
+        "title": "Job Score Calculation Example",
+        "example": "Example: Senior Developer at TechCorp, $90k salary, 4.5 company rating, clear requirements, city center location",
+        "breakdown": "Score = (4.5 × 35%) + (4.5 × 30%) + (4.0 × 20%) + (3.5 × 15%) = 4.3/5.0"
+      },
+      "resumes": {
+        "title": "Resume Score Calculation Example",
+        "example": "Example: Master's degree, 5 years experience, 15 technical skills, portfolio with 10+ projects",
+        "breakdown": "Score = (4.5 × 25%) + (4.0 × 35%) + (3.8 × 25%) + (4.0 × 15%) = 4.1/5.0"
+      }
+    }
+  },
+  "profile": {
+    "personalInfo": {
+      "title": "Personal Information",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "email": "Email",
+      "username": "Username",
+      "dateOfBirth": "Date of Birth",
+      "phone": "Phone",
+      "country": "Country",
+      "region": "Region",
+      "district": "District",
+      "publishPhone": "Publish Phone Number",
+      "publicProfile": "Public Profile"
+    },
+    "placeholders": {
+      "firstName": "Enter your first name",
+      "lastName": "Enter your last name",
+      "email": "Enter your email",
+      "selectCountry": "Select a country",
+      "selectRegion": "Select a region",
+      "selectDistrict": "Select a district"
+    },
+    "buttons": {
+      "saveChanges": "Save Changes",
+      "view": "View",
+      "edit": "Edit",
+      "delete": "Delete",
+      "editCompany": "Edit Company",
+      "deleteCompany": "Delete Company",
+      "createCompany": "Create Company",
+      "viewEditDetails": "View & Edit Details",
+      "addNewJob": "Add New Job",
+      "editJob": "Edit Job",
+      "hideJob": "Hide Job",
+      "showJob": "Show Job",
+      "deleteJob": "Delete Job"
+    },
+    "resume": {
+      "title": "Your Resumes",
+      "noResumes": "You haven't created any resumes yet."
+    },
+    "company": {
+      "title": "Company Details",
+      "founded": "Founded",
+      "size": "Size",
+      "website": "Website",
+      "noCompany": "You haven't created a company yet."
+    },
+    "jobs": {
+      "title": "Job Listings",
+      "noJobs": "No job listings yet. Create your first job posting!",
+      "statusActive": "Active",
+      "statusHidden": "Hidden"
+    },
+    "notifications": {
+      "profileUpdated": "Profile updated successfully!",
+      "failedToUpdateProfile": "Failed to update profile. Please try again.",
+      "companyUpdated": "Company details updated successfully!",
+      "companyCreated": "Company created successfully!",
+      "failedToSaveCompany": "Failed to save company details. Please try again.",
+      "jobUpdated": "Job updated successfully!",
+      "jobCreated": "Job created successfully!",
+      "resumeCreated": "Resume created successfully!",
+      "companyDeleted": "Company deleted successfully!",
+      "jobDeleted": "Job deleted successfully!",
+      "resumeDeleted": "Resume deleted successfully!",
+      "jobActivated": "Job activated successfully!",
+      "jobHidden": "Job hidden successfully!",
+      "failedToUpdateJobStatus": "Failed to update job status. Please try again.",
+      "resumeUpdated": "Resume updated successfully",
+      "failedToLoadCompany": "Failed to load company data",
+      "failedToLoadJobs": "Failed to load job listings",
+      "failedToLoadResumes": "Failed to load resumes"
+    },
+    "deleteModals": {
+      "company": {
+        "title": "Delete Company",
+        "message": "Are you sure you want to delete \"{{name}}\"? This will also delete all associated job listings."
+      },
+      "job": {
+        "title": "Delete Job Listing",
+        "message": "Are you sure you want to delete the job listing \"{{title}}\"?"
+      },
+      "resume": {
+        "title": "Delete Resume",
+        "message": "Are you sure you want to delete the resume for \"{{title}}\"?"
+      }
+    },
+    "errors": {
+      "incorrectPassword": "Incorrect password"
+    },
+    "wizard": {
+      "title": "Resume Creation",
+      "step1": "Step 1 of 4",
+      "step2": "Step 2 of 4",
+      "step3": "Step 3 of 4",
+      "step4": "Step 4 of 4",
+      "next": "Next",
+      "back": "Back",
+      "finish": "Finish",
+      "personalInfo": {
+        "title": "Personal Information",
+        "name": "Name",
+        "surname": "Surname",
+        "email": "Email",
+        "dateOfBirth": "Date of Birth",
+        "country": "Country",
+        "city": "City",
+        "gender": "Gender",
+        "phone": "Phone",
+        "genderOptions": {
+          "male": "Male",
+          "female": "Female",
+          "other": "Other"
+        }
+      },
+      "experience": {
+        "title": "Work Experience",
+        "profession": "Profession",
+        "experience": "Work Experience",
+        "experiencePlaceholder": "Describe your work experience"
+      },
+      "education": {
+        "title": "Education",
+        "level": "Education Level",
+        "institution": "Educational Institution",
+        "graduationYear": "Graduation Year",
+        "specialization": "Specialization",
+        "levels": {
+          "highSchool": "High School",
+          "vocational": "Vocational",
+          "incompleteHigher": "Incomplete Higher",
+          "higher": "Higher",
+          "bachelor": "Bachelor's",
+          "master": "Master's",
+          "phd": "PhD",
+          "doctorOfSciences": "Doctor of Sciences"
+        }
+      },
+      "skills": {
+        "title": "Skills and Contacts",
+        "skills": "Skills",
+        "skillsPlaceholder": "Select your skills",
+        "contacts": "Contacts",
+        "contactsPlaceholder": "Specify your contact information"
+      }
+    }
+  },
+  "auctionModal": {
+    "notification": {
+      "title": "Talent auction is starting",
+      "description": "Congratulations! You have applied to 3 positions. Now companies will compete for your talent in a live auction.",
+      "close": "Close",
+      "goToAuction": "Go to Auction"
+    },
+    "tutorial": {
+      "welcome": {
+        "title": "Welcome to the talent auction",
+        "description": "Companies will compete for your talent through a 4-stage bidding process. Each stage focuses on different aspects of the job offer."
+      },
+      "stages": {
+        "salary": {
+          "title": "Stage 1: Salary",
+          "description": "Companies will bid on your base salary. Each company has 10 seconds to make an offer."
+        },
+        "equity": {
+          "title": "Stage 2: Company Equity",
+          "description": "Companies will offer equity percentages in their organization. This is your ownership stake in the company."
+        },
+        "benefits": {
+          "title": "Stage 3: Benefits",
+          "description": "Companies will compete on benefits packages, including insurance, vacation, and other bonuses."
+        },
+        "position": {
+          "title": "Stage 4: Position",
+          "description": "Companies will bid on your position level, from junior specialist to department head."
+        }
+      },
+      "actions": {
+        "next": "Next",
+        "previous": "Previous",
+        "start": "Start Auction",
+        "close": "Close"
+      }
+    },
+    "auction": {
+      "title": "Talent Auction",
+      "subtitle": "Companies are competing for your skills",
+      "timer": {
+        "stage": "Stage Time",
+        "company": "Company Time"
+      },
+      "status": {
+        "currentStage": "Current Stage",
+        "currentTurn": "Current Turn",
+        "waiting": "Waiting for next company..."
+      },
+      "bidding": {
+        "history": "Bid History",
+        "noBids": "No bids yet",
+        "enterBid": "Enter bid",
+        "submit": "Place Bid"
+      },
+      "results": {
+        "title": "Auction Results",
+        "summary": "Final Offers",
+        "noBid": "No bid",
+        "chooseOffer": "Choose Offer",
+        "decline": "Decline All"
+      }
+    }
+  },
+  "deleteModal": {
+    "warning": "This action cannot be undone. Please enter your password to confirm.",
+    "passwordLabel": "Your Password",
+    "passwordPlaceholder": "Enter your password",
+    "buttons": {
+      "cancel": "Cancel",
+      "delete": "Delete {{itemType}}",
+      "verifying": "Verifying..."
+    },
+    "errors": {
+      "passwordRequired": "Password is required",
+      "failedToDelete": "Failed to delete. Please check your password and try again."
+    },
+    "itemTypes": {
+      "resume": "Resume",
+      "job": "Job",
+      "company": "Company"
+    }
+  },
+  "companyModal": {
+    "title": "Company Details",
+    "logoPreview": "Company Logo Preview",
+    "fields": {
+      "name": "Company Name",
+      "logo": "Company Logo",
+      "description": "Description",
+      "website": "Website",
+      "industry": "Industry",
+      "size": "Company Size",
+      "foundedYear": "Founded Year"
+    },
+    "placeholders": {
+      "name": "Enter company name",
+      "description": "Enter company description",
+      "website": "https://example.com",
+      "industry": "e.g. Technology, Healthcare",
+      "size": "e.g. 1-10, 11-50, 51-200"
+    },
+    "buttons": {
+      "cancel": "Cancel",
+      "saveChanges": "Save Changes",
+      "saving": "Saving..."
+    },
+    "errors": {
+      "failedToUpdate": "Failed to update company. Please try again."
+    }
+  },
+  "createCompanyModal": {
+    "title": "Create New Company",
+    "logoPreview": "Company Logo Preview",
+    "fields": {
+      "name": "Company Name",
+      "logo": "Company Logo",
+      "description": "Description",
+      "website": "Website",
+      "industry": "Industry",
+      "size": "Company Size",
+      "foundedYear": "Founded Year"
+    },
+    "placeholders": {
+      "name": "Enter company name",
+      "description": "Enter company description",
+      "website": "https://example.com",
+      "industry": "e.g. Technology, Healthcare",
+      "size": "e.g. 1-10, 11-50, 51-200"
+    },
+    "buttons": {
+      "cancel": "Cancel",
+      "createCompany": "Create Company",
+      "creating": "Creating..."
+    },
+    "errors": {
+      "mustBeLoggedIn": "You must be logged in to create a company",
+      "failedToCreate": "Failed to create company. Please try again."
+    }
+  },
+  "jobModal": {
+    "titleCreate": "Create New Job",
+    "titleEdit": "Edit Job",
+    "fields": {
+      "title": "Job Title",
+      "description": "Description",
+      "requirements": "Requirements (separate with spaces)",
+      "salaryMin": "Minimum Salary",
+      "salaryMax": "Maximum Salary",
+      "currency": "Currency (3 chars max)",
+      "city": "City",
+      "metro": "Metro Station",
+      "employmentType": "Employment Type",
+      "schedule": "Schedule",
+      "experience": "Required Experience (years)"
+    },
+    "placeholders": {
+      "title": "Enter job title",
+      "description": "Enter job description",
+      "requirements": "react nodejs mongodb docker git",
+      "salaryMin": "Enter minimum salary",
+      "salaryMax": "Enter maximum salary",
+      "currency": "USD, EUR, RUB...",
+      "city": "Enter city",
+      "metro": "Enter metro station",
+      "experience": "Enter required experience in years"
+    },
+    "hints": {
+      "requirements": "Enter requirements separated by spaces (e.g., \"react nodejs mongodb docker\")"
+    },
+    "options": {
+      "selectType": "Select type",
+      "fullTime": "Full-time",
+      "partTime": "Part-time",
+      "contract": "Contract",
+      "temporary": "Temporary",
+      "internship": "Internship",
+      "selectSchedule": "Select schedule",
+      "standard": "Standard (9-5)",
+      "flexible": "Flexible hours",
+      "shift": "Shift work",
+      "remote": "Remote",
+      "hybrid": "Hybrid"
+    },
+    "buttons": {
+      "cancel": "Cancel",
+      "createJob": "Create Job",
+      "updateJob": "Update Job",
+      "saving": "Saving..."
+    }
+  },
+  "resumeEditModal": {
+    "title": "Edit Resume",
+    "stepProgress": "Step {{current}} of {{total}}",
+    "profileDataNote": "These details were automatically loaded from your profile.",
+    "selectGender": "Select your gender",
+    "additionalContacts": "Additional Contacts",
+    "save": "Save",
+    "close": "Close",
+    "placeholders": {
+      "profession": "Enter your profession",
+      "institution": "Enter institution name",
+      "graduationYear": "Enter graduation year",
+      "specialization": "Enter your specialization",
+      "contacts": "Enter additional contact information"
+    },
+    "errors": {
+      "failedToLoad": "Failed to load resume data",
+      "failedToUpdate": "Failed to update resume"
+    }
+  },
+  "resumeWizard": {
+    "stepProgress": "Step {{current}} of {{total}}",
+    "profileDataNote": "These details were automatically loaded from your profile.",
+    "selectGender": "Select your gender",
+    "placeholders": {
+      "profession": "Enter your profession",
+      "institution": "Enter institution name",
+      "graduationYear": "Enter graduation year",
+      "specialization": "Enter your specialization"
+    }
+  },
+  "skillSelect": {
+    "placeholder": "Type a skill and press Enter or Space...",
+    "hint": "Press Enter or Space to add a skill. Press Backspace to remove the last skill."
+  }
+}
