@@ -46,8 +46,6 @@ interface FormData {
   country: string;
   region: string;
   district: string;
-  publish_phone: boolean;
-  publish_status: boolean;
   role: string;
   avatar: string;
 }
@@ -127,8 +125,6 @@ const Profile = () => {
     country: "",
     region: "",
     district: "",
-    publish_phone: false,
-    publish_status: false,
     role: "student",
     avatar: "",
   });
@@ -173,8 +169,6 @@ const Profile = () => {
         country: user.country || "",
         region: user.region || "",
         district: user.district || "",
-        publish_phone: user.publish_phone || false,
-        publish_status: user.publish_status || false,
         role: user.role || "student",
         avatar: user.avatar || "",
       });

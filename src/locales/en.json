@@ -645,8 +645,50 @@
     }
   },
   "auction": {
-    "title": "Talent Auction",
-    "subtitle": "Companies are competing for your skills",
+    "title": "Top Companies, Jobs, Students Ranking",
+    "subtitle": "Objective top 5 companies, students, vacancies on the Student's Job platform based on user reviews and performance comparison indicators",
+    "loading": "Loading companies data...",
+    "tryAgain": "Try Again",
+    "evaluationCriteria": "Evaluation Criteria",
+    "noCompanies": "No companies found",
+    "detailedComparison": "Detailed Comparison",
+    "bestHighlighted": "Best indicators are highlighted in green",
+    "metric": "Metric",
+    "score": "Score",
+    "points": "points",
+    "reviews": "Review",
+    "noDescription": "No description provided",
+    "bestJobs": "Best Jobs from Top Companies",
+    "bestJobsDesc": "Most attractive offers from each company",
+    "from": "from",
+    "to": "up to",
+    "salaryNotSpecified": "Salary not specified",
+    "fullTime": "Full-time",
+    "yearsExperience": "years experience",
+    "bestIndicator": "Best indicator in category",
+    "topCandidates": "Top Candidates",
+    "topCandidatesDesc": "Independent of companies - the 5 best candidates",
+    "candidate": "Candidate",
+    "talentScore": "Talent Score",
+    "education": "Education",
+    "specialization": "Specialization",
+    "experience": "Experience",
+    "skills": "Skills",
+    "notSpecified": "Not specified",
+    "years": "years",
+    "rank": "Rank",
+    "company": "Company",
+    "overallScore": "Overall Score",
+    "userScore": "User Score",
+    "scale": "Scale",
+    "jobQuality": "Job Quality",
+    "digital": "Digital",
+    "job": "Job",
+    "salary": "Salary",
+    "location": "Location",
+    "type": "Type",
+    "portfolio": "Portfolio",
+    "any": "Any",
     "notEnoughApplications": {
       "title": "Not Enough Applications",
       "description": "You need to apply to at least 3 positions before participating in the auction.",
@@ -719,6 +761,68 @@
       "senior": "Senior",
       "lead": "Lead",
       "head": "Head"
+    },
+    "errors": {
+      "failedToLoad": "Failed to load data. Please try again later."
+    },
+    "tabs": {
+      "companies": "Companies",
+      "jobs": "Best Jobs",
+      "resumes": "Top Resumes"
+    },
+    "metrics": {
+      "foundedYear": "Founded Year",
+      "size": "Company Size",
+      "industry": "Industry",
+      "website": "Website",
+      "notSpecified": "Not specified",
+      "available": "Available",
+      "notAvailable": "Not available"
+    },
+    "criteria": {
+      "userScore": "User Score",
+      "userScoreDesc": "Average rating based on student and employee reviews",
+      "experience": "Experience & Stability",
+      "experienceDesc": "Company founding year - an indicator of reliability and experience",
+      "scale": "Scale of Operations",
+      "scaleDesc": "Company size and number of employees",
+      "jobQuality": "Job Quality",
+      "jobQualityDesc": "Average level of salaries and working conditions",
+      "digitalPresence": "Digital Presence",
+      "digitalPresenceDesc": "Availability of corporate website and online activity",
+      "salaryLevel": "Salary Level",
+      "salaryLevelDesc": "Competitiveness of salary compared to market standards",
+      "companyRating": "Company Rating",
+      "companyRatingDesc": "Overall rating and reputation of the hiring company",
+      "jobRequirements": "Job Requirements",
+      "jobRequirementsDesc": "Clarity and reasonableness of job requirements",
+      "locationAppeal": "Location Appeal",
+      "locationAppealDesc": "Attractiveness and accessibility of job location",
+      "educationLevel": "Education Level",
+      "educationLevelDesc": "Academic qualifications and educational background",
+      "workExperience": "Work Experience",
+      "workExperienceDesc": "Professional experience and career progression",
+      "technicalSkills": "Technical Skills",
+      "technicalSkillsDesc": "Relevant technical and professional skills",
+      "portfolioQuality": "Portfolio Quality",
+      "portfolioQualityDesc": "Quality and relevance of projects and portfolio"
+    },
+    "calculations": {
+      "companies": {
+        "title": "Company Score Calculation Example",
+        "example": "Example: TechCorp with 4.5 user rating, founded 2010 (14 years), 500+ employees, $80k avg salary, has website",
+        "breakdown": "Score = (4.5 × 40%) + (3.5 × 25%) + (4.0 × 20%) + (4.0 × 10%) + (5.0 × 5%) = 4.2/5.0"
+      },
+      "jobs": {
+        "title": "Job Score Calculation Example",
+        "example": "Example: Senior Developer at TechCorp, $90k salary, 4.5 company rating, clear requirements, city center location",
+        "breakdown": "Score = (4.5 × 35%) + (4.5 × 30%) + (4.0 × 20%) + (3.5 × 15%) = 4.3/5.0"
+      },
+      "resumes": {
+        "title": "Resume Score Calculation Example",
+        "example": "Example: Master's degree, 5 years experience, 15 technical skills, portfolio with 10+ projects",
+        "breakdown": "Score = (4.5 × 25%) + (4.0 × 35%) + (3.8 × 25%) + (4.0 × 15%) = 4.1/5.0"
+      }
     }
   },
   "profile": {
@@ -1091,5 +1195,9 @@
       "graduationYear": "Enter graduation year",
       "specialization": "Enter your specialization"
     }
+  },
+  "skillSelect": {
+    "placeholder": "Type a skill and press Enter or Space...",
+    "hint": "Press Enter or Space to add a skill. Press Backspace to remove the last skill."
   }
 }

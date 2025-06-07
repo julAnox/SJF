@@ -26,8 +26,6 @@ interface User {
   country: string;
   region: string;
   district: string;
-  publish_phone: boolean;
-  publish_status: boolean;
   role: string;
 }
 
@@ -80,8 +78,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       country: userData.country || "",
       region: userData.region || "",
       district: userData.district || "",
-      publish_phone: userData.publish_phone || false,
-      publish_status: userData.publish_status || false,
       role: userData.role || "student",
     };
   };
@@ -146,8 +142,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         country: "",
         region: "",
         district: "",
-        publish_phone: false,
-        publish_status: false,
         role: role || "student",
       });
 

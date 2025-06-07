@@ -58,8 +58,6 @@ export interface User {
   country: string;
   region: string;
   district: string;
-  publish_phone: boolean;
-  publish_status: boolean;
   role: string;
   created_at: string;
   updated_at: string;
