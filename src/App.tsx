@@ -15,7 +15,7 @@ import Auction from "./pages/Auction/Auction";
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
 import About from "./pages/About/About";
-import Profile from "./pages/Profile/Profile";
+// import Profile from "./pages/Profile/Profile";
 import enTranslations from "./locales/en.json";
 import ruTranslations from "./locales/ru.json";
 
@@ -55,7 +55,7 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Register />} />
               <Route path="/about" element={<About />} />
-              <Route path="/profile" element={<Profile />} />
+              {/* <Route path="/profile" element={<Profile />} /> */}
             </Routes>
           </main>
           <Footer />
