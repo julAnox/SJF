@@ -68,5 +68,5 @@ try {
         <p>If this message persists, please refresh the page.</p>
       </div>
     </div>
-  `;
+`;
 }

@@ -90,6 +90,10 @@ function App() {
         <div
           className="min-h-screen bg-slate-50 flex flex-col"
           style={{ minHeight: "calc(var(--vh, 1vh) * 100)" }}
+        ></div>
+        <div
+          className="min-h-screen bg-slate-50 flex flex-col"
+          style={{ minHeight: "calc(var(--vh, 1vh) * 100)" }}
         >
           <Header />
           <main className="flex-grow">

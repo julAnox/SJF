@@ -43,6 +43,7 @@ input,
 select,
 textarea,
 button {
+input, select, textarea, button {
   font-size: 16px !important;
   -webkit-appearance: none;
   border-radius: 0;
@@ -54,6 +55,7 @@ button {
     min-height: -webkit-fill-available !important;
   }
 
+  
   .h-screen {
     height: -webkit-fill-available !important;
   }
