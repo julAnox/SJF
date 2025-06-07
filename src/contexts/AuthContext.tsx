@@ -10,7 +10,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-const API_URL = "https://sjb-u3p4.onrender.com";
+const API_URL = "https://sjb-u3p4.onrender.com/app";
 
 const DEFAULT_AVATAR =
   "https://static.vecteezy.com/system/resources/thumbnails/005/545/335/small/user-sign-icon-person-symbol-human-avatar-isolated-on-white-backogrund-vector.jpg";
