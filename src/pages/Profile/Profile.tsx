@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
@@ -158,6 +158,8 @@ const Profile = () => {
     cities: false,
   });
 
+  const [isInitialized, setIsInitialized] = useState(false);
+
   const [selectedResumeId, setSelectedResumeId] = useState<string | null>(null);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -178,7 +180,13 @@ const Profile = () => {
   }, [isAuthenticated, authLoading, navigate]);
 
   useEffect(() => {
-    if (user) {
+    loadCountries();
+  }, []);
+
+  useEffect(() => {
+    if (user && countries.length > 0) {
+      console.log("Setting user data to form:", user);
+
       setFormData({
         first_name: user.first_name || "",
         last_name: user.last_name || "",
@@ -192,6 +200,35 @@ const Profile = () => {
         avatar: user.avatar || "",
       });
 
+      if (user.country) {
+        console.log(
+          "User has country data, loading regions for:",
+          user.country
+        );
+        const foundCountry = locationAPI.findCountryByName(user.country);
+        if (foundCountry) {
+          console.log("Found country object:", foundCountry);
+          setCountryObj(foundCountry);
+          loadRegions(foundCountry.isoCode).then(() => {
+            if (user.region) {
+              console.log(
+                "User has region data, loading cities for:",
+                user.region
+              );
+              const foundRegion = locationAPI.findRegionByName(
+                foundCountry.isoCode,
+                user.region
+              );
+              if (foundRegion) {
+                console.log("Found region object:", foundRegion);
+                setRegionObj(foundRegion);
+                loadCities(foundCountry.isoCode, foundRegion.isoCode);
+              }
+            }
+          });
+        }
+      }
+
       if (user.role === "company") {
         fetchCompanyData();
       }
@@ -199,44 +236,27 @@ const Profile = () => {
       if (user.role === "student") {
         fetchUserResumes();
       }
+
+      setIsInitialized(true);
     }
-  }, [user]);
+  }, [user, countries]);
 
   useEffect(() => {
-    loadCountries();
-  }, []);
-
-  const debouncedLoadRegions = useCallback(
-    debounce(async (countryCode: string) => {
-      console.log("Loading regions for country:", countryCode);
-      await loadRegions(countryCode);
-    }, 300),
-    []
-  );
-
-  const debouncedLoadCities = useCallback(
-    debounce(async (countryCode: string, regionCode: string) => {
-      console.log("Loading cities for:", countryCode, regionCode);
-      await loadCities(countryCode, regionCode);
-    }, 300),
-    []
-  );
-
-  useEffect(() => {
-    if (formData.country && countries.length > 0) {
+    if (formData.country && countries.length > 0 && isInitialized) {
       console.log("Country changed:", formData.country);
-      const foundCountry = countries.find(
-        (country) =>
-          country.name.toLowerCase() === formData.country.toLowerCase()
-      );
+      const foundCountry = locationAPI.findCountryByName(formData.country);
       if (foundCountry) {
         console.log("Found country object:", foundCountry);
         setCountryObj(foundCountry);
         setRegions([]);
         setCities([]);
         setRegionObj(null);
-        setFormData((prev) => ({ ...prev, region: "", district: "" }));
-        debouncedLoadRegions(foundCountry.isoCode);
+
+        if (foundCountry.name !== user?.country) {
+          setFormData((prev) => ({ ...prev, region: "", district: "" }));
+        }
+
+        loadRegions(foundCountry.isoCode);
       } else {
         console.warn("Country not found in list:", formData.country);
         setCountryObj(null);
@@ -244,63 +264,47 @@ const Profile = () => {
         setCities([]);
         setRegionObj(null);
       }
-    } else {
-      console.log("No country selected or countries not loaded");
-      setCountryObj(null);
-      setRegions([]);
-      setCities([]);
-      setRegionObj(null);
     }
-  }, [formData.country, countries, debouncedLoadRegions]);
+  }, [formData.country, countries, isInitialized]);
 
   useEffect(() => {
-    if (countryObj && formData.region && regions.length > 0) {
+    if (countryObj && formData.region && regions.length > 0 && isInitialized) {
       console.log("Region changed:", formData.region);
-      const foundRegion = regions.find(
-        (region) => region.name.toLowerCase() === formData.region.toLowerCase()
+      const foundRegion = locationAPI.findRegionByName(
+        countryObj.isoCode,
+        formData.region
       );
       if (foundRegion) {
         console.log("Found region object:", foundRegion);
         setRegionObj(foundRegion);
         setCities([]);
-        setFormData((prev) => ({ ...prev, district: "" }));
-        debouncedLoadCities(countryObj.isoCode, foundRegion.isoCode);
+
+        if (foundRegion.name !== user?.region) {
+          setFormData((prev) => ({ ...prev, district: "" }));
+        }
+
+        loadCities(countryObj.isoCode, foundRegion.isoCode);
       } else {
         console.warn("Region not found in list:", formData.region);
         setRegionObj(null);
         setCities([]);
-        setFormData((prev) => ({ ...prev, region: "", district: "" }));
       }
-    } else {
-      console.log("No region selected or regions not loaded");
-      setRegionObj(null);
-      setCities([]);
     }
-  }, [countryObj, formData.region, regions, debouncedLoadCities]);
+  }, [countryObj, formData.region, regions, isInitialized]);
 
   useEffect(() => {
     if (countryObj && regionObj && formData.district && cities.length > 0) {
       console.log("District changed:", formData.district);
-      const foundCity = cities.find(
-        (city) => city.name.toLowerCase() === formData.district.toLowerCase()
+      const foundCity = locationAPI.findCityByName(
+        countryObj.isoCode,
+        regionObj.isoCode,
+        formData.district
       );
       if (!foundCity) {
         console.warn("City not found in list:", formData.district);
-        setFormData((prev) => ({ ...prev, district: "" }));
       }
     }
   }, [regionObj, countryObj, formData.district, cities]);
-
-  function debounce<T extends (...args: any[]) => any>(
-    func: T,
-    wait: number
-  ): (...args: Parameters<T>) => void {
-    let timeout: NodeJS.Timeout;
-    return (...args: Parameters<T>) => {
-      clearTimeout(timeout);
-      timeout = setTimeout(() => func(...args), wait);
-    };
-  }
 
   const loadCountries = async () => {
     setLocationLoading((prev) => ({ ...prev, countries: true }));
@@ -331,9 +335,6 @@ const Profile = () => {
 
     setLocationLoading((prev) => ({ ...prev, regions: true }));
     setLocationErrors((prev) => ({ ...prev, regions: false }));
-    setRegions([]);
-    setCities([]);
-    setRegionObj(null);
 
     try {
       console.log("Loading regions for:", countryCode);
@@ -357,7 +358,6 @@ const Profile = () => {
 
     setLocationLoading((prev) => ({ ...prev, cities: true }));
     setLocationErrors((prev) => ({ ...prev, cities: false }));
-    setCities([]);
 
     try {
       console.log("Loading cities for:", countryCode, regionCode);
@@ -466,9 +466,7 @@ const Profile = () => {
     console.log(`Field changed: ${name} = ${value}`);
 
     if (name === "country") {
-      const selectedCountryObj = countries.find(
-        (country) => country.name === value
-      );
+      const selectedCountryObj = locationAPI.findCountryByName(value);
       console.log("Selected country object:", selectedCountryObj);
 
       setFormData((prev) => ({
@@ -513,6 +511,7 @@ const Profile = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
+      console.log("Submitting form data:", formData);
       await updateProfile(formData);
       setNotification({
         type: "success",

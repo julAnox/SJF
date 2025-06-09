@@ -94,7 +94,6 @@ class LocationAPIService {
   private citiesCache: Map<string, City[]> = new Map();
   private pendingRequests: Map<string, Promise<any>> = new Map();
 
-  // Получение всех стран через REST Countries API
   async getAllCountries(): Promise<Country[]> {
     if (this.countriesCache) {
       console.log("Using cached countries");
@@ -122,7 +121,6 @@ class LocationAPIService {
   private async fetchCountries(): Promise<Country[]> {
     console.log("Fetching countries from REST Countries API...");
 
-    // Пробуем несколько API endpoints
     const endpoints = [
       "https://restcountries.com/v3.1/all?fields=name,cca2,flag",
       "https://restcountries.com/v3/all?fields=name,cca2,flag",
@@ -174,7 +172,6 @@ class LocationAPIService {
     throw new Error("Failed to load countries from any API endpoint");
   }
 
-  // Получение регионов/штатов для страны
   async getStatesOfCountry(countryCode: string): Promise<Region[]> {
     if (!countryCode) {
       console.warn("No country code provided for regions");
@@ -210,7 +207,6 @@ class LocationAPIService {
     const countryName = this.getCountryNameByCode(countryCode);
     console.log(`Trying API for ${countryCode} (${countryName})`);
 
-    // Пробуем разные endpoints для регионов
     const endpoints = [
       "https://countriesnow.space/api/v0.1/countries/states",
       "https://api.countrystatecity.in/v1/countries/" + countryCode + "/states",
@@ -310,7 +306,6 @@ class LocationAPIService {
     return emptyRegions;
   }
 
-  // Получение городов для региона
   async getCitiesOfState(
     countryCode: string,
     stateCode: string
@@ -355,7 +350,6 @@ class LocationAPIService {
 
     console.log(`Trying API for cities: ${countryName}/${stateName}`);
 
-    // Пробуем разные endpoints для городов
     const endpoints = [
       "https://countriesnow.space/api/v0.1/countries/state/cities",
       "https://countriesnow.space/api/v0.1/countries/cities",
@@ -436,8 +430,54 @@ class LocationAPIService {
     return emptyCities;
   }
 
+  findCountryByName(countryName: string): Country | null {
+    if (!countryName || !this.countriesCache) return null;
+
+    const searchName = countryName.toLowerCase().trim();
+
+    let found = this.countriesCache.find(
+      (country) => country.name.toLowerCase() === searchName
+    );
+
+    if (!found) {
+      found = this.countriesCache.find(
+        (country) =>
+          country.name.toLowerCase().includes(searchName) ||
+          searchName.includes(country.name.toLowerCase())
+      );
+    }
+
+    return found || null;
+  }
+
+  findRegionByName(countryCode: string, regionName: string): Region | null {
+    if (!regionName || !countryCode) return null;
+
+    const regions = this.regionsCache.get(countryCode) || [];
+    const searchName = regionName.toLowerCase().trim();
+
+    return (
+      regions.find((region) => region.name.toLowerCase() === searchName) || null
+    );
+  }
+
+  findCityByName(
+    countryCode: string,
+    stateCode: string,
+    cityName: string
+  ): City | null {
+    if (!cityName || !countryCode || !stateCode) return null;
+
+    const cacheKey = `${countryCode}-${stateCode}`;
+    const cities = this.citiesCache.get(cacheKey) || [];
+    const searchName = cityName.toLowerCase().trim();
+
+    return (
+      cities.find((city) => city.name.toLowerCase() === searchName) || null
+    );
+  }
+
   private getCountryNameByCode(code: string): string {
-    // Базовая карта для основных стран
     const countryMap: { [key: string]: string } = {
       RU: "Russia",
       US: "United States",
@@ -526,7 +566,6 @@ class LocationAPIService {
     return region?.name || regionCode;
   }
 
-  // Методы очистки кэша
   clearCache(): void {
     console.log("Clearing location API cache");
     this.countriesCache = null;
@@ -535,7 +574,6 @@ class LocationAPIService {
     this.pendingRequests.clear();
   }
 
-  // Проверка доступности API
   async checkAPIHealth(): Promise<{
     countries: boolean;
     regions: boolean;
@@ -548,7 +586,6 @@ class LocationAPIService {
     };
 
     try {
-      // Проверяем API стран
       const countriesResponse = await fetchWithTimeout(
         "https://restcountries.com/v3.1/all?fields=name&limit=1",
         {},
@@ -560,7 +597,6 @@ class LocationAPIService {
     }
 
     try {
-      // Проверяем API регионов/городов
       const regionsResponse = await fetchWithTimeout(
         "https://countriesnow.space/api/v0.1/countries/states",
         {
