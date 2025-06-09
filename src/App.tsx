@@ -42,6 +42,25 @@ const ProfileLoader = () => (
   </div>
 );
 
+// 404 Page Component
+const NotFound = () => (
+  <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+    <div className="text-center">
+      <h1 className="text-6xl font-bold text-emerald-500 mb-4">404</h1>
+      <h2 className="text-2xl font-semibold text-white mb-4">
+        Страница не найдена
+      </h2>
+      <p className="text-gray-400 mb-8">Запрашиваемая страница не существует</p>
+      <a
+        href="/"
+        className="inline-block px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors"
+      >
+        Вернуться на главную
+      </a>
+    </div>
+  </div>
+);
+
 function App() {
   useEffect(() => {
     const savedLang = localStorage.getItem("language");
@@ -75,6 +94,7 @@ function App() {
                     </Suspense>
                   }
                 />
+                <Route path="*" element={<NotFound />} />
               </Routes>
             </main>
             <Footer />
