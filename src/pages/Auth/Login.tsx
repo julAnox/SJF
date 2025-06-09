@@ -31,7 +31,7 @@ const Login = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate("/chat"); ///было профиль
+      navigate("/profile");
     }
   }, [isAuthenticated, navigate]);
 
@@ -76,7 +76,7 @@ const Login = () => {
 
     try {
       await login(formData.email, formData.password);
-      navigate("/chat"); ///было профиль;
+      navigate("/profile");
     } catch (error: any) {
       console.error("Login error:", error);
       setApiError(

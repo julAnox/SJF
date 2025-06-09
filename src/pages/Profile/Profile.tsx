@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
@@ -24,6 +24,8 @@ import {
   Eye,
   MapPin,
   Globe,
+  RefreshCw,
+  AlertTriangle,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { companiesApi, jobsApi, resumesApi } from "../../services/api";
@@ -35,7 +37,12 @@ import CreateJobModal from "../../components/Modals/CreateJobModal";
 import CompanyViewModal from "../../components/Modals/CompanyViewModal";
 import ResumeWizard from "./ResumeWizard";
 import DeleteConfirmationModal from "../../components/Modals/DeleteConfirmationModal";
-import { Country, State, City } from "country-state-city";
+import {
+  locationAPI,
+  type Country,
+  type Region,
+  type City,
+} from "../../services/location-api";
 
 interface FormData {
   first_name: string;
@@ -133,11 +140,23 @@ const Profile = () => {
   const [userResumes, setUserResumes] = useState([]);
   const [editingJob, setEditingJob] = useState<Job | null>(null);
 
-  const [countries, setCountries] = useState<any[]>([]);
-  const [regions, setRegions] = useState<any[]>([]);
-  const [cities, setCities] = useState<any[]>([]);
-  const [countryObj, setCountryObj] = useState<any>(null);
-  const [regionObj, setRegionObj] = useState<any>(null);
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [regions, setRegions] = useState<Region[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
+  const [countryObj, setCountryObj] = useState<Country | null>(null);
+  const [regionObj, setRegionObj] = useState<Region | null>(null);
+
+  const [locationLoading, setLocationLoading] = useState({
+    countries: false,
+    regions: false,
+    cities: false,
+  });
+
+  const [locationErrors, setLocationErrors] = useState({
+    countries: false,
+    regions: false,
+    cities: false,
+  });
 
   const [selectedResumeId, setSelectedResumeId] = useState<string | null>(null);
   const [showViewModal, setShowViewModal] = useState(false);
@@ -184,77 +203,201 @@ const Profile = () => {
   }, [user]);
 
   useEffect(() => {
-    try {
-      const allCountries = Country.getAllCountries();
-      setCountries(allCountries);
+    loadCountries();
+  }, []);
 
-      if (formData.country) {
-        const foundCountry = allCountries.find(
-          (country) =>
-            country.name.toLowerCase() === formData.country.toLowerCase()
-        );
-        if (foundCountry) {
-          setCountryObj(foundCountry);
-        }
-      }
-    } catch (error) {
-      console.error("Error loading countries:", error);
-    }
-  }, [formData.country]);
+  const debouncedLoadRegions = useCallback(
+    debounce(async (countryCode: string) => {
+      console.log("Loading regions for country:", countryCode);
+      await loadRegions(countryCode);
+    }, 300),
+    []
+  );
+
+  const debouncedLoadCities = useCallback(
+    debounce(async (countryCode: string, regionCode: string) => {
+      console.log("Loading cities for:", countryCode, regionCode);
+      await loadCities(countryCode, regionCode);
+    }, 300),
+    []
+  );
 
   useEffect(() => {
-    if (countryObj) {
-      try {
-        const countryRegions = State.getStatesOfCountry(countryObj.isoCode);
-        setRegions(countryRegions);
-
-        if (formData.region) {
-          const foundRegion = countryRegions.find(
-            (region) =>
-              region.name.toLowerCase() === formData.region.toLowerCase()
-          );
-          if (foundRegion) {
-            setRegionObj(foundRegion);
-          } else {
-            setFormData((prev) => ({ ...prev, region: "", district: "" }));
-          }
-        }
-      } catch (error) {
-        console.error("Error loading regions:", error);
+    if (formData.country && countries.length > 0) {
+      console.log("Country changed:", formData.country);
+      const foundCountry = countries.find(
+        (country) =>
+          country.name.toLowerCase() === formData.country.toLowerCase()
+      );
+      if (foundCountry) {
+        console.log("Found country object:", foundCountry);
+        setCountryObj(foundCountry);
         setRegions([]);
+        setCities([]);
+        setRegionObj(null);
+        setFormData((prev) => ({ ...prev, region: "", district: "" }));
+        debouncedLoadRegions(foundCountry.isoCode);
+      } else {
+        console.warn("Country not found in list:", formData.country);
+        setCountryObj(null);
+        setRegions([]);
+        setCities([]);
+        setRegionObj(null);
       }
     } else {
+      console.log("No country selected or countries not loaded");
+      setCountryObj(null);
       setRegions([]);
+      setCities([]);
       setRegionObj(null);
     }
-  }, [countryObj, formData.region]);
+  }, [formData.country, countries, debouncedLoadRegions]);
 
   useEffect(() => {
-    if (countryObj && regionObj) {
-      try {
-        const regionCities = City.getCitiesOfState(
-          countryObj.isoCode,
-          regionObj.isoCode
-        );
-        setCities(regionCities);
-
-        if (formData.district) {
-          const foundCity = regionCities.find(
-            (city) =>
-              city.name.toLowerCase() === formData.district.toLowerCase()
-          );
-          if (!foundCity) {
-            setFormData((prev) => ({ ...prev, district: "" }));
-          }
-        }
-      } catch (error) {
-        console.error("Error loading cities:", error);
+    if (countryObj && formData.region && regions.length > 0) {
+      console.log("Region changed:", formData.region);
+      const foundRegion = regions.find(
+        (region) => region.name.toLowerCase() === formData.region.toLowerCase()
+      );
+      if (foundRegion) {
+        console.log("Found region object:", foundRegion);
+        setRegionObj(foundRegion);
         setCities([]);
+        setFormData((prev) => ({ ...prev, district: "" }));
+        debouncedLoadCities(countryObj.isoCode, foundRegion.isoCode);
+      } else {
+        console.warn("Region not found in list:", formData.region);
+        setRegionObj(null);
+        setCities([]);
+        setFormData((prev) => ({ ...prev, region: "", district: "" }));
       }
     } else {
+      console.log("No region selected or regions not loaded");
+      setRegionObj(null);
       setCities([]);
     }
-  }, [regionObj, countryObj, formData.district]);
+  }, [countryObj, formData.region, regions, debouncedLoadCities]);
+
+  useEffect(() => {
+    if (countryObj && regionObj && formData.district && cities.length > 0) {
+      console.log("District changed:", formData.district);
+      const foundCity = cities.find(
+        (city) => city.name.toLowerCase() === formData.district.toLowerCase()
+      );
+      if (!foundCity) {
+        console.warn("City not found in list:", formData.district);
+        setFormData((prev) => ({ ...prev, district: "" }));
+      }
+    }
+  }, [regionObj, countryObj, formData.district, cities]);
+
+  function debounce<T extends (...args: any[]) => any>(
+    func: T,
+    wait: number
+  ): (...args: Parameters<T>) => void {
+    let timeout: NodeJS.Timeout;
+    return (...args: Parameters<T>) => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func(...args), wait);
+    };
+  }
+
+  const loadCountries = async () => {
+    setLocationLoading((prev) => ({ ...prev, countries: true }));
+    setLocationErrors((prev) => ({ ...prev, countries: false }));
+    try {
+      console.log("Starting to load countries...");
+      const countriesData = await locationAPI.getAllCountries();
+      setCountries(countriesData);
+      console.log("Countries loaded successfully:", countriesData.length);
+    } catch (error) {
+      console.error("Error loading countries:", error);
+      setLocationErrors((prev) => ({ ...prev, countries: true }));
+      setNotification({
+        type: "error",
+        message: "Failed to load countries. Using offline data.",
+      });
+      setTimeout(() => setNotification(null), 5000);
+    } finally {
+      setLocationLoading((prev) => ({ ...prev, countries: false }));
+    }
+  };
+
+  const loadRegions = async (countryCode: string) => {
+    if (!countryCode) {
+      console.warn("loadRegions called without countryCode");
+      return;
+    }
+
+    setLocationLoading((prev) => ({ ...prev, regions: true }));
+    setLocationErrors((prev) => ({ ...prev, regions: false }));
+    setRegions([]);
+    setCities([]);
+    setRegionObj(null);
+
+    try {
+      console.log("Loading regions for:", countryCode);
+      const regionsData = await locationAPI.getStatesOfCountry(countryCode);
+      console.log("Regions loaded:", regionsData.length);
+      setRegions(regionsData);
+    } catch (error) {
+      console.error("Error loading regions:", error);
+      setLocationErrors((prev) => ({ ...prev, regions: true }));
+      setRegions([]);
+    } finally {
+      setLocationLoading((prev) => ({ ...prev, regions: false }));
+    }
+  };
+
+  const loadCities = async (countryCode: string, regionCode: string) => {
+    if (!countryCode || !regionCode) {
+      console.warn("loadCities called without required codes");
+      return;
+    }
+
+    setLocationLoading((prev) => ({ ...prev, cities: true }));
+    setLocationErrors((prev) => ({ ...prev, cities: false }));
+    setCities([]);
+
+    try {
+      console.log("Loading cities for:", countryCode, regionCode);
+      const citiesData = await locationAPI.getCitiesOfState(
+        countryCode,
+        regionCode
+      );
+      console.log("Cities loaded:", citiesData.length);
+      setCities(citiesData);
+    } catch (error) {
+      console.error("Error loading cities:", error);
+      setLocationErrors((prev) => ({ ...prev, cities: true }));
+      setCities([]);
+    } finally {
+      setLocationLoading((prev) => ({ ...prev, cities: false }));
+    }
+  };
+
+  const retryLoadCountries = () => {
+    console.log("Retrying countries load...");
+    loadCountries();
+  };
+
+  const retryLoadRegions = () => {
+    if (countryObj) {
+      console.log("Retrying regions load for:", countryObj.isoCode);
+      loadRegions(countryObj.isoCode);
+    }
+  };
+
+  const retryLoadCities = () => {
+    if (countryObj && regionObj) {
+      console.log(
+        "Retrying cities load for:",
+        countryObj.isoCode,
+        regionObj.isoCode
+      );
+      loadCities(countryObj.isoCode, regionObj.isoCode);
+    }
+  };
 
   const fetchCompanyData = async () => {
     try {
@@ -315,16 +458,18 @@ const Profile = () => {
     }
   };
 
-  const handleChange = (
+  const handleChange = async (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value, type } = e.target;
+
+    console.log(`Field changed: ${name} = ${value}`);
 
     if (name === "country") {
       const selectedCountryObj = countries.find(
         (country) => country.name === value
       );
-      setCountryObj(selectedCountryObj || null);
+      console.log("Selected country object:", selectedCountryObj);
 
       setFormData((prev) => ({
         ...prev,
@@ -332,12 +477,8 @@ const Profile = () => {
         region: "",
         district: "",
       }));
-
-      setRegionObj(null);
     } else if (name === "region") {
-      const selectedRegionObj = regions.find((region) => region.name === value);
-      setRegionObj(selectedRegionObj || null);
-
+      console.log("Region selection:", value);
       setFormData((prev) => ({
         ...prev,
         [name]: value,
@@ -615,6 +756,87 @@ const Profile = () => {
     setTimeout(() => setNotification(null), 3000);
   };
 
+  const LocationSelect = ({
+    name,
+    value,
+    onChange,
+    options,
+    loading,
+    error,
+    disabled,
+    placeholder,
+    icon: Icon,
+    onRetry,
+  }: {
+    name: string;
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+    options: Array<{
+      id?: string;
+      isoCode?: string;
+      name: string;
+      flag?: string;
+    }>;
+    loading: boolean;
+    error: boolean;
+    disabled: boolean;
+    placeholder: string;
+    icon: any;
+    onRetry?: () => void;
+  }) => (
+    <div className="relative">
+      <select
+        name={name}
+        value={value}
+        onChange={onChange}
+        disabled={disabled || loading}
+        className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none h-10 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <option value="">{placeholder}</option>
+        {options.map((option) => (
+          <option
+            key={option.isoCode || option.id || option.name}
+            value={option.name}
+          >
+            {option.flag ? `${option.flag} ` : ""}
+            {option.name}
+          </option>
+        ))}
+      </select>
+
+      <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex items-center">
+        {loading ? (
+          <Loader2 className="text-gray-400 w-5 h-5 animate-spin" />
+        ) : error ? (
+          <AlertTriangle className="text-red-400 w-5 h-5" />
+        ) : (
+          <Icon className="text-gray-400 w-5 h-5 pointer-events-none" />
+        )}
+      </div>
+
+      {error && onRetry && (
+        <button
+          type="button"
+          onClick={onRetry}
+          className="absolute right-8 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-emerald-400 transition-colors"
+          title="Retry loading"
+        >
+          <RefreshCw className="w-4 h-4" />
+        </button>
+      )}
+
+      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+        <svg
+          className="fill-current h-4 w-4"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 20 20"
+        >
+          <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+        </svg>
+      </div>
+    </div>
+  );
+
   if (!isAuthenticated && !authLoading) {
     return null;
   }
@@ -793,36 +1015,18 @@ const Profile = () => {
                         <label className="block text-sm font-medium text-gray-400 mb-2">
                           {t("profile.personalInfo.country")}
                         </label>
-                        <div className="relative">
-                          <select
-                            name="country"
-                            value={formData.country}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none h-10"
-                          >
-                            <option value="">
-                              {t("profile.placeholders.selectCountry")}
-                            </option>
-                            {countries.map((country) => (
-                              <option
-                                key={country.isoCode}
-                                value={country.name}
-                              >
-                                {country.name}
-                              </option>
-                            ))}
-                          </select>
-                          <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
-                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
-                            <svg
-                              className="fill-current h-4 w-4"
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 20 20"
-                            >
-                              <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-                            </svg>
-                          </div>
-                        </div>
+                        <LocationSelect
+                          name="country"
+                          value={formData.country}
+                          onChange={handleChange}
+                          options={countries}
+                          loading={locationLoading.countries}
+                          error={locationErrors.countries}
+                          disabled={false}
+                          placeholder={t("profile.placeholders.selectCountry")}
+                          icon={Globe}
+                          onRetry={retryLoadCountries}
+                        />
                       </div>
                     </div>
                   </div>
@@ -835,34 +1039,18 @@ const Profile = () => {
                         <label className="block text-sm font-medium text-gray-400 mb-2">
                           {t("profile.personalInfo.region")}
                         </label>
-                        <div className="relative">
-                          <select
-                            name="region"
-                            value={formData.region}
-                            onChange={handleChange}
-                            disabled={!countryObj}
-                            className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none disabled:opacity-50 disabled:cursor-not-allowed h-10"
-                          >
-                            <option value="">
-                              {t("profile.placeholders.selectRegion")}
-                            </option>
-                            {regions.map((region) => (
-                              <option key={region.isoCode} value={region.name}>
-                                {region.name}
-                              </option>
-                            ))}
-                          </select>
-                          <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
-                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
-                            <svg
-                              className="fill-current h-4 w-4"
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 20 20"
-                            >
-                              <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-                            </svg>
-                          </div>
-                        </div>
+                        <LocationSelect
+                          name="region"
+                          value={formData.region}
+                          onChange={handleChange}
+                          options={regions}
+                          loading={locationLoading.regions}
+                          error={locationErrors.regions}
+                          disabled={!countryObj}
+                          placeholder={t("profile.placeholders.selectRegion")}
+                          icon={MapPin}
+                          onRetry={retryLoadRegions}
+                        />
                       </div>
 
                       {/* District/City Selector */}
@@ -870,37 +1058,18 @@ const Profile = () => {
                         <label className="block text-sm font-medium text-gray-400 mb-2">
                           {t("profile.personalInfo.district")}
                         </label>
-                        <div className="relative">
-                          <select
-                            name="district"
-                            value={formData.district}
-                            onChange={handleChange}
-                            disabled={!regionObj}
-                            className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none disabled:opacity-50 disabled:cursor-not-allowed h-10"
-                          >
-                            <option value="">
-                              {t("profile.placeholders.selectDistrict")}
-                            </option>
-                            {cities.map((city) => (
-                              <option
-                                key={city.id || city.name}
-                                value={city.name}
-                              >
-                                {city.name}
-                              </option>
-                            ))}
-                          </select>
-                          <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
-                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
-                            <svg
-                              className="fill-current h-4 w-4"
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 20 20"
-                            >
-                              <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-                            </svg>
-                          </div>
-                        </div>
+                        <LocationSelect
+                          name="district"
+                          value={formData.district}
+                          onChange={handleChange}
+                          options={cities}
+                          loading={locationLoading.cities}
+                          error={locationErrors.cities}
+                          disabled={!regionObj}
+                          placeholder={t("profile.placeholders.selectDistrict")}
+                          icon={MapPin}
+                          onRetry={retryLoadCities}
+                        />
                       </div>
                     </div>
                   </div>
@@ -924,7 +1093,7 @@ const Profile = () => {
               </form>
             </motion.div>
 
-            {/* Right Sidebar */}
+            {/* Right Sidebar - остальная часть остается без изменений */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
