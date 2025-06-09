@@ -182,10 +182,10 @@ const ApplicationModal = ({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-gray-800 rounded-xl shadow-xl w-full max-w-2xl overflow-hidden"
+            className="bg-gray-800 rounded-xl shadow-xl w-full max-w-sm sm:max-w-2xl overflow-hidden"
           >
-            <div className="flex items-center justify-between p-6 border-b border-gray-700">
-              <h2 className="text-xl font-semibold text-white">
+            <div className="flex items-center justify-between p-3 sm:p-6 border-b border-gray-700">
+              <h2 className="text-lg sm:text-xl font-semibold text-white">
                 {t("applications.modal.title")}
               </h2>
               <button
@@ -193,45 +193,50 @@ const ApplicationModal = ({
                 disabled={isLoading}
                 className="text-gray-400 hover:text-white transition-colors disabled:opacity-50"
               >
-                <X className="w-6 h-6" />
+                <X className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
             </div>
 
             {isSubmitted ? (
-              <div className="p-8 text-center">
+              <div className="p-4 sm:p-8 text-center">
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  className="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4"
+                  className="w-12 h-12 sm:w-16 sm:h-16 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4"
                 >
-                  <CheckCircle className="w-8 h-8 text-white" />
+                  <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
                 </motion.div>
-                <h3 className="text-xl font-semibold text-white mb-2">
+                <h3 className="text-lg sm:text-xl font-semibold text-white mb-2">
                   {t("applications.modal.success.title")}
                 </h3>
-                <p className="text-gray-400 mb-4">
+                <p className="text-sm sm:text-base text-gray-400 mb-4">
                   {t("applications.modal.success.description", { companyName })}
                 </p>
-                <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <div className="w-6 h-6 sm:w-8 sm:h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="p-6 space-y-6">
+              <form
+                onSubmit={handleSubmit}
+                className="p-3 sm:p-6 space-y-4 sm:space-y-6"
+              >
                 {error && (
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="p-3 bg-red-500/20 border border-red-500 rounded-lg text-red-300 flex items-center gap-2"
+                    className="p-2 sm:p-3 bg-red-500/20 border border-red-500 rounded-lg text-red-300 flex items-center gap-2"
                   >
-                    <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                    <span>{error}</span>
+                    <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                    <span className="text-sm sm:text-base">{error}</span>
                   </motion.div>
                 )}
 
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-emerald-300">
+                  <div className="flex items-center gap-2 p-3 sm:p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-emerald-300">
                     <div className="flex-1">
-                      <p className="font-medium text-lg">{jobTitle}</p>
-                      <p className="text-sm text-emerald-300/80">
+                      <p className="font-medium text-base sm:text-lg">
+                        {jobTitle}
+                      </p>
+                      <p className="text-xs sm:text-sm text-emerald-300/80">
                         {companyName}
                       </p>
                     </div>
@@ -239,7 +244,7 @@ const ApplicationModal = ({
                 </div>
 
                 <div className="space-y-4">
-                  <label className="block text-sm font-medium text-gray-300">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-300">
                     {t("applications.modal.selectResume")} *
                   </label>
 
@@ -253,20 +258,20 @@ const ApplicationModal = ({
                             onClick={() => {
                               setSelectedResume(resume.id.toString());
                             }}
-                            className={`flex items-center gap-3 p-4 rounded-lg border transition-all ${
+                            className={`flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-lg border transition-all ${
                               selectedResume === resume.id.toString()
                                 ? "border-emerald-500 bg-emerald-500/10 shadow-lg"
                                 : "border-gray-600 hover:border-gray-500 hover:bg-gray-700/50"
                             } text-left`}
                           >
-                            <FileText className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                            <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400 flex-shrink-0" />
                             <div className="flex-1">
-                              <p className="text-white font-medium">
+                              <p className="text-white font-medium text-sm sm:text-base">
                                 {resume.profession ||
                                   t("applications.modal.resumeDefaultTitle")}
                               </p>
                               {resume.experience && (
-                                <p className="text-gray-400 text-sm">
+                                <p className="text-gray-400 text-xs sm:text-sm">
                                   {t("applications.modal.yearsExperience", {
                                     years: resume.experience,
                                   })}
@@ -274,21 +279,21 @@ const ApplicationModal = ({
                               )}
                             </div>
                             {selectedResume === resume.id.toString() && (
-                              <CheckCircle className="w-5 h-5 text-emerald-400" />
+                              <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />
                             )}
                           </button>
                         ))}
                       </div>
                     ) : (
-                      <div className="p-6 border border-gray-600 border-dashed rounded-lg text-center">
-                        <FileText className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                        <p className="text-gray-400 mb-4">
+                      <div className="p-4 sm:p-6 border border-gray-600 border-dashed rounded-lg text-center">
+                        <FileText className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-2 sm:mb-3" />
+                        <p className="text-gray-400 mb-3 sm:mb-4 text-sm sm:text-base">
                           {t("applications.modal.noResumesFound")}
                         </p>
                         <button
                           type="button"
                           onClick={handleNavigateToProfile}
-                          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-colors"
+                          className="px-3 py-2 sm:px-4 sm:py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-colors text-sm sm:text-base"
                         >
                           {t("applications.modal.createResumeInProfile")}
                         </button>
@@ -298,34 +303,33 @@ const ApplicationModal = ({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
                     {t("applications.modal.coverLetter")} *
                   </label>
                   <textarea
                     value={coverLetter}
                     onChange={(e) => setCoverLetter(e.target.value)}
                     required
-                    rows={6}
-                    maxLength={1000}
-                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
+                    rows={4}
+                    className="w-full px-3 py-2 sm:px-4 sm:py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none text-sm sm:text-base"
                     placeholder={t("applications.modal.coverLetterPlaceholder")}
                   />
                   <div className="flex justify-between mt-2">
-                    <p className="text-gray-500 text-sm">
+                    <p className="text-gray-500 text-xs sm:text-sm">
                       {t("applications.modal.coverLetterHint")}
                     </p>
-                    <p className="text-gray-500 text-sm">
+                    <p className="text-gray-500 text-xs sm:text-sm">
                       {coverLetter.length}/1000
                     </p>
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-4 pt-4 border-t border-gray-700">
+                <div className="flex justify-end gap-2 sm:gap-4 pt-3 sm:pt-4 border-t border-gray-700">
                   <button
                     type="button"
                     onClick={handleClose}
                     disabled={isLoading}
-                    className="px-6 py-2 text-gray-300 hover:text-white transition-colors disabled:opacity-50"
+                    className="px-4 py-2 sm:px-6 sm:py-2 text-gray-300 hover:text-white transition-colors disabled:opacity-50 text-sm sm:text-base"
                   >
                     {t("applications.modal.cancel")}
                   </button>
@@ -334,16 +338,16 @@ const ApplicationModal = ({
                     disabled={
                       !(selectedResume && coverLetter.trim()) || isLoading
                     }
-                    className="flex items-center gap-2 px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center gap-1 sm:gap-2 px-4 py-2 sm:px-6 sm:py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
                   >
                     {isLoading ? (
                       <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                         {t("applications.modal.submitting")}
                       </>
                     ) : (
                       <>
-                        <Send className="w-4 h-4" />
+                        <Send className="w-3 h-3 sm:w-4 sm:h-4" />
                         {t("applications.modal.submit")}
                       </>
                     )}

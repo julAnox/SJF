@@ -195,11 +195,11 @@ const ResumeContactModal = ({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-gray-800 rounded-xl shadow-xl w-full max-w-2xl overflow-hidden"
+            className="bg-gray-800 rounded-xl shadow-xl w-full max-w-sm sm:max-w-2xl overflow-hidden"
           >
-            <div className="flex items-center justify-between p-6 border-b border-gray-700">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-700">
+            <div className="flex items-center justify-between p-3 sm:p-6 border-b border-gray-700">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-gray-700 flex-shrink-0">
                   {resumeUser?.avatar ? (
                     <img
                       src={resumeUser.avatar || "/placeholder.svg"}
@@ -219,7 +219,7 @@ const ResumeContactModal = ({
                   )}
                 </div>
                 <div>
-                  <h2 className="text-xl font-semibold text-white">
+                  <h2 className="text-base sm:text-xl font-semibold text-white">
                     {t("resumeContact.title", {
                       firstName:
                         resumeUser?.first_name ||
@@ -227,8 +227,8 @@ const ResumeContactModal = ({
                       lastName: resumeUser?.last_name || "",
                     })}
                   </h2>
-                  <p className="text-sm text-gray-400 flex items-center gap-1">
-                    <Briefcase className="w-4 h-4" />
+                  <p className="text-xs sm:text-sm text-gray-400 flex items-center gap-1">
+                    <Briefcase className="w-3 h-3 sm:w-4 sm:h-4" />
                     {resume?.profession || t("resumeContact.defaultResume")}
                   </p>
                 </div>
@@ -238,30 +238,30 @@ const ResumeContactModal = ({
                 disabled={isSubmitting}
                 className="text-gray-400 hover:text-white transition-colors disabled:opacity-50"
               >
-                <X className="w-6 h-6" />
+                <X className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
             </div>
 
             {isSubmitted ? (
-              <div className="p-8 text-center">
+              <div className="p-4 sm:p-8 text-center">
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  className="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4"
+                  className="w-12 h-12 sm:w-16 sm:h-16 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4"
                 >
-                  <CheckCircle className="w-8 h-8 text-white" />
+                  <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
                 </motion.div>
-                <h3 className="text-xl font-semibold text-white mb-2">
+                <h3 className="text-lg sm:text-xl font-semibold text-white mb-2">
                   {t("resumeContact.success.title")}
                 </h3>
-                <p className="text-gray-400 mb-4">
+                <p className="text-sm sm:text-base text-gray-400 mb-3 sm:mb-4">
                   {t("resumeContact.success.description", {
                     firstName:
                       resumeUser?.first_name ||
                       t("resumeContact.defaultStudent"),
                   })}
                 </p>
-                <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <div className="w-6 h-6 sm:w-8 sm:h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
               </div>
             ) : (
               <>
@@ -269,15 +269,15 @@ const ResumeContactModal = ({
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="p-4 bg-red-900/30 border border-red-700 m-6 rounded-lg"
+                    className="p-3 sm:p-4 bg-red-900/30 border border-red-700 m-3 sm:m-6 rounded-lg"
                   >
-                    <div className="flex items-start gap-3">
-                      <AlertCircle className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
+                    <div className="flex items-start gap-2 sm:gap-3">
+                      <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-400 mt-0.5 flex-shrink-0" />
                       <div>
-                        <h3 className="font-medium text-red-400">
+                        <h3 className="font-medium text-sm sm:text-base text-red-400">
                           {t("resumeContact.errorDetails")}
                         </h3>
-                        <pre className="mt-2 text-xs text-red-300 overflow-auto max-h-40 p-2 bg-black/20 rounded">
+                        <pre className="mt-1 sm:mt-2 text-xs text-red-300 overflow-auto max-h-32 sm:max-h-40 p-2 bg-black/20 rounded">
                           {errorDetails}
                         </pre>
                       </div>
@@ -285,17 +285,17 @@ const ResumeContactModal = ({
                   </motion.div>
                 )}
 
-                <form onSubmit={handleSubmit} className="p-6">
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                <form onSubmit={handleSubmit} className="p-3 sm:p-6">
+                  <div className="mb-3 sm:mb-4">
+                    <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
                       {t("resumeContact.messageLabel")}
                     </label>
                     <textarea
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
                       required
-                      rows={8}
-                      className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
+                      rows={6}
+                      className="w-full px-3 py-2 sm:px-4 sm:py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none text-sm sm:text-base"
                       placeholder={t("resumeContact.messagePlaceholder")}
                     />
                     <p className="text-xs text-gray-400 mt-1">
@@ -303,28 +303,28 @@ const ResumeContactModal = ({
                     </p>
                   </div>
 
-                  <div className="flex justify-end gap-4 pt-4 border-t border-gray-700">
+                  <div className="flex justify-end gap-2 sm:gap-4 pt-3 sm:pt-4 border-t border-gray-700">
                     <button
                       type="button"
                       onClick={handleClose}
                       disabled={isSubmitting}
-                      className="px-6 py-2 text-gray-300 hover:text-white transition-colors disabled:opacity-50"
+                      className="px-4 py-2 sm:px-6 sm:py-2 text-sm sm:text-base text-gray-300 hover:text-white transition-colors disabled:opacity-50"
                     >
                       {t("resumeContact.cancel")}
                     </button>
                     <button
                       type="submit"
                       disabled={!message.trim() || isSubmitting}
-                      className="flex items-center gap-2 px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex items-center gap-1 sm:gap-2 px-4 py-2 sm:px-6 sm:py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
                     >
                       {isSubmitting ? (
                         <>
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                           {t("resumeContact.sending")}
                         </>
                       ) : (
                         <>
-                          <Send className="w-4 h-4" />
+                          <Send className="w-3 h-3 sm:w-4 sm:h-4" />
                           {t("resumeContact.sendMessage")}
                         </>
                       )}

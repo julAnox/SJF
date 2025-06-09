@@ -144,7 +144,7 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
         return (
           <div className="space-y-2">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-2">
                 {t("profile.wizard.personalInfo.name")}
               </label>
               <input
@@ -152,11 +152,11 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
                 name="name"
                 value={formData.name}
                 readOnly
-                className="w-full px-4 py-2 bg-gray-600 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:outline-none cursor-not-allowed"
+                className="w-full px-3 py-2 sm:px-4 sm:py-2 bg-gray-600 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:outline-none cursor-not-allowed text-sm sm:text-base"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-2">
                 {t("profile.wizard.personalInfo.surname")}
               </label>
               <input
@@ -164,11 +164,11 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
                 name="surname"
                 value={formData.surname}
                 readOnly
-                className="w-full px-4 py-2 bg-gray-600 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:outline-none cursor-not-allowed"
+                className="w-full px-3 py-2 sm:px-4 sm:py-2 bg-gray-600 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:outline-none cursor-not-allowed text-sm sm:text-base"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-2">
                 {t("profile.wizard.personalInfo.email")}
               </label>
               <input
@@ -176,11 +176,11 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
                 name="email"
                 value={formData.email}
                 readOnly
-                className="w-full px-4 py-2 bg-gray-600 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:outline-none cursor-not-allowed"
+                className="w-full px-3 py-2 sm:px-4 sm:py-2 bg-gray-600 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:outline-none cursor-not-allowed text-sm sm:text-base"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-2">
                 {t("profile.wizard.personalInfo.phone")}
               </label>
               <input
@@ -188,11 +188,11 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
                 name="phone"
                 value={formData.phone}
                 readOnly
-                className="w-full px-4 py-2 bg-gray-600 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:outline-none cursor-not-allowed"
+                className="w-full px-3 py-2 sm:px-4 sm:py-2 bg-gray-600 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:outline-none cursor-not-allowed text-sm sm:text-base"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-2">
                 {t("profile.wizard.personalInfo.country")}
               </label>
               <input
@@ -200,11 +200,11 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
                 name="country"
                 value={formData.country}
                 readOnly
-                className="w-full px-4 py-2 bg-gray-600 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:outline-none cursor-not-allowed"
+                className="w-full px-3 py-2 sm:px-4 sm:py-2 bg-gray-600 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:outline-none cursor-not-allowed text-sm sm:text-base"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-2">
                 {t("profile.personalInfo.region")}
               </label>
               <input
@@ -212,21 +212,21 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
                 name="region"
                 value={formData.region}
                 readOnly
-                className="w-full px-4 py-2 bg-gray-600 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:outline-none cursor-not-allowed"
+                className="w-full px-3 py-2 sm:px-4 sm:py-2 bg-gray-600 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:outline-none cursor-not-allowed text-sm sm:text-base"
               />
             </div>
-            <p className="text-sm text-gray-400 italic mt-2 mb-4">
+            <p className="text-xs sm:text-sm text-gray-400 italic mt-1 sm:mt-2 mb-2 sm:mb-4">
               {t("resumeWizard.profileDataNote")}
             </p>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-2">
                 {t("profile.wizard.personalInfo.gender")}
               </label>
               <select
                 name="gender"
                 value={formData.gender}
                 onChange={handleChange}
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-3 py-2 sm:px-4 sm:py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
               >
                 <option value="">{t("resumeWizard.selectGender")}</option>
                 <option value="male">
@@ -241,9 +241,9 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
         );
       case 2:
         return (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-2">
                 {t("profile.wizard.experience.profession")}
               </label>
               <input
@@ -251,21 +251,21 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
                 name="profession"
                 value={formData.profession}
                 onChange={handleChange}
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-3 py-2 sm:px-4 sm:py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
                 placeholder={t("resumeWizard.placeholders.profession")}
                 maxLength={100}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-2">
                 {t("profile.wizard.experience.experience")}
               </label>
               <textarea
                 name="experience"
                 value={formData.experience}
                 onChange={handleChange}
-                rows={4}
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+                rows={3}
+                className="w-full px-3 py-2 sm:px-4 sm:py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none text-sm sm:text-base"
                 placeholder={t(
                   "profile.wizard.experience.experiencePlaceholder"
                 )}
@@ -276,18 +276,18 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
         );
       case 3:
         return (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-2">
                 {t("profile.wizard.education.level")}
               </label>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
                 {educationOptions.map((option) => (
                   <button
                     key={option}
                     type="button"
                     onClick={() => handleEducationSelect(option)}
-                    className={`p-4 rounded-lg border ${
+                    className={`p-2 sm:p-4 rounded-lg border text-xs sm:text-sm ${
                       formData.education === option
                         ? "border-emerald-500 bg-emerald-500/10 text-white"
                         : "border-gray-600 text-gray-400 hover:border-gray-500"
@@ -299,7 +299,7 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-2">
                 {t("profile.wizard.education.institution")}
               </label>
               <input
@@ -307,13 +307,13 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
                 name="institutionName"
                 value={formData.institutionName}
                 onChange={handleChange}
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-3 py-2 sm:px-4 sm:py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
                 placeholder={t("resumeWizard.placeholders.institution")}
                 maxLength={150}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-2">
                 {t("profile.wizard.education.graduationYear")}
               </label>
               <input
@@ -321,13 +321,13 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
                 name="graduationYear"
                 value={formData.graduationYear}
                 onChange={handleChange}
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-3 py-2 sm:px-4 sm:py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
                 placeholder={t("resumeWizard.placeholders.graduationYear")}
                 maxLength={4}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-2">
                 {t("profile.wizard.education.specialization")}
               </label>
               <input
@@ -335,7 +335,7 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
                 name="specialization"
                 value={formData.specialization}
                 onChange={handleChange}
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-3 py-2 sm:px-4 sm:py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
                 placeholder={t("resumeWizard.placeholders.specialization")}
                 maxLength={150}
               />
@@ -344,9 +344,9 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
         );
       case 4:
         return (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-2">
                 {t("profile.wizard.skills.skills")}
               </label>
               <SkillSelect
@@ -360,15 +360,15 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-2">
                 {t("profile.wizard.skills.contacts")}
               </label>
               <textarea
                 name="contacts"
                 value={formData.contacts}
                 onChange={handleChange}
-                rows={4}
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+                rows={3}
+                className="w-full px-3 py-2 sm:px-4 sm:py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none text-sm sm:text-base"
                 placeholder={t("profile.wizard.skills.contactsPlaceholder")}
                 maxLength={500}
               />
@@ -387,28 +387,28 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+          className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/50"
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-gray-800 rounded-xl shadow-xl w-full max-w-2xl overflow-hidden"
+            className="bg-gray-800 rounded-xl shadow-xl w-full max-w-sm sm:max-w-2xl overflow-hidden"
           >
-            <div className="relative p-6 border-b border-gray-700">
+            <div className="relative p-3 sm:p-6 border-b border-gray-700">
               <button
                 onClick={onClose}
-                className="absolute right-6 top-6 text-gray-400 hover:text-white transition-colors"
+                className="absolute right-3 top-3 sm:right-6 sm:top-6 text-gray-400 hover:text-white transition-colors"
               >
-                <X className="w-6 h-6" />
+                <X className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
-              <h2 className="text-2xl font-bold text-white">
+              <h2 className="text-lg sm:text-2xl font-bold text-white pr-8">
                 {t("profile.wizard.title")}
               </h2>
-              <p className="text-gray-400 mt-2">
+              <p className="text-xs sm:text-base text-gray-400 mt-1 sm:mt-2">
                 {t("resumeWizard.stepProgress", { current: step, total: 4 })}
               </p>
-              <div className="mt-4 h-2 bg-gray-700 rounded-full overflow-hidden">
+              <div className="mt-2 sm:mt-4 h-1.5 sm:h-2 bg-gray-700 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-emerald-500 transition-all duration-300"
                   style={{ width: `${(step / 4) * 100}%` }}
@@ -416,25 +416,27 @@ const ResumeWizard = ({ isOpen, onClose, onComplete }: ResumeWizardProps) => {
               </div>
             </div>
 
-            <div className="p-6">{renderStep()}</div>
+            <div className="p-3 sm:p-6 max-h-[60vh] sm:max-h-none overflow-y-auto">
+              {renderStep()}
+            </div>
 
-            <div className="p-6 border-t border-gray-700 flex justify-between">
+            <div className="p-3 sm:p-6 border-t border-gray-700 flex justify-between">
               <button
                 onClick={handleBack}
                 disabled={step === 1}
-                className="px-6 py-2 flex items-center gap-2 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1.5 sm:px-6 sm:py-2 flex items-center gap-1 sm:gap-2 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                 {t("profile.wizard.back")}
               </button>
               <button
                 onClick={handleNext}
-                className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors flex items-center gap-2"
+                className="px-3 py-1.5 sm:px-6 sm:py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors flex items-center gap-1 sm:gap-2 text-sm sm:text-base"
               >
                 {step === 4
                   ? t("profile.wizard.finish")
                   : t("profile.wizard.next")}
-                {step < 4 && <ChevronRight className="w-5 h-5" />}
+                {step < 4 && <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />}
               </button>
             </div>
           </motion.div>

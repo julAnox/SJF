@@ -789,7 +789,7 @@ const Profile = () => {
         value={value}
         onChange={onChange}
         disabled={disabled || loading}
-        className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none h-10 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none h-10 sm:h-10 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
       >
         <option value="">{placeholder}</option>
         {options.map((option) => (
@@ -803,13 +803,13 @@ const Profile = () => {
         ))}
       </select>
 
-      <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex items-center">
+      <div className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 flex items-center">
         {loading ? (
-          <Loader2 className="text-gray-400 w-5 h-5 animate-spin" />
+          <Loader2 className="text-gray-400 w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
         ) : error ? (
-          <AlertTriangle className="text-red-400 w-5 h-5" />
+          <AlertTriangle className="text-red-400 w-4 h-4 sm:w-5 sm:h-5" />
         ) : (
-          <Icon className="text-gray-400 w-5 h-5 pointer-events-none" />
+          <Icon className="text-gray-400 w-4 h-4 sm:w-5 sm:h-5 pointer-events-none" />
         )}
       </div>
 
@@ -817,16 +817,16 @@ const Profile = () => {
         <button
           type="button"
           onClick={onRetry}
-          className="absolute right-8 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-emerald-400 transition-colors"
+          className="absolute right-6 sm:right-8 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-emerald-400 transition-colors"
           title="Retry loading"
         >
-          <RefreshCw className="w-4 h-4" />
+          <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4" />
         </button>
       )}
 
       <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
         <svg
-          className="fill-current h-4 w-4"
+          className="fill-current h-3 w-3 sm:h-4 sm:w-4"
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 20 20"
         >
@@ -850,8 +850,8 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen bg-gray-900">
-      <div className="pt-20">
-        <div className="max-w-7xl mx-auto px-4 py-12">
+      <div className="pt-20 sm:pt-24">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 py-4 sm:py-12">
           {/* Notification Toast */}
           <AnimatePresence>
             {notification && (
@@ -859,18 +859,18 @@ const Profile = () => {
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className={`fixed top-24 right-4 px-6 py-3 rounded-lg shadow-lg ${
+                className={`fixed top-24 sm:top-28 right-2 sm:right-4 px-4 py-2 sm:px-6 sm:py-3 rounded-lg shadow-lg ${
                   notification.type === "success"
                     ? "bg-emerald-500"
                     : "bg-red-500"
-                } text-white z-50`}
+                } text-white z-50 text-sm sm:text-base max-w-xs sm:max-w-none`}
               >
                 {notification.message}
               </motion.div>
             )}
           </AnimatePresence>
 
-          <div className="flex flex-col lg:flex-row gap-8">
+          <div className="flex flex-col lg:flex-row gap-3 sm:gap-8">
             {/* Profile Section */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -878,8 +878,8 @@ const Profile = () => {
               className="flex-1 bg-gray-800 rounded-xl shadow-xl overflow-hidden"
             >
               {/* Header */}
-              <div className="relative h-48 bg-gradient-to-r from-emerald-600 to-blue-600">
-                <div className="absolute -bottom-16 left-8">
+              <div className="relative h-32 sm:h-48 bg-gradient-to-r from-emerald-600 to-blue-600">
+                <div className="absolute -bottom-8 sm:-bottom-16 left-3 sm:left-8">
                   <div className="relative">
                     <img
                       src={
@@ -889,10 +889,10 @@ const Profile = () => {
                         }+${formData.last_name || ""}&background=random`
                       }
                       alt={`${formData.first_name} ${formData.last_name}`}
-                      className="w-32 h-32 rounded-xl object-cover border-4 border-gray-800"
+                      className="w-16 h-16 sm:w-32 sm:h-32 rounded-lg sm:rounded-xl object-cover border-2 sm:border-4 border-gray-800"
                     />
-                    <label className="absolute bottom-2 right-2 w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-700 transition-colors">
-                      <Camera className="w-5 h-5 text-emerald-400" />
+                    <label className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 w-6 h-6 sm:w-8 sm:h-8 bg-gray-800 rounded-md sm:rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-700 transition-colors">
+                      <Camera className="w-3 h-3 sm:w-5 sm:h-5 text-emerald-400" />
                       <input
                         type="file"
                         accept="image/*"
@@ -905,11 +905,14 @@ const Profile = () => {
               </div>
 
               {/* Form */}
-              <form onSubmit={handleSubmit} className="p-8 pt-20">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <form
+                onSubmit={handleSubmit}
+                className="p-3 sm:p-8 pt-12 sm:pt-20"
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                   {/* First Name */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-2">
+                    <label className="block text-xs sm:text-sm font-medium text-gray-400 mb-1 sm:mb-2">
                       {t("profile.personalInfo.firstName")}
                     </label>
                     <div className="relative">
@@ -918,16 +921,16 @@ const Profile = () => {
                         name="first_name"
                         value={formData.first_name}
                         onChange={handleChange}
-                        className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
                         placeholder={t("profile.placeholders.firstName")}
                       />
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                      <User className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
                     </div>
                   </div>
 
                   {/* Last Name */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-2">
+                    <label className="block text-xs sm:text-sm font-medium text-gray-400 mb-1 sm:mb-2">
                       {t("profile.personalInfo.lastName")}
                     </label>
                     <div className="relative">
@@ -936,16 +939,16 @@ const Profile = () => {
                         name="last_name"
                         value={formData.last_name}
                         onChange={handleChange}
-                        className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
                         placeholder={t("profile.placeholders.lastName")}
                       />
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                      <User className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
                     </div>
                   </div>
 
                   {/* Email */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-2">
+                    <label className="block text-xs sm:text-sm font-medium text-gray-400 mb-1 sm:mb-2">
                       {t("profile.personalInfo.email")}
                     </label>
                     <div className="relative">
@@ -954,17 +957,17 @@ const Profile = () => {
                         name="email"
                         value={formData.email}
                         onChange={handleChange}
-                        className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
+                        className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50 text-sm sm:text-base"
                         placeholder={t("profile.placeholders.email")}
                         disabled
                       />
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                      <Mail className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
                     </div>
                   </div>
 
                   {/* Date of Birth */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-2">
+                    <label className="block text-xs sm:text-sm font-medium text-gray-400 mb-1 sm:mb-2">
                       {t("profile.personalInfo.dateOfBirth")}
                     </label>
                     <div className="relative">
@@ -989,18 +992,18 @@ const Profile = () => {
                             date_of_birth: formattedDate,
                           }));
                         }}
-                        className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
                       />
-                      <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                      <Calendar className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
                     </div>
                   </div>
 
                   {/* Phone Number Row */}
                   <div className="md:col-span-2">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                       {/* Phone Number - Half Width */}
                       <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-2">
+                        <label className="block text-xs sm:text-sm font-medium text-gray-400 mb-1 sm:mb-2">
                           {t("profile.personalInfo.phone")}
                         </label>
                         <PhoneInputWithFlag
@@ -1011,7 +1014,7 @@ const Profile = () => {
 
                       {/* Country Selector - Half Width */}
                       <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-2">
+                        <label className="block text-xs sm:text-sm font-medium text-gray-400 mb-1 sm:mb-2">
                           {t("profile.personalInfo.country")}
                         </label>
                         <LocationSelect
@@ -1032,10 +1035,10 @@ const Profile = () => {
 
                   {/* Region and District Row */}
                   <div className="md:col-span-2">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                       {/* Region Selector */}
                       <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-2">
+                        <label className="block text-xs sm:text-sm font-medium text-gray-400 mb-1 sm:mb-2">
                           {t("profile.personalInfo.region")}
                         </label>
                         <LocationSelect
@@ -1054,7 +1057,7 @@ const Profile = () => {
 
                       {/* District/City Selector */}
                       <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-2">
+                        <label className="block text-xs sm:text-sm font-medium text-gray-400 mb-1 sm:mb-2">
                           {t("profile.personalInfo.district")}
                         </label>
                         <LocationSelect
@@ -1075,16 +1078,16 @@ const Profile = () => {
                 </div>
 
                 {/* Submit Button */}
-                <div className="mt-6 flex justify-end">
+                <div className="mt-4 sm:mt-6 flex justify-end">
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    className="px-4 py-2 sm:px-6 sm:py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 sm:gap-2 text-sm sm:text-base"
                   >
                     {isLoading ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
                     ) : (
-                      <Save className="w-5 h-5" />
+                      <Save className="w-4 h-4 sm:w-5 sm:h-5" />
                     )}
                     {t("profile.buttons.saveChanges")}
                   </button>
@@ -1092,69 +1095,69 @@ const Profile = () => {
               </form>
             </motion.div>
 
-            {/* Right Sidebar - остальная часть остается без изменений */}
+            {/* Right Sidebar */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="lg:w-[400px] flex-shrink-0 space-y-4"
+              className="lg:w-[350px] xl:w-[400px] flex-shrink-0 space-y-3 sm:space-y-4"
             >
               {/* Resumes Section (for students) */}
               {formData.role === "student" && (
                 <div className="bg-gray-800 rounded-xl shadow-xl">
-                  <div className="p-6 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <FileText className="w-6 h-6 text-emerald-400" />
-                      <h2 className="text-xl font-bold text-white">
+                  <div className="p-3 sm:p-6 flex items-center justify-between">
+                    <div className="flex items-center gap-1 sm:gap-2">
+                      <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400" />
+                      <h2 className="text-lg sm:text-xl font-bold text-white">
                         {t("profile.resume.title")}
                       </h2>
                     </div>
                     <button
                       onClick={() => setShowResumeWizard(true)}
-                      className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center hover:bg-emerald-500 transition-colors"
+                      className="w-7 h-7 sm:w-8 sm:h-8 bg-emerald-600 rounded-lg flex items-center justify-center hover:bg-emerald-500 transition-colors"
                     >
-                      <Plus className="w-5 h-5 text-white" />
+                      <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                     </button>
                   </div>
 
                   {/* Resume List */}
-                  <div className="px-6 pb-6">
+                  <div className="px-3 sm:px-6 pb-3 sm:pb-6">
                     {isLoading ? (
                       <div className="flex justify-center py-4">
-                        <Loader2 className="w-6 h-6 text-emerald-400 animate-spin" />
+                        <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400 animate-spin" />
                       </div>
                     ) : userResumes.length > 0 ? (
-                      <div className="space-y-3 mt-2">
+                      <div className="space-y-2 sm:space-y-3 mt-2">
                         {userResumes.map((resume: any) => (
                           <div
                             key={resume.id}
-                            className="p-4 bg-gray-700 rounded-lg hover:bg-gray-650 transition-colors"
+                            className="p-3 sm:p-4 bg-gray-700 rounded-lg hover:bg-gray-650 transition-colors"
                           >
                             <div className="flex justify-between items-start">
-                              <div>
-                                <h3 className="font-medium text-white">
+                              <div className="min-w-0 flex-1">
+                                <h3 className="font-medium text-white text-sm sm:text-base truncate">
                                   {resume.profession}
                                 </h3>
-                                <p className="text-sm text-gray-400 mt-1">
+                                <p className="text-xs sm:text-sm text-gray-400 mt-1 truncate">
                                   {resume.education} • {resume.specialization}
                                 </p>
                               </div>
-                              <span className="text-xs text-gray-400">
+                              <span className="text-xs text-gray-400 ml-2 flex-shrink-0">
                                 {new Date(
                                   resume.created_at
                                 ).toLocaleDateString()}
                               </span>
                             </div>
-                            <div className="flex gap-2 mt-3">
+                            <div className="flex gap-1 sm:gap-2 mt-2 sm:mt-3">
                               <button
                                 onClick={() => handleViewResume(resume.id)}
-                                className="px-3 py-1 bg-gray-600 text-white text-sm rounded hover:bg-gray-500 transition-colors"
+                                className="px-2 py-1 sm:px-3 sm:py-1 bg-gray-600 text-white text-xs sm:text-sm rounded hover:bg-gray-500 transition-colors"
                               >
                                 {t("profile.buttons.view")}
                               </button>
                               <button
                                 onClick={() => handleEditResume(resume.id)}
-                                className="px-3 py-1 bg-emerald-600 text-white text-sm rounded hover:bg-emerald-500 transition-colors"
+                                className="px-2 py-1 sm:px-3 sm:py-1 bg-emerald-600 text-white text-xs sm:text-sm rounded hover:bg-emerald-500 transition-colors"
                               >
                                 {t("profile.buttons.edit")}
                               </button>
@@ -1165,7 +1168,7 @@ const Profile = () => {
                                     resume.profession
                                   )
                                 }
-                                className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-500 transition-colors"
+                                className="px-2 py-1 sm:px-3 sm:py-1 bg-red-600 text-white text-xs sm:text-sm rounded hover:bg-red-500 transition-colors"
                               >
                                 {t("profile.buttons.delete")}
                               </button>
@@ -1174,7 +1177,7 @@ const Profile = () => {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-gray-400 text-center py-4">
+                      <p className="text-gray-400 text-center py-4 text-sm sm:text-base">
                         {t("profile.resume.noResumes")}
                       </p>
                     )}
@@ -1185,67 +1188,67 @@ const Profile = () => {
               {/* Company Section (for companies) */}
               {formData.role === "company" && (
                 <div className="bg-gray-800 rounded-xl shadow-xl">
-                  <div className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-2">
-                        <Building2 className="w-6 h-6 text-emerald-400" />
-                        <h2 className="text-xl font-bold text-white">
+                  <div className="p-3 sm:p-6">
+                    <div className="flex items-center justify-between mb-3 sm:mb-4">
+                      <div className="flex items-center gap-1 sm:gap-2">
+                        <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400" />
+                        <h2 className="text-lg sm:text-xl font-bold text-white">
                           {t("profile.company.title")}
                         </h2>
                       </div>
                       {company ? (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 sm:gap-2">
                           <button
                             onClick={() => setShowCompanyViewModal(true)}
-                            className="p-2 text-gray-400 hover:text-emerald-500 transition-colors"
+                            className="p-1.5 sm:p-2 text-gray-400 hover:text-emerald-500 transition-colors"
                             title={t("profile.buttons.editCompany")}
                           >
-                            <Edit className="w-5 h-5" />
+                            <Edit className="w-4 h-4 sm:w-5 sm:h-5" />
                           </button>
                           <button
                             onClick={openDeleteCompanyModal}
-                            className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                            className="p-1.5 sm:p-2 text-gray-400 hover:text-red-500 transition-colors"
                             title={t("profile.buttons.deleteCompany")}
                           >
-                            <Trash2 className="w-5 h-5" />
+                            <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
                           </button>
                         </div>
                       ) : (
                         <button
                           onClick={() => setShowCreateCompanyModal(true)}
-                          className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center hover:bg-emerald-500 transition-colors"
+                          className="w-7 h-7 sm:w-8 sm:h-8 bg-emerald-600 rounded-lg flex items-center justify-center hover:bg-emerald-500 transition-colors"
                           title={t("profile.buttons.createCompany")}
                         >
-                          <Plus className="w-5 h-5 text-white" />
+                          <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                         </button>
                       )}
                     </div>
 
                     {company ? (
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-4">
+                      <div className="space-y-3 sm:space-y-4">
+                        <div className="flex items-center gap-3 sm:gap-4">
                           {company.logo ? (
                             <img
                               src={company.logo || "/placeholder.svg"}
                               alt={company.name}
-                              className="w-16 h-16 rounded-lg object-cover bg-gray-700"
+                              className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg object-cover bg-gray-700"
                             />
                           ) : (
-                            <div className="w-16 h-16 rounded-lg bg-gray-700 flex items-center justify-center">
-                              <Building2 className="w-8 h-8 text-gray-500" />
+                            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg bg-gray-700 flex items-center justify-center">
+                              <Building2 className="w-6 h-6 sm:w-8 sm:h-8 text-gray-500" />
                             </div>
                           )}
-                          <div>
-                            <h3 className="font-medium text-white text-lg">
+                          <div className="min-w-0 flex-1">
+                            <h3 className="font-medium text-white text-base sm:text-lg truncate">
                               {company.name}
                             </h3>
-                            <p className="text-sm text-gray-400">
+                            <p className="text-xs sm:text-sm text-gray-400 truncate">
                               {company.industry}
                             </p>
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div className="grid grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm">
                           <div>
                             <p className="text-gray-400">
                               {t("profile.company.founded")}
@@ -1275,19 +1278,19 @@ const Profile = () => {
 
                         <button
                           onClick={() => setShowCompanyViewModal(true)}
-                          className="w-full mt-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm"
+                          className="w-full mt-2 px-3 py-2 sm:px-4 sm:py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-xs sm:text-sm"
                         >
                           {t("profile.buttons.viewEditDetails")}
                         </button>
                       </div>
                     ) : (
-                      <div className="text-center py-8">
-                        <p className="text-gray-400 mb-4">
+                      <div className="text-center py-6 sm:py-8">
+                        <p className="text-gray-400 mb-3 sm:mb-4 text-sm sm:text-base">
                           {t("profile.company.noCompany")}
                         </p>
                         <button
                           onClick={() => setShowCreateCompanyModal(true)}
-                          className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors"
+                          className="px-4 py-2 sm:px-6 sm:py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors text-sm sm:text-base"
                         >
                           {t("profile.buttons.createCompany")}
                         </button>
@@ -1300,11 +1303,11 @@ const Profile = () => {
               {/* Jobs Section - Only visible if company exists */}
               {company && (
                 <div className="bg-gray-800 rounded-xl shadow-xl">
-                  <div className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-2">
-                        <Briefcase className="w-6 h-6 text-emerald-400" />
-                        <h2 className="text-xl font-bold text-white">
+                  <div className="p-3 sm:p-6">
+                    <div className="flex items-center justify-between mb-3 sm:mb-4">
+                      <div className="flex items-center gap-1 sm:gap-2">
+                        <Briefcase className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400" />
+                        <h2 className="text-lg sm:text-xl font-bold text-white">
                           {t("profile.jobs.title")}
                         </h2>
                       </div>
@@ -1313,39 +1316,41 @@ const Profile = () => {
                           setEditingJob(null);
                           setShowCreateJobModal(true);
                         }}
-                        className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center hover:bg-emerald-500 transition-colors"
+                        className="w-7 h-7 sm:w-8 sm:h-8 bg-emerald-600 rounded-lg flex items-center justify-center hover:bg-emerald-500 transition-colors"
                         title={t("profile.buttons.addNewJob")}
                       >
-                        <Plus className="w-5 h-5 text-white" />
+                        <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                       </button>
                     </div>
 
                     {/* Job List */}
                     {isLoading ? (
-                      <div className="flex justify-center py-8">
-                        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+                      <div className="flex justify-center py-6 sm:py-8">
+                        <Loader2 className="w-6 h-6 sm:w-8 sm:h-8 text-emerald-500 animate-spin" />
                       </div>
                     ) : jobs.length === 0 ? (
-                      <div className="text-center py-8 text-gray-400">
-                        <p>{t("profile.jobs.noJobs")}</p>
+                      <div className="text-center py-6 sm:py-8 text-gray-400">
+                        <p className="text-sm sm:text-base">
+                          {t("profile.jobs.noJobs")}
+                        </p>
                       </div>
                     ) : (
-                      <div className="space-y-4">
+                      <div className="space-y-3 sm:space-y-4">
                         {jobs.map((job) => (
                           <div
                             key={job.id}
                             className="bg-gray-700 rounded-lg overflow-hidden"
                           >
                             {/* Job Header */}
-                            <div className="p-4">
+                            <div className="p-3 sm:p-4">
                               <div className="flex justify-between items-start">
-                                <div>
-                                  <div className="flex items-center gap-2">
-                                    <h3 className="font-medium text-white">
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <h3 className="font-medium text-white text-sm sm:text-base truncate">
                                       {job.title}
                                     </h3>
                                     <span
-                                      className={`text-xs px-2 py-0.5 rounded ${
+                                      className={`text-xs px-1.5 py-0.5 sm:px-2 sm:py-0.5 rounded ${
                                         job.status === "active"
                                           ? "bg-emerald-600"
                                           : "bg-gray-500"
@@ -1356,28 +1361,32 @@ const Profile = () => {
                                         : t("profile.jobs.statusHidden")}
                                     </span>
                                   </div>
-                                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-400 mt-2">
+                                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm text-gray-400">
                                     <div className="flex items-center gap-1">
-                                      <MapPin className="w-4 h-4" />
-                                      <span>{job.city}</span>
+                                      <MapPin className="w-3 h-3 sm:w-4 sm:h-4" />
+                                      <span className="truncate">
+                                        {job.city}
+                                      </span>
                                     </div>
                                     <div className="flex items-center gap-1">
-                                      <DollarSign className="w-4 h-4" />
-                                      <span>{`${job.salary_min}-${job.salary_max} ${job.type_of_money}`}</span>
+                                      <DollarSign className="w-3 h-3 sm:w-4 sm:h-4" />
+                                      <span className="truncate">{`${job.salary_min}-${job.salary_max} ${job.type_of_money}`}</span>
                                     </div>
                                     <div className="flex items-center gap-1">
-                                      <Clock className="w-4 h-4" />
-                                      <span>{job.type}</span>
+                                      <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+                                      <span className="truncate">
+                                        {job.type}
+                                      </span>
                                     </div>
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1 sm:gap-2 ml-2">
                                   <button
                                     onClick={() => handleEditJob(job)}
                                     className="p-1 text-gray-400 hover:text-white transition-colors"
                                     title={t("profile.buttons.editJob")}
                                   >
-                                    <Edit className="w-5 h-5" />
+                                    <Edit className="w-4 h-4 sm:w-5 sm:h-5" />
                                   </button>
                                   <button
                                     onClick={() =>
@@ -1394,9 +1403,9 @@ const Profile = () => {
                                     }
                                   >
                                     {job.status === "active" ? (
-                                      <EyeOff className="w-5 h-5" />
+                                      <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" />
                                     ) : (
-                                      <Eye className="w-5 h-5" />
+                                      <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
                                     )}
                                   </button>
                                   <button
@@ -1409,7 +1418,7 @@ const Profile = () => {
                                     className="p-1 text-gray-400 hover:text-red-500 transition-colors"
                                     title={t("profile.buttons.deleteJob")}
                                   >
-                                    <Trash2 className="w-5 h-5" />
+                                    <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
                                   </button>
                                 </div>
                               </div>
