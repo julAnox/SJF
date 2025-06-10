@@ -15,6 +15,9 @@ import {
 import { useTranslation } from "react-i18next";
 import { companiesApi } from "../../services/api";
 import { useAuth } from "../../contexts/AuthContext";
+import { ValidatedInput } from "../validated-input";
+import { ValidatedTextarea } from "../validated-textarea";
+import { useFieldValidation } from "../../hooks/use-field-validation";
 
 interface CreateCompanyModalProps {
   isOpen: boolean;
@@ -29,6 +32,7 @@ const CreateCompanyModal = ({
 }: CreateCompanyModalProps) => {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const { validateForm } = useFieldValidation();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -41,6 +45,7 @@ const CreateCompanyModal = ({
     status: "active",
   });
   const [error, setError] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -51,6 +56,32 @@ const CreateCompanyModal = ({
     setFormData((prev) => ({
       ...prev,
       [name]: name === "founded_year" ? Number.parseInt(value) : value,
+    }));
+  };
+
+  const handleValidatedFieldChange = (fieldName: string, value: string) => {
+    if (fieldName === "founded_year") {
+      const numericValue = value.replace(/[^0-9]/g, "");
+      const numValue = numericValue ? Number.parseInt(numericValue) : "";
+      setFormData((prev) => ({
+        ...prev,
+        [fieldName]: numValue,
+      }));
+      return;
+    }
+
+    if (fieldName === "size") {
+      const numericValue = value.replace(/[^0-9]/g, "");
+      setFormData((prev) => ({
+        ...prev,
+        [fieldName]: numericValue,
+      }));
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      [fieldName]: value,
     }));
   };
 
@@ -70,6 +101,65 @@ const CreateCompanyModal = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    setValidationErrors([]);
+    setError(null);
+
+    const requiredFields = [
+      "name",
+      "description",
+      "website",
+      "industry",
+      "size",
+      "founded_year",
+    ];
+
+    const fieldLabels = {
+      name: "Название компании",
+      description: "Описание компании",
+      website: "Веб-сайт",
+      industry: "Отрасль",
+      size: "Размер компании",
+      founded_year: "Год основания",
+    };
+
+    const validationData = {
+      ...formData,
+      founded_year: formData.founded_year.toString(),
+    };
+
+    const validation = validateForm("company", validationData, requiredFields);
+
+    if (!validation.isValid) {
+      const errors: string[] = [];
+
+      validation.missingRequired.forEach((fieldName) => {
+        const label =
+          fieldLabels[fieldName as keyof typeof fieldLabels] || fieldName;
+        errors.push(`${label} обязательно для заполнения`);
+      });
+
+      Object.entries(validation.errors).forEach(([fieldName, error]) => {
+        const label =
+          fieldLabels[fieldName as keyof typeof fieldLabels] || fieldName;
+        errors.push(`${label}: ${error.message}`);
+      });
+
+      setValidationErrors(errors);
+      return;
+    }
+
+    if (
+      !formData.founded_year ||
+      formData.founded_year < 1800 ||
+      formData.founded_year > new Date().getFullYear()
+    ) {
+      setValidationErrors([
+        `Год основания должен быть между 1800 и ${new Date().getFullYear()}`,
+      ]);
+      return;
+    }
+
     if (!user) {
       setError(t("createCompanyModal.errors.mustBeLoggedIn"));
       return;
@@ -77,7 +167,6 @@ const CreateCompanyModal = ({
 
     try {
       setIsLoading(true);
-      setError(null);
 
       const newCompany = await companiesApi.create({
         ...formData,
@@ -123,35 +212,49 @@ const CreateCompanyModal = ({
                   {error}
                 </div>
               )}
+              {validationErrors.length > 0 && (
+                <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-yellow-900/30 border border-yellow-700 rounded-lg text-yellow-400 text-sm sm:text-base">
+                  <div className="font-medium mb-2">
+                    Пожалуйста, исправьте следующие ошибки:
+                  </div>
+                  <ul className="list-disc list-inside space-y-1">
+                    {validationErrors.map((error, index) => (
+                      <li key={index}>{error}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
                 <div>
                   <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
-                    {t("createCompanyModal.fields.name")}*
+                    Название компании*
                   </label>
-                  <div className="relative">
-                    <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
-                      placeholder={t("createCompanyModal.placeholders.name")}
-                      required
-                    />
-                  </div>
+                  <ValidatedInput
+                    modelName="company"
+                    fieldName="name"
+                    value={formData.name}
+                    onChange={(value) =>
+                      handleValidatedFieldChange("name", value)
+                    }
+                    placeholder="Введите название компании"
+                    className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
+                    icon={
+                      <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+                    }
+                    required
+                  />
                 </div>
 
                 <div>
                   <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
-                    {t("createCompanyModal.fields.logo")}
+                    Логотип компании
                   </label>
                   {formData.logo && (
                     <div className="mb-3 sm:mb-4">
                       <img
                         src={formData.logo || "/placeholder.svg"}
-                        alt={t("createCompanyModal.logoPreview")}
+                        alt="Предпросмотр логотипа"
                         className="w-24 h-24 sm:w-32 sm:h-32 object-contain rounded-lg bg-gray-700 p-2"
                       />
                     </div>
@@ -166,99 +269,106 @@ const CreateCompanyModal = ({
 
                 <div>
                   <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
-                    {t("createCompanyModal.fields.description")}*
+                    Описание компании*
                   </label>
-                  <div className="relative">
-                    <FileText className="absolute left-3 top-3 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-                    <textarea
-                      name="description"
-                      value={formData.description}
-                      onChange={handleChange}
-                      rows={3}
-                      className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none text-sm sm:text-base"
-                      placeholder={t(
-                        "createCompanyModal.placeholders.description"
-                      )}
-                      required
-                    />
-                  </div>
+                  <ValidatedTextarea
+                    modelName="company"
+                    fieldName="description"
+                    value={formData.description}
+                    onChange={(value) =>
+                      handleValidatedFieldChange("description", value)
+                    }
+                    rows={3}
+                    className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none text-sm sm:text-base"
+                    placeholder="Расскажите о вашей компании"
+                    icon={
+                      <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+                    }
+                    required
+                  />
                 </div>
 
                 <div>
                   <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
-                    {t("createCompanyModal.fields.website")}*
+                    Веб-сайт*
                   </label>
-                  <div className="relative">
-                    <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-                    <input
-                      type="url"
-                      name="website"
-                      value={formData.website}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
-                      placeholder={t("createCompanyModal.placeholders.website")}
-                      required
-                    />
-                  </div>
+                  <ValidatedInput
+                    modelName="company"
+                    fieldName="website"
+                    value={formData.website}
+                    onChange={(value) =>
+                      handleValidatedFieldChange("website", value)
+                    }
+                    type="url"
+                    placeholder="https://example.com"
+                    className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
+                    icon={
+                      <Globe className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+                    }
+                    required
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2">
                   <div>
                     <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
-                      {t("createCompanyModal.fields.industry")}*
+                      Отрасль*
                     </label>
-                    <div className="relative">
-                      <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-                      <input
-                        type="text"
-                        name="industry"
-                        value={formData.industry}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
-                        placeholder={t(
-                          "createCompanyModal.placeholders.industry"
-                        )}
-                        required
-                      />
-                    </div>
+                    <ValidatedInput
+                      modelName="company"
+                      fieldName="industry"
+                      value={formData.industry}
+                      onChange={(value) =>
+                        handleValidatedFieldChange("industry", value)
+                      }
+                      placeholder="IT, Финансы, Медицина"
+                      className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
+                      icon={
+                        <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+                      }
+                      required
+                    />
                   </div>
 
                   <div>
                     <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
-                      {t("createCompanyModal.fields.size")}*
+                      Размер компании* (только цифры)
                     </label>
-                    <div className="relative">
-                      <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-                      <input
-                        type="text"
-                        name="size"
-                        value={formData.size}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
-                        placeholder={t("createCompanyModal.placeholders.size")}
-                        required
-                      />
-                    </div>
+                    <ValidatedInput
+                      modelName="company"
+                      fieldName="size"
+                      value={formData.size}
+                      onChange={(value) =>
+                        handleValidatedFieldChange("size", value)
+                      }
+                      placeholder="50"
+                      className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
+                      icon={
+                        <Users className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+                      }
+                      required
+                    />
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
-                    {t("createCompanyModal.fields.foundedYear")}*
+                    Год основания* (1800-{new Date().getFullYear()})
                   </label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-                    <input
-                      type="number"
-                      name="founded_year"
-                      value={formData.founded_year}
-                      onChange={handleChange}
-                      min="1900"
-                      max={new Date().getFullYear()}
-                      className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
-                      required
-                    />
-                  </div>
+                  <ValidatedInput
+                    modelName="company"
+                    fieldName="founded_year"
+                    value={formData.founded_year.toString()}
+                    onChange={(value) =>
+                      handleValidatedFieldChange("founded_year", value)
+                    }
+                    placeholder="2020"
+                    className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
+                    icon={
+                      <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+                    }
+                    required
+                  />
                 </div>
 
                 <div className="flex justify-end gap-2 sm:gap-4 pt-3 sm:pt-4">
@@ -268,7 +378,7 @@ const CreateCompanyModal = ({
                     className="px-4 py-2 sm:px-6 sm:py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm sm:text-base"
                     disabled={isLoading}
                   >
-                    {t("createCompanyModal.buttons.cancel")}
+                    Отмена
                   </button>
                   <button
                     type="submit"
@@ -278,12 +388,10 @@ const CreateCompanyModal = ({
                     {isLoading ? (
                       <>
                         <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
-                        <span>{t("createCompanyModal.buttons.creating")}</span>
+                        <span>Создание...</span>
                       </>
                     ) : (
-                      <span>
-                        {t("createCompanyModal.buttons.createCompany")}
-                      </span>
+                      <span>Создать компанию</span>
                     )}
                   </button>
                 </div>

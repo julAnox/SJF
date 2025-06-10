@@ -1,7 +1,6 @@
 "use client";
 
 import type React from "react";
-
 import { useState, useEffect } from "react";
 import { useFieldValidation } from "../hooks/use-field-validation";
 
@@ -34,7 +33,7 @@ export function ValidatedInput({
   showError = true,
   icon,
 }: ValidatedInputProps) {
-  const { validateField, getMaxLength } = useFieldValidation();
+  const { validateField, getMaxLength, isNumericField } = useFieldValidation();
   const [error, setError] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
   const maxLength = getMaxLength(modelName, fieldName);
@@ -52,8 +51,8 @@ export function ValidatedInput({
       } else {
         setError(null);
 
-        // Показываем предупреждение, если заполнено более 90% от максимальной длины
-        if (maxLength && result.currentLength > maxLength * 0.9) {
+        const isNumeric = isNumericField(modelName, fieldName);
+        if (maxLength && !isNumeric && result.currentLength > maxLength * 0.9) {
           setWarning(
             `Приближение к лимиту (${result.currentLength}/${result.maxLength})`
           );
@@ -68,20 +67,19 @@ export function ValidatedInput({
   }, [value, modelName, fieldName, maxLength]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
+    let newValue = e.target.value;
 
-    // Если есть ограничение по длине и новое значение превышает его, не обновляем
+    if (isNumericField(modelName, fieldName)) {
+      newValue = newValue.replace(/[^0-9]/g, "");
+    }
+
     if (maxLength && newValue.length > maxLength) {
-      setError(
-        `Превышена максимальная длина (${newValue.length}/${maxLength})`
-      );
       return;
     }
 
     onChange(newValue);
   };
 
-  // Определяем цвет границы в зависимости от состояния
   const getBorderClass = () => {
     if (error) return "border-red-500";
     if (warning) return "border-yellow-500";
@@ -104,7 +102,6 @@ export function ValidatedInput({
           placeholder={placeholder}
           disabled={disabled}
           required={required}
-          maxLength={maxLength}
           className={`w-full ${
             icon ? "pl-8 sm:pl-10" : ""
           } ${getBorderClass()} ${className}`}

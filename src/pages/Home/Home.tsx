@@ -22,6 +22,8 @@ import { useAuth } from "../../contexts/AuthContext";
 import StarRating from "../../components/StarRating/StarRating";
 import { commentsApi, usersApi, jobsApi } from "../../services/api";
 import { companiesApi } from "../../services/api";
+import { ValidatedTextarea } from "../../components/validated-textarea";
+import { useFieldValidation } from "../../hooks/use-field-validation";
 
 interface CommentWithUser extends Comment {
   first_name: string;
@@ -60,6 +62,7 @@ const Home = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
+  const { validateField } = useFieldValidation();
 
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -85,6 +88,8 @@ const Home = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [commentsPerPage, setCommentsPerPage] = useState(9);
   const [latestCompanies, setLatestCompanies] = useState<Company[]>([]);
+
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const indexOfLastComment = currentPage * commentsPerPage;
   const indexOfFirstComment = indexOfLastComment - commentsPerPage;
@@ -279,9 +284,31 @@ const Home = () => {
     }
   };
 
+  const handleCommentChange = (value: string) => {
+    setNewComment((prev) => ({
+      ...prev,
+      content: value,
+    }));
+    setValidationError(null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newComment.content.trim() || !isAuthenticated || !user?.id) return;
+
+    const validationResult = validateField(
+      "comment",
+      "content",
+      newComment.content
+    );
+    if (!validationResult.isValid) {
+      setValidationError(
+        validationResult.message ||
+          `Превышена максимальная длина (${validationResult.currentLength}/${validationResult.maxLength})`
+      );
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const commentData = {
@@ -729,18 +756,22 @@ const Home = () => {
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     {t("home.cta.youreview")}
                   </label>
-                  <textarea
+                  {/* Заменяем обычный textarea на ValidatedTextarea */}
+                  <ValidatedTextarea
+                    modelName="comment"
+                    fieldName="content"
                     value={newComment.content}
-                    onChange={(e) =>
-                      setNewComment((prev) => ({
-                        ...prev,
-                        content: e.target.value,
-                      }))
-                    }
-                    className="w-full px-3 sm:px-4 py-2 bg-gray-700 rounded-lg text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 h-24 sm:h-32 resize-none text-sm sm:text-base"
+                    onChange={handleCommentChange}
                     placeholder={t("home.cta.shareyourexp")}
+                    className="w-full px-3 sm:px-4 py-2 bg-gray-700 rounded-lg text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 h-24 sm:h-32 resize-none text-sm sm:text-base"
                     required
+                    rows={5}
                   />
+                  {validationError && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {validationError}
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4">
@@ -749,6 +780,7 @@ const Home = () => {
                     onClick={() => {
                       setShowCommentForm(false);
                       setNewComment({ content: "", stars: 5 });
+                      setValidationError(null);
                     }}
                     className="px-4 py-2 text-gray-400 hover:text-white transition-colors text-sm sm:text-base"
                   >

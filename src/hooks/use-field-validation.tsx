@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react";
 
-// Объект с ограничениями полей из Django моделей
-// Это будет использоваться как fallback, если API недоступен
 const DEFAULT_FIELD_LIMITS: Record<string, Record<string, number>> = {
   user: {
     email: 30,
@@ -25,7 +23,7 @@ const DEFAULT_FIELD_LIMITS: Record<string, Record<string, number>> = {
     graduationYear: 4,
     specialization: 50,
     skills: 255,
-    contacts: 255,
+    contacts: 300,
   },
   comment: {
     content: 255,
@@ -36,19 +34,24 @@ const DEFAULT_FIELD_LIMITS: Record<string, Record<string, number>> = {
   },
   company: {
     name: 40,
+    description: 1000,
     website: 40,
     industry: 50,
     size: 20,
+    founded_year: 4,
     status: 20,
   },
   job: {
     title: 30,
-    description: 255,
-    requirements: 255,
+    description: 2000,
+    requirements: 1000,
+    salary_min: 15,
+    salary_max: 15,
     city: 20,
     metro: 30,
     type: 30,
     schedule: 30,
+    experiense: 2,
     status: 20,
     type_of_money: 3,
   },
@@ -62,6 +65,95 @@ const DEFAULT_FIELD_LIMITS: Record<string, Record<string, number>> = {
   },
 };
 
+const NUMERIC_ONLY_FIELDS: Record<string, string[]> = {
+  company: ["size", "founded_year"],
+  job: ["salary_min", "salary_max", "experiense"],
+  user: [],
+  resume: ["graduationYear"],
+};
+
+const FIELD_VALIDATION_RULES: Record<
+  string,
+  Record<string, (value: string) => { isValid: boolean; message?: string }>
+> = {
+  company: {
+    founded_year: (value: string) => {
+      const year = Number.parseInt(value);
+      const currentYear = new Date().getFullYear();
+      if (isNaN(year) || year < 1800 || year > currentYear) {
+        return {
+          isValid: false,
+          message: `Год должен быть между 1800 и ${currentYear}`,
+        };
+      }
+      return { isValid: true };
+    },
+    website: (value: string) => {
+      if (value && !value.match(/^https?:\/\/.+/)) {
+        return {
+          isValid: false,
+          message: "Веб-сайт должен начинаться с http:// или https://",
+        };
+      }
+      return { isValid: true };
+    },
+    size: (value: string) => {
+      const num = Number.parseInt(value);
+      if (value && (isNaN(num) || num <= 0)) {
+        return {
+          isValid: false,
+          message: "Размер компании должен быть положительным числом",
+        };
+      }
+      return { isValid: true };
+    },
+  },
+  user: {
+    email: (value: string) => {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (value && !emailRegex.test(value)) {
+        return {
+          isValid: false,
+          message: "Неверный формат email",
+        };
+      }
+      return { isValid: true };
+    },
+  },
+  job: {
+    salary_min: (value: string) => {
+      const num = Number.parseFloat(value);
+      if (value && (isNaN(num) || num < 0)) {
+        return {
+          isValid: false,
+          message: "Минимальная зарплата должна быть положительным числом",
+        };
+      }
+      return { isValid: true };
+    },
+    salary_max: (value: string) => {
+      const num = Number.parseFloat(value);
+      if (value && (isNaN(num) || num < 0)) {
+        return {
+          isValid: false,
+          message: "Максимальная зарплата должна быть положительным числом",
+        };
+      }
+      return { isValid: true };
+    },
+    experiense: (value: string) => {
+      const num = Number.parseInt(value);
+      if (value && (isNaN(num) || num < 0 || num > 50)) {
+        return {
+          isValid: false,
+          message: "Опыт должен быть от 0 до 50 лет",
+        };
+      }
+      return { isValid: true };
+    },
+  },
+};
+
 export interface ValidationResult {
   isValid: boolean;
   message?: string;
@@ -69,38 +161,18 @@ export interface ValidationResult {
   maxLength: number;
 }
 
+export interface FormValidationResult {
+  isValid: boolean;
+  errors: Record<string, ValidationResult>;
+  missingRequired: string[];
+}
+
 export function useFieldValidation() {
   const [fieldLimits, setFieldLimits] =
     useState<Record<string, Record<string, number>>>(DEFAULT_FIELD_LIMITS);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Загрузка ограничений полей с сервера
-  useEffect(() => {
-    const fetchFieldLimits = async () => {
-      try {
-        const response = await fetch("/api/field-limits/");
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        const data = await response.json();
-        setFieldLimits(data);
-        setError(null);
-      } catch (err) {
-        console.error("Ошибка при загрузке ограничений полей:", err);
-        setError(
-          "Не удалось загрузить ограничения полей. Используются значения по умолчанию."
-        );
-        // Используем значения по умолчанию в случае ошибки
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchFieldLimits();
-  }, []);
-
-  // Проверка одного поля
   const validateField = (
     modelName: string,
     fieldName: string,
@@ -125,24 +197,58 @@ export function useFieldValidation() {
     }
 
     const currentLength = value.length;
-    const isValid = currentLength <= maxLength;
+    let isValid = currentLength <= maxLength;
+    let message: string | undefined;
+
+    const numericFields = NUMERIC_ONLY_FIELDS[modelName.toLowerCase()];
+    if (numericFields && numericFields.includes(fieldName)) {
+      const isNumeric = /^\d*$/.test(value) || value === "";
+      if (!isNumeric) {
+        isValid = false;
+        message = "Поле должно содержать только цифры";
+      }
+    }
+
+    const validationRules = FIELD_VALIDATION_RULES[modelName.toLowerCase()];
+    if (validationRules && validationRules[fieldName] && value.trim()) {
+      const customValidation = validationRules[fieldName](value);
+      if (!customValidation.isValid) {
+        isValid = false;
+        message = customValidation.message;
+      }
+    }
+
+    if (isValid && currentLength > maxLength) {
+      isValid = false;
+      message = `Превышена максимальная длина (${currentLength}/${maxLength})`;
+    }
 
     return {
       isValid,
-      message: isValid
-        ? undefined
-        : `Превышена максимальная длина (${currentLength}/${maxLength})`,
+      message,
       currentLength,
       maxLength,
     };
   };
 
-  // Проверка всей формы
   const validateForm = (
     modelName: string,
-    formData: Record<string, string>
-  ): Record<string, ValidationResult> => {
+    formData: Record<string, any>,
+    requiredFields: string[] = []
+  ): FormValidationResult => {
     const errors: Record<string, ValidationResult> = {};
+    const missingRequired: string[] = [];
+
+    requiredFields.forEach((fieldName) => {
+      const value = formData[fieldName];
+      if (
+        !value ||
+        (typeof value === "string" && !value.trim()) ||
+        (typeof value === "number" && (isNaN(value) || value === 0))
+      ) {
+        missingRequired.push(fieldName);
+      }
+    });
 
     Object.entries(formData).forEach(([fieldName, value]) => {
       if (typeof value === "string") {
@@ -153,10 +259,13 @@ export function useFieldValidation() {
       }
     });
 
-    return errors;
+    return {
+      isValid: Object.keys(errors).length === 0 && missingRequired.length === 0,
+      errors,
+      missingRequired,
+    };
   };
 
-  // Получение максимальной длины для поля
   const getMaxLength = (
     modelName: string,
     fieldName: string
@@ -164,10 +273,51 @@ export function useFieldValidation() {
     return fieldLimits[modelName.toLowerCase()]?.[fieldName];
   };
 
+  const isNumericField = (modelName: string, fieldName: string): boolean => {
+    const numericFields = NUMERIC_ONLY_FIELDS[modelName.toLowerCase()];
+    return numericFields ? numericFields.includes(fieldName) : false;
+  };
+
+  const filterNumericValue = (
+    modelName: string,
+    fieldName: string,
+    value: string
+  ): string => {
+    if (isNumericField(modelName, fieldName)) {
+      return value.replace(/[^0-9]/g, "");
+    }
+    return value;
+  };
+
+  const getFormErrorMessages = (
+    modelName: string,
+    formData: Record<string, any>,
+    requiredFields: string[] = [],
+    fieldLabels: Record<string, string> = {}
+  ): string[] => {
+    const validation = validateForm(modelName, formData, requiredFields);
+    const messages: string[] = [];
+
+    validation.missingRequired.forEach((fieldName) => {
+      const label = fieldLabels[fieldName] || fieldName;
+      messages.push(`${label} обязательно для заполнения`);
+    });
+
+    Object.entries(validation.errors).forEach(([fieldName, error]) => {
+      const label = fieldLabels[fieldName] || fieldName;
+      messages.push(`${label}: ${error.message}`);
+    });
+
+    return messages;
+  };
+
   return {
     validateField,
     validateForm,
     getMaxLength,
+    isNumericField,
+    filterNumericValue,
+    getFormErrorMessages,
     fieldLimits,
     isLoading,
     error,

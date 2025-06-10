@@ -37,16 +37,13 @@ import CreateJobModal from "../../components/Modals/CreateJobModal";
 import CompanyViewModal from "../../components/Modals/CompanyViewModal";
 import ResumeWizard from "./ResumeWizard";
 import DeleteConfirmationModal from "../../components/Modals/DeleteConfirmationModal";
+import { ValidatedInput } from "../../components/validated-input";
 import {
   locationAPI,
   type Country,
   type Region,
   type City,
 } from "../../services/location-api";
-
-// Импортируем компоненты валидации
-import { ValidatedInput } from "../validated-input";
-import { useFieldValidation } from "../../hooks/use-field-validation";
 
 interface FormData {
   first_name: string;
@@ -119,10 +116,6 @@ const Profile = () => {
     isLoading: authLoading,
     verifyPassword,
   } = useAuth();
-
-  // Добавляем хук валидации
-  const { validateForm } = useFieldValidation();
-
   const [isLoading, setIsLoading] = useState(false);
   const [showResumeWizard, setShowResumeWizard] = useState(false);
   const [showCreateCompanyModal, setShowCreateCompanyModal] = useState(false);
@@ -466,7 +459,6 @@ const Profile = () => {
     }
   };
 
-  // Обновленная функция handleChange для работы с валидацией
   const handleChange = async (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
@@ -500,7 +492,6 @@ const Profile = () => {
     }
   };
 
-  // Новая функция для обработки изменений валидируемых полей
   const handleValidatedFieldChange = (fieldName: string, value: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -527,32 +518,7 @@ const Profile = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
     try {
-      // Валидация формы перед отправкой
-      const validationErrors = validateForm("user", {
-        first_name: formData.first_name,
-        last_name: formData.last_name,
-        email: formData.email,
-        phone: formData.phone,
-        country: formData.country,
-        region: formData.region,
-        district: formData.district,
-      });
-
-      if (Object.keys(validationErrors).length > 0) {
-        const errorMessages = Object.entries(validationErrors)
-          .map(([field, error]) => `${field}: ${error.message}`)
-          .join(", ");
-
-        setNotification({
-          type: "error",
-          message: `Ошибки валидации: ${errorMessages}`,
-        });
-        setTimeout(() => setNotification(null), 5000);
-        return;
-      }
-
       console.log("Submitting form data:", formData);
       await updateProfile(formData);
       setNotification({
@@ -952,66 +918,67 @@ const Profile = () => {
                 className="p-3 sm:p-8 pt-12 sm:pt-20"
               >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                  {/* First Name - Заменяем на ValidatedInput */}
+                  {/* First Name */}
                   <div>
                     <label className="block text-xs sm:text-sm font-medium text-gray-400 mb-1 sm:mb-2">
                       {t("profile.personalInfo.firstName")}
                     </label>
-                    <ValidatedInput
-                      modelName="user"
-                      fieldName="first_name"
-                      value={formData.first_name}
-                      onChange={(value) =>
-                        handleValidatedFieldChange("first_name", value)
-                      }
-                      placeholder={t("profile.placeholders.firstName")}
-                      className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
-                      icon={
-                        <User className="text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-                      }
-                    />
+                    <div className="relative">
+                      <ValidatedInput
+                        modelName="user"
+                        fieldName="first_name"
+                        value={formData.first_name}
+                        onChange={(value) =>
+                          handleValidatedFieldChange("first_name", value)
+                        }
+                        placeholder={t("profile.placeholders.firstName")}
+                        className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
+                        icon={
+                          <User className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+                        }
+                      />
+                    </div>
                   </div>
 
-                  {/* Last Name - Заменяем на ValidatedInput */}
+                  {/* Last Name */}
                   <div>
                     <label className="block text-xs sm:text-sm font-medium text-gray-400 mb-1 sm:mb-2">
                       {t("profile.personalInfo.lastName")}
                     </label>
-                    <ValidatedInput
-                      modelName="user"
-                      fieldName="last_name"
-                      value={formData.last_name}
-                      onChange={(value) =>
-                        handleValidatedFieldChange("last_name", value)
-                      }
-                      placeholder={t("profile.placeholders.lastName")}
-                      className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
-                      icon={
-                        <User className="text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-                      }
-                    />
+                    <div className="relative">
+                      <ValidatedInput
+                        modelName="user"
+                        fieldName="last_name"
+                        value={formData.last_name}
+                        onChange={(value) =>
+                          handleValidatedFieldChange("last_name", value)
+                        }
+                        placeholder={t("profile.placeholders.lastName")}
+                        className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
+                        icon={
+                          <User className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+                        }
+                      />
+                    </div>
                   </div>
 
-                  {/* Email - Заменяем на ValidatedInput */}
+                  {/* Email */}
                   <div>
                     <label className="block text-xs sm:text-sm font-medium text-gray-400 mb-1 sm:mb-2">
                       {t("profile.personalInfo.email")}
                     </label>
-                    <ValidatedInput
-                      modelName="user"
-                      fieldName="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(value) =>
-                        handleValidatedFieldChange("email", value)
-                      }
-                      placeholder={t("profile.placeholders.email")}
-                      className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50 text-sm sm:text-base"
-                      icon={
-                        <Mail className="text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-                      }
-                      disabled
-                    />
+                    <div className="relative">
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50 text-sm sm:text-base"
+                        placeholder={t("profile.placeholders.email")}
+                        disabled
+                      />
+                      <Mail className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
+                    </div>
                   </div>
 
                   {/* Date of Birth */}
@@ -1061,7 +1028,7 @@ const Profile = () => {
                         />
                       </div>
 
-                      {/* Country Selector - Half Width - Заменяем на ValidatedInput */}
+                      {/* Country Selector - Half Width */}
                       <div>
                         <label className="block text-xs sm:text-sm font-medium text-gray-400 mb-1 sm:mb-2">
                           {t("profile.personalInfo.country")}
@@ -1085,7 +1052,7 @@ const Profile = () => {
                   {/* Region and District Row */}
                   <div className="md:col-span-2">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                      {/* Region Selector - Заменяем на ValidatedInput */}
+                      {/* Region Selector */}
                       <div>
                         <label className="block text-xs sm:text-sm font-medium text-gray-400 mb-1 sm:mb-2">
                           {t("profile.personalInfo.region")}
@@ -1104,7 +1071,7 @@ const Profile = () => {
                         />
                       </div>
 
-                      {/* District/City Selector - Заменяем на ValidatedInput */}
+                      {/* District/City Selector */}
                       <div>
                         <label className="block text-xs sm:text-sm font-medium text-gray-400 mb-1 sm:mb-2">
                           {t("profile.personalInfo.district")}

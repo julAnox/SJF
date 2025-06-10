@@ -1,7 +1,6 @@
 "use client";
 
 import type React from "react";
-
 import { useState, useEffect } from "react";
 import { useFieldValidation } from "../hooks/use-field-validation";
 
@@ -52,7 +51,6 @@ export function ValidatedTextarea({
       } else {
         setError(null);
 
-        // Показываем предупреждение, если заполнено более 90% от максимальной длины
         if (maxLength && result.currentLength > maxLength * 0.9) {
           setWarning(
             `Приближение к лимиту (${result.currentLength}/${result.maxLength})`
@@ -70,18 +68,13 @@ export function ValidatedTextarea({
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value;
 
-    // Если есть ограничение по длине и новое значение превышает его, не обновляем
     if (maxLength && newValue.length > maxLength) {
-      setError(
-        `Превышена максимальная длина (${newValue.length}/${maxLength})`
-      );
       return;
     }
 
     onChange(newValue);
   };
 
-  // Определяем цвет границы в зависимости от состояния
   const getBorderClass = () => {
     if (error) return "border-red-500";
     if (warning) return "border-yellow-500";
@@ -100,7 +93,6 @@ export function ValidatedTextarea({
           disabled={disabled}
           required={required}
           rows={rows}
-          maxLength={maxLength}
           className={`w-full ${
             icon ? "pl-8 sm:pl-10" : ""
           } ${getBorderClass()} ${className}`}

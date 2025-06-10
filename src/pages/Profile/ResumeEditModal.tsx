@@ -16,7 +16,10 @@ import {
 import { useTranslation } from "react-i18next";
 import { resumesApi } from "../../services/api";
 import { useAuth } from "../../contexts/AuthContext";
-import SkillSelect from "../../components/SkillSelect/SkillSelect";
+import ValidatedSkillSelect from "../../components/validated-skill-select";
+import { ValidatedInput } from "../../components/validated-input";
+import { ValidatedTextarea } from "../../components/validated-textarea";
+import { useFieldValidation } from "../../hooks/use-field-validation";
 
 interface ResumeEditModalProps {
   isOpen: boolean;
@@ -70,6 +73,8 @@ const ResumeEditModal = ({
   onComplete,
 }: ResumeEditModalProps) => {
   const { t } = useTranslation();
+  const { validateField } = useFieldValidation();
+
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [isLoading, setIsLoading] = useState(false);
@@ -162,11 +167,57 @@ const ResumeEditModal = ({
     }));
   };
 
+  const handleValidatedFieldChange = (fieldName: string, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      [fieldName]: value,
+    }));
+  };
+
   const handleEducationSelect = (education: string) => {
     setFormData((prev) => ({
       ...prev,
       education,
     }));
+  };
+
+  const isCurrentStepValid = () => {
+    switch (step) {
+      case 2:
+        const professionValid = validateField(
+          "resume",
+          "profession",
+          formData.profession
+        ).isValid;
+        const experienceValid = validateField(
+          "resume",
+          "experience",
+          formData.experience
+        ).isValid;
+        return professionValid && experienceValid;
+      case 3:
+        const institutionValid = validateField(
+          "resume",
+          "institutionName",
+          formData.institutionName
+        ).isValid;
+        const specializationValid = validateField(
+          "resume",
+          "specialization",
+          formData.specialization
+        ).isValid;
+        return institutionValid && specializationValid;
+      case 4:
+        const contactsValid = validateField(
+          "resume",
+          "contacts",
+          formData.contacts
+        ).isValid;
+        const skillsValid = formData.skills.length <= 100;
+        return contactsValid && skillsValid;
+      default:
+        return true;
+    }
   };
 
   const handleNext = () => {
@@ -338,30 +389,33 @@ const ResumeEditModal = ({
               <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-2">
                 {t("profile.wizard.experience.profession")}
               </label>
-              <input
-                type="text"
-                name="profession"
+              <ValidatedInput
+                modelName="resume"
+                fieldName="profession"
                 value={formData.profession}
-                onChange={handleChange}
+                onChange={(value) =>
+                  handleValidatedFieldChange("profession", value)
+                }
                 className="w-full px-3 py-2 sm:px-4 sm:py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
                 placeholder={t("resumeEditModal.placeholders.profession")}
-                maxLength={100}
               />
             </div>
             <div>
               <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-2">
                 {t("profile.wizard.experience.experience")}
               </label>
-              <textarea
-                name="experience"
+              <ValidatedTextarea
+                modelName="resume"
+                fieldName="experience"
                 value={formData.experience}
-                onChange={handleChange}
+                onChange={(value) =>
+                  handleValidatedFieldChange("experience", value)
+                }
                 rows={3}
                 className="w-full px-3 py-2 sm:px-4 sm:py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none text-sm sm:text-base"
                 placeholder={t(
                   "profile.wizard.experience.experiencePlaceholder"
                 )}
-                maxLength={1000}
               />
             </div>
           </div>
@@ -395,14 +449,15 @@ const ResumeEditModal = ({
               <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-2">
                 {t("profile.wizard.education.institution")}
               </label>
-              <input
-                type="text"
-                name="institutionName"
+              <ValidatedInput
+                modelName="resume"
+                fieldName="institutionName"
                 value={formData.institutionName}
-                onChange={handleChange}
+                onChange={(value) =>
+                  handleValidatedFieldChange("institutionName", value)
+                }
                 className="w-full px-3 py-2 sm:px-4 sm:py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
                 placeholder={t("resumeEditModal.placeholders.institution")}
-                maxLength={150}
               />
             </div>
             <div>
@@ -423,14 +478,15 @@ const ResumeEditModal = ({
               <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-2">
                 {t("profile.wizard.education.specialization")}
               </label>
-              <input
-                type="text"
-                name="specialization"
+              <ValidatedInput
+                modelName="resume"
+                fieldName="specialization"
                 value={formData.specialization}
-                onChange={handleChange}
+                onChange={(value) =>
+                  handleValidatedFieldChange("specialization", value)
+                }
                 className="w-full px-3 py-2 sm:px-4 sm:py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
                 placeholder={t("resumeEditModal.placeholders.specialization")}
-                maxLength={150}
               />
             </div>
           </div>
@@ -443,7 +499,7 @@ const ResumeEditModal = ({
               <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-2">
                 {t("profile.wizard.skills.skills")}
               </label>
-              <SkillSelect
+              <ValidatedSkillSelect
                 selectedSkills={formData.skills || ""}
                 onChange={(skills) => {
                   setFormData((prev) => ({
@@ -451,20 +507,24 @@ const ResumeEditModal = ({
                     skills: skills,
                   }));
                 }}
+                maxSkillLength={15}
+                maxTotalLength={100}
               />
             </div>
             <div>
               <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-2">
                 {t("resumeEditModal.additionalContacts")}
               </label>
-              <textarea
-                name="contacts"
+              <ValidatedTextarea
+                modelName="resume"
+                fieldName="contacts"
                 value={formData.contacts}
-                onChange={handleChange}
+                onChange={(value) =>
+                  handleValidatedFieldChange("contacts", value)
+                }
                 rows={3}
                 className="w-full px-3 py-2 sm:px-4 sm:py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none text-sm sm:text-base"
                 placeholder={t("resumeEditModal.placeholders.contacts")}
-                maxLength={500}
               />
             </div>
           </div>
@@ -500,7 +560,7 @@ const ResumeEditModal = ({
               <h2 className="text-lg sm:text-2xl font-bold text-white pr-8">
                 {t("resumeEditModal.title")}
               </h2>
-              <p className="text-xs sm:text-base text-gray-400 mt-1 sm:mt-2">
+              <p className="text-xs sm:text-sm text-gray-400 mt-1 sm:mt-2">
                 {t("resumeEditModal.stepProgress", { current: step, total: 4 })}
               </p>
               <div className="mt-2 sm:mt-4 h-1.5 sm:h-2 bg-gray-700 rounded-full overflow-hidden">
@@ -542,7 +602,8 @@ const ResumeEditModal = ({
                   </button>
                   <button
                     onClick={handleNext}
-                    className="px-3 py-1.5 sm:px-6 sm:py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors flex items-center gap-1 sm:gap-2 text-sm sm:text-base"
+                    disabled={!isCurrentStepValid()}
+                    className="px-3 py-1.5 sm:px-6 sm:py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors flex items-center gap-1 sm:gap-2 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {step === 4
                       ? t("resumeEditModal.save")

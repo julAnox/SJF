@@ -12,6 +12,8 @@ import { resumesApi } from "../../services/api";
 import applicationsService from "../../services/applicationsService";
 import chatsService from "../../services/chatsService";
 import messagesService from "../../services/messagesService";
+import { ValidatedTextarea } from "../../components/validated-textarea";
+import { useFieldValidation } from "../../hooks/use-field-validation";
 
 interface ApplicationModalProps {
   isOpen: boolean;
@@ -35,12 +37,15 @@ const ApplicationModal = ({
   const navigate = useNavigate();
   const { user } = useAuth();
   const { t } = useTranslation();
+  const { validateField } = useFieldValidation();
+
   const [selectedResume, setSelectedResume] = useState("");
   const [coverLetter, setCoverLetter] = useState("");
   const [resumes, setResumes] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchResumes = async () => {
@@ -63,10 +68,38 @@ const ApplicationModal = ({
     }
   }, [isOpen, user, t]);
 
+  const handleCoverLetterChange = (value: string) => {
+    setCoverLetter(value);
+    setValidationError(null);
+  };
+
+  const isCoverLetterValid = () => {
+    if (!coverLetter.trim()) return false;
+    const validationResult = validateField(
+      "jobapplication",
+      "cover_letter",
+      coverLetter
+    );
+    return validationResult.isValid;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!(selectedResume && coverLetter.trim())) {
       setError(t("applications.modal.errors.selectResumeAndCoverLetter"));
+      return;
+    }
+
+    const validationResult = validateField(
+      "jobapplication",
+      "cover_letter",
+      coverLetter
+    );
+    if (!validationResult.isValid) {
+      setValidationError(
+        validationResult.message ||
+          `Превышена максимальная длина (${validationResult.currentLength}/${validationResult.maxLength})`
+      );
       return;
     }
 
@@ -171,6 +204,7 @@ const ApplicationModal = ({
       setCoverLetter("");
       setError(null);
       setIsSubmitted(false);
+      setValidationError(null);
     }
   }, [isOpen]);
 
@@ -306,9 +340,12 @@ const ApplicationModal = ({
                   <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
                     {t("applications.modal.coverLetter")} *
                   </label>
-                  <textarea
+                  {/* Заменяем обычный textarea на ValidatedTextarea */}
+                  <ValidatedTextarea
+                    modelName="jobapplication"
+                    fieldName="cover_letter"
                     value={coverLetter}
-                    onChange={(e) => setCoverLetter(e.target.value)}
+                    onChange={handleCoverLetterChange}
                     required
                     rows={4}
                     className="w-full px-3 py-2 sm:px-4 sm:py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none text-sm sm:text-base"
@@ -318,10 +355,13 @@ const ApplicationModal = ({
                     <p className="text-gray-500 text-xs sm:text-sm">
                       {t("applications.modal.coverLetterHint")}
                     </p>
-                    <p className="text-gray-500 text-xs sm:text-sm">
-                      {coverLetter.length}/1000
-                    </p>
+                    {/* Счетчик символов теперь встроен в ValidatedTextarea */}
                   </div>
+                  {validationError && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {validationError}
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex justify-end gap-2 sm:gap-4 pt-3 sm:pt-4 border-t border-gray-700">
@@ -336,7 +376,11 @@ const ApplicationModal = ({
                   <button
                     type="submit"
                     disabled={
-                      !(selectedResume && coverLetter.trim()) || isLoading
+                      !(
+                        selectedResume &&
+                        coverLetter.trim() &&
+                        isCoverLetterValid()
+                      ) || isLoading
                     }
                     className="flex items-center gap-1 sm:gap-2 px-4 py-2 sm:px-6 sm:py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
                   >

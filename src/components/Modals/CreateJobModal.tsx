@@ -16,6 +16,9 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { jobsApi } from "../../services/api";
+import { ValidatedInput } from "../validated-input";
+import { ValidatedTextarea } from "../validated-textarea";
+import { useFieldValidation } from "../../hooks/use-field-validation";
 
 interface CreateJobModalProps {
   isOpen: boolean;
@@ -33,18 +36,21 @@ const CreateJobModal = ({
   initialData,
 }: CreateJobModalProps) => {
   const { t } = useTranslation();
+  const { validateForm } = useFieldValidation();
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     requirements: "",
-    salary_min: 0,
-    salary_max: 0,
+    salary_min: "",
+    salary_max: "",
     city: "",
     metro: "",
     type: "",
     schedule: "",
-    experiense: 0,
+    experiense: "",
     status: "active",
     type_of_money: "USD",
   });
@@ -57,13 +63,13 @@ const CreateJobModal = ({
         requirements: initialData.requirements
           ? initialData.requirements.replace(/,\s*/g, " ").trim()
           : "",
-        salary_min: initialData.salary_min || 0,
-        salary_max: initialData.salary_max || 0,
+        salary_min: initialData.salary_min?.toString() || "",
+        salary_max: initialData.salary_max?.toString() || "",
         city: initialData.city || "",
         metro: initialData.metro || "",
         type: initialData.type || "",
         schedule: initialData.schedule || "",
-        experiense: initialData.experiense || 0,
+        experiense: initialData.experiense?.toString() || "",
         status: initialData.status || "active",
         type_of_money: initialData.type_of_money || "USD",
       });
@@ -83,51 +89,138 @@ const CreateJobModal = ({
       return;
     }
 
-    if (name === "requirements") {
-      setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleValidatedFieldChange = (fieldName: string, value: string) => {
+    if (["salary_min", "salary_max", "experiense"].includes(fieldName)) {
+      const numericValue = value.replace(/[^0-9]/g, "");
+      setFormData((prev) => ({
+        ...prev,
+        [fieldName]: numericValue,
+      }));
       return;
     }
 
     setFormData((prev) => ({
       ...prev,
-      [name]:
-        name.includes("salary") || name === "experiense"
-          ? Number.parseFloat(value)
-          : value,
+      [fieldName]: value,
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    setValidationErrors([]);
+    setError(null);
+
+    const requiredFields = [
+      "title",
+      "description",
+      "requirements",
+      "salary_min",
+      "salary_max",
+      "city",
+      "type",
+      "schedule",
+      "experiense",
+      "type_of_money",
+    ];
+
+    const fieldLabels = {
+      title: "Название вакансии",
+      description: "Описание вакансии",
+      requirements: "Требования",
+      salary_min: "Минимальная зарплата",
+      salary_max: "Максимальная зарплата",
+      city: "Город",
+      type: "Тип занятости",
+      schedule: "График работы",
+      experiense: "Опыт работы",
+      type_of_money: "Валюта",
+    };
+
+    const validation = validateForm("job", formData, requiredFields);
+
+    if (!validation.isValid) {
+      const errors: string[] = [];
+
+      validation.missingRequired.forEach((fieldName) => {
+        const label =
+          fieldLabels[fieldName as keyof typeof fieldLabels] || fieldName;
+        errors.push(`${label} обязательно для заполнения`);
+      });
+
+      Object.entries(validation.errors).forEach(([fieldName, error]) => {
+        const label =
+          fieldLabels[fieldName as keyof typeof fieldLabels] || fieldName;
+        errors.push(`${label}: ${error.message}`);
+      });
+
+      setValidationErrors(errors);
+      return;
+    }
+
+    const salaryMin = Number.parseFloat(formData.salary_min);
+    const salaryMax = Number.parseFloat(formData.salary_max);
+
+    if (salaryMin <= 0) {
+      setValidationErrors(["Минимальная зарплата должна быть больше 0"]);
+      return;
+    }
+
+    if (salaryMax <= 0) {
+      setValidationErrors(["Максимальная зарплата должна быть больше 0"]);
+      return;
+    }
+
+    if (salaryMin > salaryMax) {
+      setValidationErrors([
+        "Минимальная зарплата не может быть больше максимальной",
+      ]);
+      return;
+    }
+
     try {
       setIsLoading(true);
 
       const processedFormData = {
-        ...formData,
+        title: formData.title.trim(),
+        description: formData.description.trim(),
         requirements: formData.requirements
           .split(/\s+/)
           .filter((req) => req.trim() !== "")
           .join(", "),
+        salary_min: Number.parseFloat(formData.salary_min),
+        salary_max: Number.parseFloat(formData.salary_max),
+        city: formData.city.trim(),
+        metro: formData.metro.trim(),
+        type: formData.type.trim(),
+        schedule: formData.schedule.trim(),
+        experiense: Number.parseInt(formData.experiense),
+        status: formData.status,
+        type_of_money: formData.type_of_money.trim(),
+        company: companyId,
       };
 
       if (initialData) {
-        const updatedJob = await jobsApi.update(initialData.id.toString(), {
-          ...processedFormData,
-          company: companyId,
-        });
+        const updatedJob = await jobsApi.update(
+          initialData.id.toString(),
+          processedFormData
+        );
         onComplete(updatedJob);
       } else {
-        const newJob = await jobsApi.create({
-          ...processedFormData,
-          company: companyId,
-        });
+        const newJob = await jobsApi.create(processedFormData);
         onComplete(newJob);
       }
 
       onClose();
     } catch (error) {
       console.error("Error saving job:", error);
+      setError("Произошла ошибка при сохранении вакансии");
     } finally {
       setIsLoading(false);
     }
@@ -146,9 +239,7 @@ const CreateJobModal = ({
             {/* Header */}
             <div className="flex items-center justify-between p-3 sm:p-6 border-b border-gray-700">
               <h2 className="text-lg sm:text-xl font-bold text-white">
-                {initialData
-                  ? t("jobModal.titleEdit")
-                  : t("jobModal.titleCreate")}
+                {initialData ? "Редактировать вакансию" : "Создать вакансию"}
               </h2>
               <button
                 onClick={onClose}
@@ -160,38 +251,61 @@ const CreateJobModal = ({
 
             {/* Form */}
             <div className="p-3 sm:p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+              {error && (
+                <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-red-900/30 border border-red-700 rounded-lg text-red-400 text-sm sm:text-base">
+                  {error}
+                </div>
+              )}
+              {validationErrors.length > 0 && (
+                <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-yellow-900/30 border border-yellow-700 rounded-lg text-yellow-400 text-sm sm:text-base">
+                  <div className="font-medium mb-2">
+                    Пожалуйста, исправьте следующие ошибки:
+                  </div>
+                  <ul className="list-disc list-inside space-y-1">
+                    {validationErrors.map((error, index) => (
+                      <li key={index}>{error}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
                 {/* Title */}
                 <div>
                   <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
-                    {t("jobModal.fields.title")}*
+                    Название вакансии*
                   </label>
-                  <div className="relative">
-                    <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-                    <input
-                      type="text"
-                      name="title"
-                      value={formData.title}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
-                      placeholder={t("jobModal.placeholders.title")}
-                      required
-                    />
-                  </div>
+                  <ValidatedInput
+                    modelName="job"
+                    fieldName="title"
+                    value={formData.title}
+                    onChange={(value) =>
+                      handleValidatedFieldChange("title", value)
+                    }
+                    placeholder="Frontend разработчик"
+                    className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
+                    icon={
+                      <Briefcase className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+                    }
+                    required
+                  />
                 </div>
 
                 {/* Description */}
                 <div>
                   <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
-                    {t("jobModal.fields.description")}*
+                    Описание вакансии*
                   </label>
-                  <textarea
-                    name="description"
+                  <ValidatedTextarea
+                    modelName="job"
+                    fieldName="description"
                     value={formData.description}
-                    onChange={handleChange}
+                    onChange={(value) =>
+                      handleValidatedFieldChange("description", value)
+                    }
                     rows={3}
                     className="w-full px-3 py-2 sm:px-4 sm:py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none text-sm sm:text-base"
-                    placeholder={t("jobModal.placeholders.description")}
+                    placeholder="Подробное описание вакансии и обязанностей"
                     required
                   />
                 </div>
@@ -199,22 +313,24 @@ const CreateJobModal = ({
                 {/* Requirements */}
                 <div>
                   <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
-                    {t("jobModal.fields.requirements")}*
+                    Требования*
                   </label>
-                  <div className="relative">
-                    <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-                    <input
-                      type="text"
-                      name="requirements"
-                      value={formData.requirements}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
-                      placeholder={t("jobModal.placeholders.requirements")}
-                      required
-                    />
-                  </div>
+                  <ValidatedInput
+                    modelName="job"
+                    fieldName="requirements"
+                    value={formData.requirements}
+                    onChange={(value) =>
+                      handleValidatedFieldChange("requirements", value)
+                    }
+                    placeholder="React JavaScript TypeScript"
+                    className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
+                    icon={
+                      <Briefcase className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+                    }
+                    required
+                  />
                   <p className="text-xs text-gray-400 mt-1">
-                    {t("jobModal.hints.requirements")}
+                    Перечислите требования через пробел
                   </p>
                 </div>
 
@@ -222,94 +338,106 @@ const CreateJobModal = ({
                 <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2">
                   <div>
                     <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
-                      {t("jobModal.fields.salaryMin")}*
+                      Минимальная зарплата*
                     </label>
-                    <div className="relative">
-                      <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-                      <input
-                        type="number"
-                        name="salary_min"
-                        value={formData.salary_min}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
-                        placeholder={t("jobModal.placeholders.salaryMin")}
-                        required
-                      />
-                    </div>
+                    <ValidatedInput
+                      modelName="job"
+                      fieldName="salary_min"
+                      value={formData.salary_min}
+                      onChange={(value) =>
+                        handleValidatedFieldChange("salary_min", value)
+                      }
+                      placeholder="50000"
+                      className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
+                      icon={
+                        <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+                      }
+                      required
+                    />
                   </div>
                   <div>
                     <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
-                      {t("jobModal.fields.salaryMax")}*
+                      Максимальная зарплата*
                     </label>
-                    <div className="relative">
-                      <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-                      <input
-                        type="number"
-                        name="salary_max"
-                        value={formData.salary_max}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
-                        placeholder={t("jobModal.placeholders.salaryMax")}
-                        required
-                      />
-                    </div>
+                    <ValidatedInput
+                      modelName="job"
+                      fieldName="salary_max"
+                      value={formData.salary_max}
+                      onChange={(value) =>
+                        handleValidatedFieldChange("salary_max", value)
+                      }
+                      placeholder="100000"
+                      className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
+                      icon={
+                        <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+                      }
+                      required
+                    />
                   </div>
                 </div>
 
                 {/* Currency */}
                 <div>
                   <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
-                    {t("jobModal.fields.currency")}*
+                    Валюта*
                   </label>
-                  <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-                    <input
-                      type="text"
-                      name="type_of_money"
-                      value={formData.type_of_money}
-                      onChange={handleChange}
-                      maxLength={3}
-                      className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
-                      placeholder={t("jobModal.placeholders.currency")}
-                      required
-                    />
-                  </div>
+                  <ValidatedInput
+                    modelName="job"
+                    fieldName="type_of_money"
+                    value={formData.type_of_money}
+                    onChange={(value) =>
+                      handleValidatedFieldChange(
+                        "type_of_money",
+                        value.toUpperCase()
+                      )
+                    }
+                    placeholder="USD"
+                    className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
+                    icon={
+                      <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+                    }
+                    required
+                  />
                 </div>
 
                 {/* Location */}
                 <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2">
                   <div>
                     <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
-                      {t("jobModal.fields.city")}*
+                      Город*
                     </label>
-                    <div className="relative">
-                      <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-                      <input
-                        type="text"
-                        name="city"
-                        value={formData.city}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
-                        placeholder={t("jobModal.placeholders.city")}
-                        required
-                      />
-                    </div>
+                    <ValidatedInput
+                      modelName="job"
+                      fieldName="city"
+                      value={formData.city}
+                      onChange={(value) =>
+                        handleValidatedFieldChange("city", value)
+                      }
+                      placeholder="Москва"
+                      className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
+                      icon={
+                        <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+                      }
+                      required
+                    />
                   </div>
                   <div>
                     <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
-                      {t("jobModal.fields.metro")}
+                      Метро
                     </label>
-                    <div className="relative">
-                      <Train className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-                      <input
-                        type="text"
-                        name="metro"
-                        value={formData.metro}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
-                        placeholder={t("jobModal.placeholders.metro")}
-                      />
-                    </div>
+                    <ValidatedInput
+                      modelName="job"
+                      fieldName="metro"
+                      value={formData.metro}
+                      onChange={(value) =>
+                        handleValidatedFieldChange("metro", value)
+                      }
+                      placeholder="Красные ворота"
+                      className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
+                      icon={
+                        <Train className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+                      }
+                    />
                   </div>
                 </div>
 
@@ -317,91 +445,63 @@ const CreateJobModal = ({
                 <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2">
                   <div>
                     <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
-                      {t("jobModal.fields.employmentType")}*
+                      Тип занятости*
                     </label>
-                    <div className="relative">
-                      <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5 pointer-events-none z-10" />
-                      <select
-                        name="type"
-                        value={formData.type}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base appearance-none"
-                        required
-                      >
-                        <option value="">
-                          {t("jobModal.options.selectType")}
-                        </option>
-                        <option value="Full-time">
-                          {t("jobModal.options.fullTime")}
-                        </option>
-                        <option value="Part-time">
-                          {t("jobModal.options.partTime")}
-                        </option>
-                        <option value="Contract">
-                          {t("jobModal.options.contract")}
-                        </option>
-                        <option value="Temporary">
-                          {t("jobModal.options.temporary")}
-                        </option>
-                        <option value="Internship">
-                          {t("jobModal.options.internship")}
-                        </option>
-                      </select>
-                    </div>
+                    <ValidatedInput
+                      modelName="job"
+                      fieldName="type"
+                      value={formData.type}
+                      onChange={(value) =>
+                        handleValidatedFieldChange("type", value)
+                      }
+                      placeholder="Полная занятость"
+                      className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
+                      icon={
+                        <Briefcase className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+                      }
+                      required
+                    />
                   </div>
                   <div>
                     <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
-                      {t("jobModal.fields.schedule")}*
+                      График работы*
                     </label>
-                    <div className="relative">
-                      <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5 pointer-events-none z-10" />
-                      <select
-                        name="schedule"
-                        value={formData.schedule}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base appearance-none"
-                        required
-                      >
-                        <option value="">
-                          {t("jobModal.options.selectSchedule")}
-                        </option>
-                        <option value="Standard">
-                          {t("jobModal.options.standard")}
-                        </option>
-                        <option value="Flexible">
-                          {t("jobModal.options.flexible")}
-                        </option>
-                        <option value="Shift">
-                          {t("jobModal.options.shift")}
-                        </option>
-                        <option value="Remote">
-                          {t("jobModal.options.remote")}
-                        </option>
-                        <option value="Hybrid">
-                          {t("jobModal.options.hybrid")}
-                        </option>
-                      </select>
-                    </div>
+                    <ValidatedInput
+                      modelName="job"
+                      fieldName="schedule"
+                      value={formData.schedule}
+                      onChange={(value) =>
+                        handleValidatedFieldChange("schedule", value)
+                      }
+                      placeholder="5/2"
+                      className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
+                      icon={
+                        <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+                      }
+                      required
+                    />
                   </div>
                 </div>
 
                 {/* Experience */}
                 <div>
                   <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
-                    {t("jobModal.fields.experience")}*
+                    Опыт работы (лет)*
                   </label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-                    <input
-                      type="number"
-                      name="experiense"
-                      value={formData.experiense}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
-                      placeholder={t("jobModal.placeholders.experience")}
-                      required
-                    />
-                  </div>
+                  <ValidatedInput
+                    modelName="job"
+                    fieldName="experiense"
+                    value={formData.experiense}
+                    onChange={(value) =>
+                      handleValidatedFieldChange("experiense", value)
+                    }
+                    placeholder="3"
+                    className="w-full px-3 py-2 sm:px-4 sm:py-2 pl-8 sm:pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base"
+                    icon={
+                      <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+                    }
+                    required
+                  />
                 </div>
 
                 {/* Buttons */}
@@ -412,7 +512,7 @@ const CreateJobModal = ({
                     className="px-4 py-2 sm:px-6 sm:py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm sm:text-base"
                     disabled={isLoading}
                   >
-                    {t("jobModal.buttons.cancel")}
+                    Отмена
                   </button>
                   <button
                     type="submit"
@@ -422,15 +522,15 @@ const CreateJobModal = ({
                     {isLoading ? (
                       <>
                         <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
-                        <span>{t("jobModal.buttons.saving")}</span>
+                        <span>Сохранение...</span>
                       </>
                     ) : (
                       <>
                         <Save className="w-4 h-4 sm:w-5 sm:h-5" />
                         <span>
                           {initialData
-                            ? t("jobModal.buttons.updateJob")
-                            : t("jobModal.buttons.createJob")}
+                            ? "Обновить вакансию"
+                            : "Создать вакансию"}
                         </span>
                       </>
                     )}
