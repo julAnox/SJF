@@ -20,6 +20,8 @@ interface ResumeContactModalProps {
   resumeUser: any;
 }
 
+const MAX_MESSAGE_LENGTH = 255;
+
 const ResumeContactModal = ({
   isOpen,
   onClose,
@@ -34,9 +36,31 @@ const ResumeContactModal = ({
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const { user } = useAuth();
 
+  const handleMessageChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newValue = e.target.value;
+    if (newValue.length <= MAX_MESSAGE_LENGTH) {
+      setMessage(newValue);
+    }
+  };
+
+  const getCharacterCountColor = () => {
+    const remaining = MAX_MESSAGE_LENGTH - message.length;
+    if (remaining <= 10) return "text-red-400";
+    if (remaining <= 30) return "text-yellow-400";
+    return "text-gray-400";
+  };
+
+  const getBorderColor = () => {
+    const remaining = MAX_MESSAGE_LENGTH - message.length;
+    if (remaining <= 0) return "border-red-500 focus:ring-red-500";
+    if (remaining <= 10) return "border-yellow-500 focus:ring-yellow-500";
+    return "border-gray-600 focus:ring-emerald-500";
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!message.trim() || isSubmitting) return;
+    if (!message.trim() || isSubmitting || message.length > MAX_MESSAGE_LENGTH)
+      return;
 
     setIsSubmitting(true);
     setErrorDetails(null);
@@ -290,17 +314,36 @@ const ResumeContactModal = ({
                     <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
                       {t("resumeContact.messageLabel")}
                     </label>
-                    <textarea
-                      value={message}
-                      onChange={(e) => setMessage(e.target.value)}
-                      required
-                      rows={6}
-                      className="w-full px-3 py-2 sm:px-4 sm:py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none text-sm sm:text-base"
-                      placeholder={t("resumeContact.messagePlaceholder")}
-                    />
-                    <p className="text-xs text-gray-400 mt-1">
-                      {t("resumeContact.messageHint")}
-                    </p>
+                    <div className="relative">
+                      <textarea
+                        value={message}
+                        onChange={handleMessageChange}
+                        required
+                        rows={6}
+                        maxLength={MAX_MESSAGE_LENGTH}
+                        className={`w-full px-3 py-2 sm:px-4 sm:py-3 bg-gray-700 border ${getBorderColor()} rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent resize-none text-sm sm:text-base pr-16`}
+                        placeholder={t("resumeContact.messagePlaceholder")}
+                      />
+                      <div
+                        className={`absolute right-3 bottom-3 text-xs ${getCharacterCountColor()} bg-gray-800 px-2 py-1 rounded`}
+                      >
+                        {message.length}/{MAX_MESSAGE_LENGTH}
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center mt-1">
+                      <p className="text-xs text-gray-400">
+                        {t("resumeContact.messageHint")}
+                      </p>
+                      {message.length > MAX_MESSAGE_LENGTH - 30 && (
+                        <p className={`text-xs ${getCharacterCountColor()}`}>
+                          {MAX_MESSAGE_LENGTH - message.length === 0
+                            ? "Достигнут лимит символов"
+                            : `Осталось ${
+                                MAX_MESSAGE_LENGTH - message.length
+                              } символов`}
+                        </p>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex justify-end gap-2 sm:gap-4 pt-3 sm:pt-4 border-t border-gray-700">
@@ -314,7 +357,11 @@ const ResumeContactModal = ({
                     </button>
                     <button
                       type="submit"
-                      disabled={!message.trim() || isSubmitting}
+                      disabled={
+                        !message.trim() ||
+                        isSubmitting ||
+                        message.length > MAX_MESSAGE_LENGTH
+                      }
                       className="flex items-center gap-1 sm:gap-2 px-4 py-2 sm:px-6 sm:py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
                     >
                       {isSubmitting ? (
