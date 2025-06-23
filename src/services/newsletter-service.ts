@@ -3,7 +3,7 @@ import { config } from "../config";
 export const newsletterService = {
   subscribe: async (email) => {
     const response = await fetch(
-      `${config.API_BASE_URL}/app/newsletter/subscribe/`,
+      `${config.API_BASE_URL}/newsletter/subscribe/`,
       {
         method: "POST",
         headers: {
